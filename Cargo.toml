@@ -1,0 +1,42 @@
+[package]
+name = "cardworder"
+version = "0.1.0"
+authors = ["Aleksandr Kopytov <grender.no8@gmail.com>"]
+edition = "2021"
+resolver = "2"
+rust-version = "1.77"
+
+[[bin]]
+name = "cardworder"
+harness = false # do not use the built in cargo test harness -> resolve rust-analyzer errors
+
+[profile.release]
+opt-level = "s"
+
+[profile.dev]
+debug = true    # Symbols are nice and they don't increase the size on Flash
+opt-level = "s"
+
+[features]
+default = []
+experimental = ["esp-idf-svc/experimental"]
+
+[dependencies]
+anyhow = "1.0.94"
+log = "0.4"
+esp-idf-svc = { version = "0.49.1", features = ["std", "critical-section", "embassy-time-driver", "embassy-sync"] }
+esp-idf-hal = {version="0.44.1"}
+display-interface = "0.5.0"
+display-interface-spi = "0.5.0"
+mipidsi = "0.8.0"
+embedded-hal = "1.0.0"
+embedded-graphics = "0.8.1"
+embedded-fps = { version = "0.1.0", features = ["std"] }
+embedded-graphics-framebuf = "0.5.0"
+
+[dev-dependencies]
+# for examples
+
+[build-dependencies]
+embuild = "0.32.0"
+cc = "=1.1.30" # Version "1.1.30" necessary until a new version of `esp-idf-sys` is released
