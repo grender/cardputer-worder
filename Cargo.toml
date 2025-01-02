@@ -11,7 +11,7 @@ name = "cardworder"
 harness = false # do not use the built in cargo test harness -> resolve rust-analyzer errors
 
 [profile.release]
-opt-level = "s"
+opt-level = "z"
 
 [profile.dev]
 debug = true    # Symbols are nice and they don't increase the size on Flash
@@ -33,6 +33,11 @@ embedded-hal = "1.0.0"
 embedded-graphics = "0.8.1"
 embedded-fps = { version = "0.1.0", features = ["std"] }
 embedded-graphics-framebuf = "0.5.0"
+ws2812-esp32-rmt-driver = { version = "0.10.0", features = ["embedded-graphics-core", "smart-leds-trait"] }
+smart-leds = "0.4.0"
+esp-idf-sys = { version = "0.35.0", features = ["native", "panic_handler"] }
+smart-leds-trait = "0.3.0"
+u8g2-fonts = { version = "0.5.1", features = ["embedded_graphics_textstyle", "std"] }
 
 [dev-dependencies]
 # for examples

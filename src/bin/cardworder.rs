@@ -1,46 +1,48 @@
-pub mod lib;
-
-use crate::lib::display;
-use display_interface::DataFormat;
+use cardworder::keyboard::{Keyboard, KeyboardState};
+use cardworder::screen::cardputer_screen;
+use cardworder::screen::display::{DISPLAY_SIZE_HEIGHT, DISPLAY_SIZE_WIDTH};
 use embedded_fps::{StdClock, FPS};
-use embedded_graphics::framebuffer::{buffer_size, Framebuffer};
 use embedded_graphics::mono_font::ascii::{FONT_4X6, FONT_9X18_BOLD};
 use embedded_graphics::prelude::WebColors;
 use embedded_graphics::primitives::Line;
-use esp_idf_hal::delay::Delay;
 use esp_idf_svc::hal::prelude::Peripherals;
 
-use embedded_graphics::{
-    pixelcolor::{raw::LittleEndian, Rgb565},
-    prelude::*,
-    primitives::PrimitiveStyle,
-};
+use embedded_graphics::{pixelcolor::Rgb565, prelude::*, primitives::PrimitiveStyle};
 
-use display_interface::WriteOnlyDataCommand;
 use embedded_graphics::mono_font::MonoTextStyle;
 use embedded_graphics::text::Text;
-use lib::display::{DISPLAY_SIZE_HEIGHT, DISPLAY_SIZE_WIDTH};
-use mipidsi::dcs::WriteMemoryStart;
+use u8g2_fonts::types::{FontColor, HorizontalAlignment, VerticalPosition};
+use u8g2_fonts::{fonts, FontRenderer};
 
-//const DISPLAY_SIZE_WIDTH_U: usize = DISPLAY_SIZE_WIDTH as usize;
-//const DISPLAY_SIZE_HEIGHT_U: usize = DISPLAY_SIZE_HEIGHT as usize;
+pub trait ResultExt<R, E> {
+    fn unwrap_or_log(self, message: &str) -> R;
+}
+
+impl<R, E: std::fmt::Debug> ResultExt<R, E> for Result<R, E> {
+    fn unwrap_or_log(self, message: &str) -> R {
+        match self {
+            Ok(t) => t,
+            Err(e) => {
+                log::error!("error: {} {:?}", message, e);
+                loop {}
+            }
+        }
+    }
+}
 
 fn main() {
-    // It is necessary to call this function once. Otherwise some patches to the runtime
-    // implemented by esp-idf-sys might not link properly. See https://github.com/esp-rs/esp-idf-template/issues/71
     esp_idf_svc::sys::link_patches();
-
-    // Bind the log crate to the ESP Logging facilities
     esp_idf_svc::log::EspLogger::initialize_default();
 
     log::info!("Start the app");
 
-    // let std_clock = StdClock::default();
-    // let mut fps_counter = FPS::<120, _>::new(std_clock);
+    let std_clock = StdClock::default();
+    let mut fps_counter = FPS::<120, _>::new(std_clock);
 
-    let peripherals = Peripherals::take().unwrap();
+    let peripherals = Peripherals::take().unwrap_or_log("error get peripherals");
 
-    let mut display_real = display::build(
+    let mut display = cardputer_screen::CardputerScreen::build(
+        Rgb565::CSS_BLACK,
         peripherals.spi2,
         peripherals.pins.gpio36,
         peripherals.pins.gpio35,
@@ -48,21 +50,42 @@ fn main() {
         peripherals.pins.gpio34,
         peripherals.pins.gpio33,
         peripherals.pins.gpio38,
-    )
-    .unwrap();
+    );
 
     let mut idx: u8 = 0;
 
     let bg_color = Rgb565::CSS_LIGHT_GRAY;
 
-    let mut display = Framebuffer::<Rgb565, _, LittleEndian, 320, 320, {buffer_size::<Rgb565>(320, 320)}>::new();
-    // let mut display = display_real.screen;
+    let font = FontRenderer::new::<fonts::u8g2_font_haxrcorp4089_t_cyrillic>();
+
+    let mut keyboard = Keyboard::new(
+        peripherals.pins.gpio8,
+        peripherals.pins.gpio9,
+        peripherals.pins.gpio11,
+        peripherals.pins.gpio13,
+        peripherals.pins.gpio15,
+        peripherals.pins.gpio3,
+        peripherals.pins.gpio4,
+        peripherals.pins.gpio5,
+        peripherals.pins.gpio6,
+        peripherals.pins.gpio7,
+    )
+    .unwrap();
+    let mut keyboard_state = KeyboardState::default();
+
+    let mut add = 0;
 
     loop {
-        (idx, _) = idx.overflowing_add(1);
+        keyboard_state.update(&mut keyboard).unwrap();
+        log::info!("pressed : {:?}", keyboard_state.pressed_keys());
+        log::info!("released: {:?}", keyboard_state.released_keys());
 
-        //display.screen.set_vertical_scroll_region(20, DISPLAY_SIZE_HEIGHT).unwrap();
-        //display.screen.set_vertical_scroll_offset(idx.into()).unwrap();
+        // thread::sleep(Duration::from_millis(50));
+        (idx, _) = idx.overflowing_add(add);
+        add = 0;
+
+        //display.screen.set_vertical_scroll_region(20, DISPLAY_SIZE_HEIGHT); // .unwrap();
+        //display.screen.set_vertical_scroll_offset(idx.into()); // .unwrap();
 
         let text_color = Rgb565::new(idx, 0b1111_1111 ^ idx, idx);
         let text_small_color = Rgb565::new(0b1111_1111 ^ idx, idx, idx);
@@ -70,16 +93,26 @@ fn main() {
         let style = MonoTextStyle::new(&FONT_9X18_BOLD, text_color);
         let style_small = MonoTextStyle::new(&FONT_4X6, text_small_color);
 
-        log::info!("clear");
+        // log::info!("clear");
         display
             .clear(bg_color)
             .map_err(|err| {
                 log::error!("error clear {:?}", err);
             })
-            .unwrap();
+            .unwrap_or_log("error clear display");
+
+        font.render_aligned(
+            "Приветики =)",
+            display.bounding_box().center() + Point::new(0, 16),
+            VerticalPosition::Baseline,
+            HorizontalAlignment::Center,
+            FontColor::Transparent(Rgb565::RED),
+            &mut display,
+        )
+        .unwrap_or_log("error draw with nice font");
 
         // cross
-        log::info!("cdraw cross");
+        // log::info!("cdraw cross");
         Line::new(
             Point::new(0, 0),
             Point::new(
@@ -89,7 +122,7 @@ fn main() {
         )
         .into_styled(PrimitiveStyle::with_stroke(text_color, 1))
         .draw(&mut display)
-        .unwrap();
+        .unwrap_or_log("error draw line");
 
         Line::new(
             Point::new(0, (DISPLAY_SIZE_HEIGHT - 1).into()),
@@ -97,17 +130,17 @@ fn main() {
         )
         .into_styled(PrimitiveStyle::with_stroke(text_color, 1))
         .draw(&mut display)
-        .unwrap();
+        .unwrap_or_log("error draw line");
 
         // perimeter
-        log::info!("cdraw perimiter");
+        // log::info!("cdraw perimiter");
         Line::new(
             Point::new(0, 0),
             Point::new((DISPLAY_SIZE_WIDTH - 1).into(), 0),
         )
         .into_styled(PrimitiveStyle::with_stroke(Rgb565::CSS_RED, 1))
         .draw(&mut display)
-        .unwrap();
+        .unwrap_or_log("error draw line");
 
         Line::new(
             Point::new(0, 0),
@@ -115,7 +148,7 @@ fn main() {
         )
         .into_styled(PrimitiveStyle::with_stroke(Rgb565::CSS_RED, 1))
         .draw(&mut display)
-        .unwrap();
+        .unwrap_or_log("error draw line");
 
         Line::new(
             Point::new(
@@ -126,7 +159,7 @@ fn main() {
         )
         .into_styled(PrimitiveStyle::with_stroke(Rgb565::CSS_RED, 1))
         .draw(&mut display)
-        .unwrap();
+        .unwrap_or_log("error draw line");
 
         Line::new(
             Point::new(
@@ -137,20 +170,20 @@ fn main() {
         )
         .into_styled(PrimitiveStyle::with_stroke(Rgb565::CSS_RED, 1))
         .draw(&mut display)
-        .unwrap();
+        .unwrap_or_log("error draw line");
 
-        log::info!("cdraw coords");
+        // log::info!("cdraw coords");
         let p = Point::new(0, 0);
         let s = format!("{} , {}", p.x, p.y);
         let mut t = Text::new(&s, p, style_small);
         t.position.y = t.position.y + t.bounding_box().size.height as i32;
-        t.draw(&mut display).unwrap();
+        t.draw(&mut display).unwrap_or_log("error draw point text");
 
         let p = Point::new(0, (DISPLAY_SIZE_HEIGHT - 1).into());
         let s = format!("{} , {}", p.x, p.y);
         let mut t = Text::new(&s, p, style_small);
         t.position.y = t.position.y - t.bounding_box().size.height as i32;
-        t.draw(&mut display).unwrap();
+        t.draw(&mut display).unwrap_or_log("error draw point text");
 
         let p = Point::new(
             (DISPLAY_SIZE_WIDTH - 1).into(),
@@ -160,31 +193,23 @@ fn main() {
         let mut t = Text::new(&s, p, style_small);
         t.position.x = t.position.x - t.bounding_box().size.width as i32;
         t.position.y = t.position.y - t.bounding_box().size.height as i32;
-        t.draw(&mut display).unwrap();
+        t.draw(&mut display).unwrap_or_log("error draw point text");
 
         let p = Point::new((DISPLAY_SIZE_WIDTH - 1).into(), 0);
         let s = format!("{} , {}", p.x, p.y);
         let mut t = Text::new(&s, p, style_small);
         t.position.x = t.position.x - t.bounding_box().size.width as i32;
         t.position.y = t.position.y + t.bounding_box().size.height as i32;
-        t.draw(&mut display).unwrap();
+        t.draw(&mut display).unwrap_or_log("error draw point text");
 
-        log::info!("calc and draw cross");
+        // log::info!("calc and draw cross");
 
-        //let fps = fps_counter.tick_max();
+        let fps = fps_counter.tick_max();
 
-        //Text::new(&format!("{} FPS: {}", idx, fps), Point::new(100, 60), style)
-        //    .draw(&mut display)
-        //    .unwrap();
+        Text::new(&format!("{} FPS: {}", idx, fps), Point::new(100, 80), style)
+            .draw(&mut display)
+            .unwrap_or_log("error draw fps text");
 
-        unsafe {
-            display_real
-                .screen
-                .dcs()
-                .write_command(WriteMemoryStart)
-                .unwrap();
-            let buf = DataFormat::U8(display.data_mut());
-            display_real.screen.dcs().di.send_data(buf).unwrap();
-        }
+        display.flush_framebuffer().unwrap_or_log("error flushing buffer");
     }
 }

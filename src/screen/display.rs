@@ -16,7 +16,7 @@ use mipidsi::{
     Builder, Display,
 };
 
-use super::st7789v2::ST7789V2;
+use crate::screen::st7789v2::ST7789V2;
 
 type Drawable<'a> = Display<
     SPIInterface<SpiDeviceDriver<'a, SpiDriver<'a>>, PinDriver<'a, Gpio34, Output>>,
@@ -47,8 +47,11 @@ where
     SPI: SpiAnyPins,
 {
     log::info!("start building");
-    let spi_config = SpiConfig::new().baudrate(80.MHz().into());
-    let device_config = DriverConfig::new();
+    let spi_config = SpiConfig::new()
+        .baudrate(80.MHz().into())
+        .data_mode(esp_idf_hal::spi::config::MODE_0)
+        .queue_size(1);
+    let device_config = DriverConfig::new().dma(esp_idf_hal::spi::Dma::Auto(4096));
 
     let spi = SpiDeviceDriver::new_single(
         spi,
