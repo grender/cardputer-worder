@@ -1,10 +1,12 @@
-use cardworder::keyboard::{Keyboard, KeyboardState};
-use cardworder::screen::cardputer_screen;
+use cardworder::keyboard::CardputerKeyboard;
+use cardworder::screen::{cardputer_screen, cardworder_ui};
 use cardworder::screen::display::{DISPLAY_SIZE_HEIGHT, DISPLAY_SIZE_WIDTH};
+use cardworder::sd::cardputer_sd::CardputerSd;
 use embedded_fps::{StdClock, FPS};
 use embedded_graphics::mono_font::ascii::{FONT_4X6, FONT_9X18_BOLD};
 use embedded_graphics::prelude::WebColors;
 use embedded_graphics::primitives::Line;
+use esp_idf_hal::gpio::{self, IOPin, Output, OutputPin, PinDriver};
 use esp_idf_svc::hal::prelude::Peripherals;
 
 use embedded_graphics::{pixelcolor::Rgb565, prelude::*, primitives::PrimitiveStyle};
@@ -37,11 +39,11 @@ fn main() {
     log::info!("Start the app");
 
     let std_clock = StdClock::default();
-    let mut fps_counter = FPS::<120, _>::new(std_clock);
+    let mut fps_counter = FPS::<45, _>::new(std_clock);
 
     let peripherals = Peripherals::take().unwrap_or_log("error get peripherals");
 
-    let mut display = cardputer_screen::CardputerScreen::build(
+    let mut display =  cardputer_screen::CardputerScreen::build(
         Rgb565::CSS_BLACK,
         peripherals.spi2,
         peripherals.pins.gpio36,
@@ -52,9 +54,50 @@ fn main() {
         peripherals.pins.gpio38,
     );
 
+    let mut ui = cardworder_ui::CardworderUi::build( display);
+
+    let sd = CardputerSd::build(
+        peripherals.spi3,
+        peripherals.pins.gpio40,
+        peripherals.pins.gpio39,
+        peripherals.pins.gpio14,
+        peripherals.pins.gpio12,
+    );
+
+    let mux_pins: [PinDriver<'_, gpio::AnyOutputPin, Output>; 3] = [
+        PinDriver::output(peripherals.pins.gpio8.downgrade_output()).unwrap(),
+        PinDriver::output(peripherals.pins.gpio9.downgrade_output()).unwrap(),
+        PinDriver::output(peripherals.pins.gpio11.downgrade_output()).unwrap(),
+    ];
+
+    let column_pins = [
+        PinDriver::input(peripherals.pins.gpio13.downgrade()).unwrap(),
+        PinDriver::input(peripherals.pins.gpio15.downgrade()).unwrap(),
+        PinDriver::input(peripherals.pins.gpio3.downgrade()).unwrap(),
+        PinDriver::input(peripherals.pins.gpio4.downgrade()).unwrap(),
+        PinDriver::input(peripherals.pins.gpio5.downgrade()).unwrap(),
+        PinDriver::input(peripherals.pins.gpio6.downgrade()).unwrap(),
+        PinDriver::input(peripherals.pins.gpio7.downgrade()).unwrap(),
+    ];
+
+    let mut keyboard = CardputerKeyboard::new(mux_pins, column_pins);
+    keyboard.init();
+
+    loop {
+        let key_state = keyboard.read_events();
+
+        key_state.iter().for_each(|key| {
+            log::info!("key: {:?}", key);
+        });
+
+        // ui.clear(Rgb565::CSS_WHITE_SMOKE);
+        ui.flip_buffer();
+    }
+
+    /* 
     let mut idx: u8 = 0;
 
-    let bg_color = Rgb565::CSS_LIGHT_GRAY;
+    let bg_color = Rgb565::CSS_DARK_GRAY;
 
     let font = FontRenderer::new::<fonts::u8g2_font_haxrcorp4089_t_cyrillic>();
 
@@ -102,8 +145,8 @@ fn main() {
             .unwrap_or_log("error clear display");
 
         font.render_aligned(
-            "Приветики =)",
-            display.bounding_box().center() + Point::new(0, 16),
+            "(= Приветики =)",
+            display.bounding_box().center() - Point::new(0, 32),
             VerticalPosition::Baseline,
             HorizontalAlignment::Center,
             FontColor::Transparent(Rgb565::RED),
@@ -212,4 +255,5 @@ fn main() {
 
         display.flush_framebuffer().unwrap_or_log("error flushing buffer");
     }
+    */
 }
