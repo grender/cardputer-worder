@@ -31,7 +31,7 @@ impl FrameBufferBackend for CardputerFramebuffer {
 impl CardputerFramebuffer {
 
     pub fn new(initial_color:Rgb565) ->Self {
-        let mut fb_data = iter::repeat(initial_color)
+        let fb_data = iter::repeat(initial_color)
         .take(DISPLAY_SIZE_WIDTH_U * DISPLAY_SIZE_HEIGHT_U)
         .collect();
         CardputerFramebuffer { data: fb_data }

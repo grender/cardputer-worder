@@ -1,10 +1,8 @@
-use core::mem::MaybeUninit;
 use embedded_hal::delay::DelayNs;
-use embedded_sdmmc::{BlockDevice, Directory, SdCard, TimeSource, VolumeIdx};
+use embedded_sdmmc::{BlockDevice, Directory, SdCard, TimeSource};
 use esp_idf_hal::{
     delay::Delay,
-    prelude::Peripherals,
-    spi::{config::DriverConfig, Spi, SpiConfig, SpiDeviceDriver},
+    spi::{config::DriverConfig, SpiConfig, SpiDeviceDriver},
     units::FromValueType,
 };
 use esp_idf_hal::{
@@ -12,7 +10,6 @@ use esp_idf_hal::{
     peripheral::Peripheral,
     spi::{SpiAnyPins, SpiDriver},
 };
-use std::fmt::Debug;
 
 pub struct CardputerSd<'a, DELAYER: DelayNs> {
     pub sdcard: SdCard<SpiDeviceDriver<'a, SpiDriver<'a>>, DELAYER>,
@@ -42,7 +39,7 @@ impl CardputerSd<'_, Delay> {
         mosi: impl Peripheral<P = Gpio14> + 'a,
         cs: impl Peripheral<P = Gpio12> + 'a,
     ) -> CardputerSd<'a, Delay> {
-        let mut delay = Delay::new_default();
+        let delay = Delay::new_default();
 
         let spi_config = SpiConfig::new()
             .baudrate(1.MHz().into())

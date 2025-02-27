@@ -1,21 +1,14 @@
 use cardworder::input::{InputLanguage, InputState, PressedSymbol};
 use cardworder::keyboard::{CardputerKeyboard, Key, KeyEvent};
-use cardworder::screen::display::{DISPLAY_SIZE_HEIGHT, DISPLAY_SIZE_WIDTH};
 use cardworder::screen::{cardputer_screen, cardworder_ui};
 use cardworder::sd::cardputer_sd::CardputerSd;
 use embedded_fps::{StdClock, FPS};
-use embedded_graphics::mono_font::ascii::{FONT_4X6, FONT_9X18_BOLD};
 use embedded_graphics::prelude::WebColors;
-use embedded_graphics::primitives::Line;
 use esp_idf_hal::gpio::{self, IOPin, Output, OutputPin, PinDriver};
 use esp_idf_svc::hal::prelude::Peripherals;
 
-use embedded_graphics::{pixelcolor::Rgb565, prelude::*, primitives::PrimitiveStyle};
+use embedded_graphics::{pixelcolor::Rgb565, prelude::*};
 
-use embedded_graphics::mono_font::MonoTextStyle;
-use embedded_graphics::text::Text;
-use u8g2_fonts::types::{FontColor, HorizontalAlignment, VerticalPosition};
-use u8g2_fonts::{fonts, FontRenderer};
 
 pub trait ResultExt<R, E> {
     fn unwrap_or_log(self, message: &str) -> R;
@@ -40,11 +33,11 @@ fn main() {
     log::info!("Start the app");
 
     let std_clock = StdClock::default();
-    let mut fps_counter = FPS::<45, _>::new(std_clock);
+    let fps_counter = FPS::<45, _>::new(std_clock);
 
     let peripherals = Peripherals::take().unwrap_or_log("error get peripherals");
 
-    let mut display = cardputer_screen::CardputerScreen::build(
+    let display = cardputer_screen::CardputerScreen::build(
         Rgb565::CSS_BLACK,
         peripherals.spi2,
         peripherals.pins.gpio36,
@@ -132,7 +125,7 @@ fn main() {
             _ => {}
         }
 
-        if (is_changed) {
+        if is_changed {
             ui.draw_long_text(is_bold);
         }
         ui.flip_buffer();

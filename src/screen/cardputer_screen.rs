@@ -89,7 +89,7 @@ impl CardputerScreen<'_> {
 
     pub fn flush_framebuffer(&mut self) -> Result<(), DisplayError> {
         //let mut screen: mipidsi::Display<display_interface_spi::SPIInterface<esp_idf_hal::spi::SpiDeviceDriver<'_, esp_idf_hal::spi::SpiDriver<'_>>, esp_idf_hal::gpio::PinDriver<'_, Gpio34, esp_idf_hal::gpio::Output>>, super::st7789v2::ST7789V2, esp_idf_hal::gpio::PinDriver<'_, Gpio33, esp_idf_hal::gpio::Output>> = self.cardputer_display.screen;
-        let mut screen = &mut self.cardputer_display.screen;
+        let screen = &mut self.cardputer_display.screen;
         unsafe {
             screen.dcs().write_command(SetColumnAddress::new(40, 279))?;
 

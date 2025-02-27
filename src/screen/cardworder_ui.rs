@@ -1,12 +1,10 @@
-use std::str;
 
-use display_interface::DisplayError;
 use embedded_fps::{StdClock, FPS};
 use embedded_graphics::geometry::AnchorPoint;
 use embedded_graphics::mono_font::iso_8859_5::FONT_6X13;
 use embedded_graphics::mono_font::iso_8859_5::FONT_6X13_BOLD;
 use embedded_graphics::prelude::WebColors;
-use embedded_graphics::primitives::{Line, Rectangle};
+use embedded_graphics::primitives::Rectangle;
 use embedded_graphics::text::{Alignment, Baseline, TextStyleBuilder};
 use embedded_graphics::{
     mono_font::{ascii::FONT_4X6, MonoTextStyle},
@@ -16,9 +14,8 @@ use embedded_graphics::{
 use embedded_text::alignment::HorizontalAlignment;
 use embedded_text::style::{HeightMode, TextBoxStyleBuilder};
 use embedded_text::TextBox;
-use esp_idf_svc::hal::prelude::Peripherals;
 
-use embedded_graphics::{pixelcolor::Rgb565, prelude::*, primitives::PrimitiveStyle};
+use embedded_graphics::{pixelcolor::Rgb565, prelude::*};
 
 use u8g2_fonts::types::{FontColor, VerticalPosition};
 use u8g2_fonts::{fonts, FontRenderer};
@@ -50,7 +47,7 @@ impl CardworderUi<'_> {
 
     pub fn flip_buffer(&mut self) {
         let fps = self.fps_counter.tick();
-        if (self.show_fps) {
+        if self.show_fps {
             let fps_text = format!("FPS: {}", fps);
             let text_style = TextStyleBuilder::new()
                 .baseline(Baseline::Top)
