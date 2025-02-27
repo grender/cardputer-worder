@@ -1,6 +1,7 @@
-use cardworder::keyboard::CardputerKeyboard;
-use cardworder::screen::{cardputer_screen, cardworder_ui};
+use cardworder::input::{InputLanguage, InputState, PressedSymbol};
+use cardworder::keyboard::{CardputerKeyboard, Key, KeyEvent};
 use cardworder::screen::display::{DISPLAY_SIZE_HEIGHT, DISPLAY_SIZE_WIDTH};
+use cardworder::screen::{cardputer_screen, cardworder_ui};
 use cardworder::sd::cardputer_sd::CardputerSd;
 use embedded_fps::{StdClock, FPS};
 use embedded_graphics::mono_font::ascii::{FONT_4X6, FONT_9X18_BOLD};
@@ -43,7 +44,7 @@ fn main() {
 
     let peripherals = Peripherals::take().unwrap_or_log("error get peripherals");
 
-    let mut display =  cardputer_screen::CardputerScreen::build(
+    let mut display = cardputer_screen::CardputerScreen::build(
         Rgb565::CSS_BLACK,
         peripherals.spi2,
         peripherals.pins.gpio36,
@@ -54,7 +55,7 @@ fn main() {
         peripherals.pins.gpio38,
     );
 
-    let mut ui = cardworder_ui::CardworderUi::build( display);
+    let mut ui = cardworder_ui::CardworderUi::build(display);
 
     let sd = CardputerSd::build(
         peripherals.spi3,
@@ -83,18 +84,61 @@ fn main() {
     let mut keyboard = CardputerKeyboard::new(mux_pins, column_pins);
     keyboard.init();
 
+    let mut input_state = InputState {
+        ctrl_pressed: false,
+        shift_pressed: false,
+        opt_pressed: false,
+        alt_pressed: false,
+        fn_pressed: false,
+        lang: InputLanguage::En,
+    };
+
+    let mut is_bold = false;
+    let mut is_changed = true;
+
     loop {
-        let key_state = keyboard.read_events();
+        let key = keyboard.read_events();
 
-        key_state.iter().for_each(|key| {
-            log::info!("key: {:?}", key);
-        });
+        let pressed = match key {
+            Some((event, key)) => input_state.eat_keys(event, key).map(|f| (event, f)),
+            None => None,
+        };
 
-        // ui.clear(Rgb565::CSS_WHITE_SMOKE);
+        match (input_state.opt_pressed, key) {
+            (true, Some((KeyEvent::Pressed, Key::F))) => {
+                ui.show_fps = !ui.show_fps;
+            }
+            _ => {}
+        }
+
+        match pressed {
+            Some((KeyEvent::Pressed, PressedSymbol::ArrowDown)) => {
+                ui.clear(Rgb565::CSS_DARK_GRAY);
+                is_changed = true;
+            }
+            Some((KeyEvent::Released, PressedSymbol::ArrowDown)) => {
+                ui.backlight_off();
+            }
+            Some((KeyEvent::Pressed, PressedSymbol::ArrowUp)) => {
+                ui.clear(Rgb565::CSS_WHEAT);
+                ui.backlight_on();
+                is_changed = true;
+            }
+            Some((KeyEvent::Pressed, PressedSymbol::Char(' '))) => {
+                is_bold = !is_bold;
+                ui.clear(Rgb565::CSS_RED);
+                is_changed = true;
+            }
+            _ => {}
+        }
+
+        if (is_changed) {
+            ui.draw_long_text(is_bold);
+        }
         ui.flip_buffer();
     }
 
-    /* 
+    /*
     let mut idx: u8 = 0;
 
     let bg_color = Rgb565::CSS_DARK_GRAY;

@@ -79,14 +79,12 @@ impl CardputerScreen<'_> {
         }
     }
 
-    pub fn backlight_off(self) {
-        let mut pin = self.cardputer_display.backlight_pin;
-        pin.set_low();
+    pub fn backlight_off(&mut self) {
+        self.cardputer_display.backlight_pin.set_low();
     }
 
-    pub fn backlight_on(self) {
-        let mut pin = self.cardputer_display.backlight_pin;
-        pin.set_high();
+    pub fn backlight_on(&mut self) {
+        self.cardputer_display.backlight_pin.set_high();
     }
 
     pub fn flush_framebuffer(&mut self) -> Result<(), DisplayError> {
