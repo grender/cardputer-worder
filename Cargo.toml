@@ -41,6 +41,7 @@ u8g2-fonts = { version = "0.5.1", features = ["embedded_graphics_textstyle", "st
 embedded-sdmmc = { version = "0.8.1", features = ["log"] }
 embedded-text = { version = "0.7.2", features = ["plugin"] }
 rs-fsrs = { version = "1.2.1" }
+chrono = { version = "0.4.40", features = ["serde"] }
 
 [dev-dependencies]
 # for examples

@@ -9,7 +9,6 @@ use esp_idf_svc::hal::prelude::Peripherals;
 
 use embedded_graphics::{pixelcolor::Rgb565, prelude::*};
 
-
 pub trait ResultExt<R, E> {
     fn unwrap_or_log(self, message: &str) -> R;
 }
@@ -31,9 +30,6 @@ fn main() {
     esp_idf_svc::log::EspLogger::initialize_default();
 
     log::info!("Start the app");
-
-    let std_clock = StdClock::default();
-    let fps_counter = FPS::<45, _>::new(std_clock);
 
     let peripherals = Peripherals::take().unwrap_or_log("error get peripherals");
 
@@ -128,6 +124,7 @@ fn main() {
         if is_changed {
             ui.draw_long_text(is_bold);
         }
+        ui.draw_top_line(&input_state, &pressed);
         ui.flip_buffer();
     }
 

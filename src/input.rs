@@ -66,17 +66,17 @@ impl InputState {
 
 
 
-        return match (key, self.ctrl_pressed, self.fn_pressed) {
-            (Key::Space, true, _) => {
+        return match (event, key, self.ctrl_pressed, self.fn_pressed) {
+            (KeyEvent::Pressed, Key::Space, true, _) => {
                 self.switch_language();
                 None
             },
-            (Key::Tilde, _, true) => Some(PressedSymbol::Esc),
-            (Key::Backspace, _, true) => Some(PressedSymbol::Del),
-            (Key::Semicolon, _, true) => Some(PressedSymbol::ArrowUp),
-            (Key::Slash, _, true) => Some(PressedSymbol::ArrowRight),
-            (Key::Comma, _, true) => Some(PressedSymbol::ArrowLeft),
-            (Key::Period, _, true) => Some(PressedSymbol::ArrowDown),
+            (_, Key::Tilde, _, true) => Some(PressedSymbol::Esc),
+            (_, Key::Backspace, _, true) => Some(PressedSymbol::Del),
+            (_, Key::Semicolon, _, true) => Some(PressedSymbol::ArrowUp),
+            (_, Key::Slash, _, true) => Some(PressedSymbol::ArrowRight),
+            (_, Key::Comma, _, true) => Some(PressedSymbol::ArrowLeft),
+            (_, Key::Period, _, true) => Some(PressedSymbol::ArrowDown),
             _ => self.key_to_pressed_symbol(key),
         };
     }
@@ -315,5 +315,5 @@ const SYMBOL_MAP_RU_SHIFTED: [Option<PressedSymbol>; 56] = [
     Some(PressedSymbol::Char('^')),
     Some(PressedSymbol::Char('*')),
     Some(PressedSymbol::Char(')')),
-    Some(PressedSymbol::Char('=')),
+    Some(PressedSymbol::Char('+')),
 ];
