@@ -4,7 +4,8 @@ use embedded_hal::{delay::DelayNs, digital::OutputPin};
 
 use mipidsi::{
     dcs::{
-        BitsPerPixel, Dcs, EnterNormalMode, ExitSleepMode, PixelFormat, SetAddressMode, SetDisplayOn, SetInvertMode, SetPixelFormat, SetScrollArea, SoftReset, WriteMemoryStart
+        BitsPerPixel, Dcs, EnterNormalMode, ExitSleepMode, PixelFormat, SetAddressMode,
+        SetDisplayOn, SetInvertMode, SetPixelFormat, SetScrollArea, SoftReset, WriteMemoryStart,
     },
     error::{Error, InitError},
     models::Model,
@@ -50,7 +51,7 @@ impl Model for ST7789V2 {
         dcs.write_command(SetInvertMode::new(ColorInversion::Normal))?;
         dcs.write_command(SetScrollArea::new(0, Self::FRAMEBUFFER_SIZE.1, 0))?;
         dcs.write_command(madctl)?;
-        
+
         let pf = PixelFormat::with_all(BitsPerPixel::from_rgb_color::<Self::ColorFormat>());
         dcs.write_command(SetPixelFormat::new(pf))?;
         dcs.write_command(SetInvertMode::new(ColorInversion::Inverted))?;

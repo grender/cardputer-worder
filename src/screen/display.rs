@@ -80,7 +80,7 @@ where
     log::info!("create drawable");
     let drawable = Builder::new(model, SPIInterface::new(spi, rs))
         .reset_pin(rst)
-        .display_size( DISPLAY_SIZE_HEIGHT,DISPLAY_SIZE_WIDTH)
+        .display_size(DISPLAY_SIZE_HEIGHT, DISPLAY_SIZE_WIDTH)
         .display_offset(52, 40)
         .invert_colors(ColorInversion::Inverted)
         .orientation(Orientation::new().rotate(Rotation::Deg90))

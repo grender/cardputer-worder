@@ -64,13 +64,11 @@ impl InputState {
             _ => {}
         }
 
-
-
         return match (event, key, self.ctrl_pressed, self.fn_pressed) {
             (KeyEvent::Pressed, Key::Space, true, _) => {
                 self.switch_language();
                 None
-            },
+            }
             (_, Key::Tilde, _, true) => Some(PressedSymbol::Esc),
             (_, Key::Backspace, _, true) => Some(PressedSymbol::Del),
             (_, Key::Semicolon, _, true) => Some(PressedSymbol::ArrowUp),

@@ -22,7 +22,8 @@ where
     DELAYER: DelayNs + 'a,
 {
     // sdcard: SdCard<SpiDeviceDriver<'a, SpiDriver<'a>>, DELAYER>,
-    volume_manager: VolumeManager<SdCard<SpiDeviceDriver<'a, SpiDriver<'a>>, DELAYER>, FakeTimesource, 4, 4, 1>,
+    volume_manager:
+        VolumeManager<SdCard<SpiDeviceDriver<'a, SpiDriver<'a>>, DELAYER>, FakeTimesource, 4, 4, 1>,
 }
 
 struct FakeTimesource();
@@ -73,7 +74,9 @@ impl CardputerSd<'_, Delay> {
         log::info!("Card size is {} bytes", sdcard.num_bytes().unwrap());
 
         let mut volume_manager = embedded_sdmmc::VolumeManager::new(sdcard, FakeTimesource());
-        return CardputerSd { volume_manager: volume_manager };
+        return CardputerSd {
+            volume_manager: volume_manager,
+        };
     }
 
     pub fn read_file(&mut self, path: &str) -> Result<String, Error<SdCardError>> {

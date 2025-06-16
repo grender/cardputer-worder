@@ -1,8 +1,6 @@
 use std::time::SystemTime;
 use std::vec;
 
-use chrono::Local;
-use chrono::{DateTime, Utc};
 use embedded_fps::{StdClock, FPS};
 use embedded_graphics::geometry::AnchorPoint;
 use embedded_graphics::mono_font::iso_8859_5::FONT_6X13;
@@ -21,8 +19,8 @@ use embedded_text::TextBox;
 
 use embedded_graphics::{pixelcolor::Rgb565, prelude::*};
 
-use esp_idf_sys::{localtime, localtime_r, time, time_t, tm};
 use esp_idf_sys::tzset;
+use esp_idf_sys::{localtime, localtime_r, time, time_t, tm};
 use u8g2_fonts::types::{FontColor, VerticalPosition};
 use u8g2_fonts::{fonts, FontRenderer};
 
@@ -96,15 +94,16 @@ impl CardworderUi<'_> {
         let font1 = FontRenderer::new::<fonts::u8g2_font_6x12_t_cyrillic>();
 
         let top_line_area = Rectangle {
-            top_left: Point { x: 0, y: 135-font1.get_default_line_height() as i32 },
+            top_left: Point {
+                x: 0,
+                y: 135 - font1.get_default_line_height() as i32,
+            },
             size: Size {
                 width: 240,
                 height: font1.get_default_line_height(),
             },
         };
-        self.screen
-            .fill_solid(&top_line_area, bg_color)
-            .unwrap();
+        self.screen.fill_solid(&top_line_area, bg_color).unwrap();
 
         font1
             .render(
@@ -234,18 +233,18 @@ impl CardworderUi<'_> {
 
         let time_x = 240 - 1 - 4 * 8;
 
-        let mut tm = tm{
-            tm_sec:0,
-            tm_min:0,
-            tm_hour:0,
-            tm_mday:0,
-            tm_mon:0,
-            tm_year:0,
-            tm_wday:0,
-            tm_yday:0,
-            tm_isdst:0,
+        let mut tm = tm {
+            tm_sec: 0,
+            tm_min: 0,
+            tm_hour: 0,
+            tm_mday: 0,
+            tm_mon: 0,
+            tm_year: 0,
+            tm_wday: 0,
+            tm_yday: 0,
+            tm_isdst: 0,
         };
-        let mut now_time:time_t = 0;
+        let mut now_time: time_t = 0;
         unsafe {
             // TODO: move to a separate file
             time(&mut now_time);
