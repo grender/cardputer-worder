@@ -1,5 +1,9 @@
+use std::{any::Any, string::FromUtf8Error as FormUtf8Error};
+
 use embedded_hal::delay::DelayNs;
-use embedded_sdmmc::{BlockDevice, Directory, SdCard, TimeSource};
+use embedded_sdmmc::{
+    BlockDevice, Directory, Error, Mode, SdCard, TimeSource, VolumeIdx, VolumeManager,
+};
 use esp_idf_hal::{
     delay::Delay,
     spi::{config::DriverConfig, SpiConfig, SpiDeviceDriver},
@@ -11,9 +15,14 @@ use esp_idf_hal::{
     spi::{SpiAnyPins, SpiDriver},
 };
 
-pub struct CardputerSd<'a, DELAYER: DelayNs> {
-    pub sdcard: SdCard<SpiDeviceDriver<'a, SpiDriver<'a>>, DELAYER>,
-    // root_dir: embedded_sdmmc::directory::Directory<SpiDeviceDriver, esp_idf_hal::time::EspIdfTime, 16, 16, 1>,
+use embedded_sdmmc::SdCardError;
+
+pub struct CardputerSd<'a, DELAYER>
+where
+    DELAYER: DelayNs + 'a,
+{
+    // sdcard: SdCard<SpiDeviceDriver<'a, SpiDriver<'a>>, DELAYER>,
+    volume_manager: VolumeManager<SdCard<SpiDeviceDriver<'a, SpiDriver<'a>>, DELAYER>, FakeTimesource, 4, 4, 1>,
 }
 
 struct FakeTimesource();
@@ -63,18 +72,50 @@ impl CardputerSd<'_, Delay> {
 
         log::info!("Card size is {} bytes", sdcard.num_bytes().unwrap());
 
-        /*
         let mut volume_manager = embedded_sdmmc::VolumeManager::new(sdcard, FakeTimesource());
+        return CardputerSd { volume_manager: volume_manager };
+    }
 
-        let mut volume0 = volume_manager.open_volume(VolumeIdx(0)).unwrap();
-        log::info!("Volume 0: {:?}", volume0);
-    
-        let root_dir = volume0.open_root_dir().unwrap();
-        */
+    pub fn read_file(&mut self, path: &str) -> Result<String, Error<SdCardError>> {
+        let mut volume0 = self.volume_manager.open_volume(VolumeIdx(0))?;
+        let mut root_dir = volume0.open_root_dir()?;
 
-        return CardputerSd { sdcard: sdcard };
+        let mut file = root_dir.open_file_in_dir(path, Mode::ReadOnly)?;
+        let mut contents = Vec::new();
+
+        let mut buffer = [0u8; 512];
+        loop {
+            let bytes_read = file.read(&mut buffer)?;
+            if bytes_read == 0 {
+                break;
+            }
+            contents.extend_from_slice(&buffer[..bytes_read]);
+        }
+
+        String::from_utf8(contents).map_err(|_| {
+            embedded_sdmmc::Error::FormatError("Failed to convert bytes to String".into())
+        })
+    }
+
+    pub fn write_file(&mut self, path: &str, contents: &str) -> Result<(), Error<SdCardError>> {
+        let mut volume0 = self.volume_manager.open_volume(VolumeIdx(0))?;
+        let mut root_dir = volume0.open_root_dir()?;
+
+        let mut file = root_dir.open_file_in_dir(path, Mode::ReadWriteCreate)?;
+        file.write(contents.as_bytes())?;
+        file.flush()?;
+        file.close()?;
+        Ok(())
+    }
+
+    pub fn is_file_exists(&mut self, path: &str) -> Result<bool, Error<SdCardError>> {
+        let mut volume0 = self.volume_manager.open_volume(VolumeIdx(0))?;
+        let mut root_dir = volume0.open_root_dir()?;
+        let file = root_dir.open_file_in_dir(path, Mode::ReadOnly);
+        Ok(file.is_ok())
     }
 }
+
 fn list_dir<
     B: BlockDevice,
     T: TimeSource,

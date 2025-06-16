@@ -1,6 +1,7 @@
 use std::time::SystemTime;
 use std::vec;
 
+use chrono::Local;
 use chrono::{DateTime, Utc};
 use embedded_fps::{StdClock, FPS};
 use embedded_graphics::geometry::AnchorPoint;
@@ -20,6 +21,8 @@ use embedded_text::TextBox;
 
 use embedded_graphics::{pixelcolor::Rgb565, prelude::*};
 
+use esp_idf_sys::{localtime, localtime_r, time, time_t, tm};
+use esp_idf_sys::tzset;
 use u8g2_fonts::types::{FontColor, VerticalPosition};
 use u8g2_fonts::{fonts, FontRenderer};
 
@@ -87,6 +90,31 @@ impl CardworderUi<'_> {
 
     pub fn backlight_on(&mut self) {
         self.screen.backlight_on();
+    }
+
+    pub fn draw_starting_line(&mut self, text: &str, bg_color: Rgb565, font_color: Rgb565) {
+        let font1 = FontRenderer::new::<fonts::u8g2_font_6x12_t_cyrillic>();
+
+        let top_line_area = Rectangle {
+            top_left: Point { x: 0, y: 135-font1.get_default_line_height() as i32 },
+            size: Size {
+                width: 240,
+                height: font1.get_default_line_height(),
+            },
+        };
+        self.screen
+            .fill_solid(&top_line_area, bg_color)
+            .unwrap();
+
+        font1
+            .render(
+                text,
+                Point::new(0, 135 - font1.get_default_line_height() as i32),
+                VerticalPosition::Top,
+                FontColor::Transparent(font_color),
+                &mut self.screen,
+            )
+            .unwrap();
     }
 
     pub fn draw_top_line(
@@ -201,16 +229,30 @@ impl CardworderUi<'_> {
                     )
                     .unwrap();
             }
-            _ => {},
+            _ => {}
         };
 
         let time_x = 240 - 1 - 4 * 8;
 
-        let st_now = SystemTime::now();
-        // Convert to UTC Time
-        let dt_now_utc: DateTime<Utc> = st_now.clone().into();
-        // Format Time String
-        let formatted = format!("{}", dt_now_utc.format("%H:%M:%S"));
+        let mut tm = tm{
+            tm_sec:0,
+            tm_min:0,
+            tm_hour:0,
+            tm_mday:0,
+            tm_mon:0,
+            tm_year:0,
+            tm_wday:0,
+            tm_yday:0,
+            tm_isdst:0,
+        };
+        let mut now_time:time_t = 0;
+        unsafe {
+            // TODO: move to a separate file
+            time(&mut now_time);
+            localtime_r(&now_time, &mut tm);
+        }
+
+        let formatted = format!("{:02}:{:02}:{:02}", tm.tm_hour, tm.tm_min, tm.tm_sec);
 
         font1
             .render(
