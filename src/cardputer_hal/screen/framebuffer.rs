@@ -1,4 +1,4 @@
-use std::iter;
+use core::iter;
 
 use embedded_graphics::pixelcolor::Rgb565;
 use embedded_graphics_framebuf::backends::FrameBufferBackend;

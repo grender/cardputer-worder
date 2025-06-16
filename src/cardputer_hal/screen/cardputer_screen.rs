@@ -1,4 +1,4 @@
-use std::convert::Infallible;
+use core::convert::Infallible;
 
 use display_interface::{DataFormat, DisplayError};
 use embedded_graphics::{

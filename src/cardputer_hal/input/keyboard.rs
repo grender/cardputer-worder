@@ -1,4 +1,4 @@
-use crate::keyboard::{Key, KeyEvent};
+use crate::cardputer_hal::input::keyboard_io::{Key, KeyEvent};
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum InputLanguage {

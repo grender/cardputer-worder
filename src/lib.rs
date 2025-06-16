@@ -1,5 +1,4 @@
-pub mod input;
-pub mod keyboard;
-pub mod screen;
-pub mod sd;
-pub mod wifi;
+// #![no_std] // can't cuz there is many format! macro
+
+pub mod cardputer_hal;
+pub mod ui;

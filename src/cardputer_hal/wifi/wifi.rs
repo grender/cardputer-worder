@@ -1,12 +1,14 @@
-use crate::sd::cardputer_sd::CardputerSd;
 use anyhow::Result;
 use core::str::FromStr;
 use esp_idf_hal::delay::Delay;
 use esp_idf_hal::peripheral::Peripheral;
 use esp_idf_svc::nvs::EspDefaultNvsPartition;
 use esp_idf_svc::wifi::{ClientConfiguration, Configuration, EspWifi};
+use esp_idf_sys::usleep;
 use heapless::String;
 use serde::{Deserialize, Serialize};
+
+use crate::cardputer_hal::sd::cardputer_sd::CardputerSd;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct WifiConfig {
@@ -51,8 +53,8 @@ impl<'a> CardWorderWifi<'a> {
         let config: WifiConfig = serde_json::from_str(&config_str)?;
 
         let wifi_configuration = ClientConfiguration {
-            ssid: heapless::String::try_from("ATOM").unwrap(), //config.ssid,
-            password: heapless::String::try_from("pw!!ATOM2023@@").unwrap(), // config.password,
+            ssid: heapless::String::try_from("grenderNet").unwrap(), //config.ssid,
+            password: heapless::String::try_from("44751197").unwrap(), // config.password,
             ..Default::default()
         };
 
@@ -63,7 +65,9 @@ impl<'a> CardWorderWifi<'a> {
         self.driver.connect()?;
 
         while !self.driver.is_connected()? {
-            std::thread::sleep(std::time::Duration::from_millis(100));
+            unsafe {
+                usleep(1000);
+            }
         }
 
         log::info!("Connected to WiFi network");

@@ -1,7 +1,4 @@
-use std::time::SystemTime;
-use std::vec;
-
-use embedded_fps::{StdClock, FPS};
+use embedded_fps::FPS;
 use embedded_graphics::geometry::AnchorPoint;
 use embedded_graphics::mono_font::iso_8859_5::FONT_6X13;
 use embedded_graphics::mono_font::iso_8859_5::FONT_6X13_BOLD;
@@ -13,32 +10,72 @@ use embedded_graphics::{
     prelude::{Point, RgbColor},
     text::Text,
 };
+
 use embedded_text::alignment::HorizontalAlignment;
 use embedded_text::style::{HeightMode, TextBoxStyleBuilder};
 use embedded_text::TextBox;
 
 use embedded_graphics::{pixelcolor::Rgb565, prelude::*};
 
+use embedded_time::rate::Fraction;
 use esp_idf_sys::tzset;
 use esp_idf_sys::{localtime, localtime_r, time, time_t, tm};
 use u8g2_fonts::types::{FontColor, VerticalPosition};
 use u8g2_fonts::{fonts, FontRenderer};
 
-use crate::input::InputState;
-use crate::input::PressedSymbol;
-use crate::keyboard::KeyEvent;
-use crate::screen::cardputer_screen::CardputerScreen;
+use crate::cardputer_hal::input::keyboard::InputLanguage;
+use crate::cardputer_hal::input::keyboard::InputState;
+use crate::cardputer_hal::input::keyboard::PressedSymbol;
+use crate::cardputer_hal::input::keyboard_io::KeyEvent;
+use crate::cardputer_hal::screen::cardputer_screen::CardputerScreen;
 
+pub struct CardworderClock {}
 pub struct CardworderUi<'a> {
     screen: CardputerScreen<'a>,
-    fps_counter: FPS<45, StdClock>,
+    fps_counter: FPS<45, CardworderClock>,
     debug_small_text_style: MonoTextStyle<'a, Rgb565>,
     pub show_fps: bool,
 }
 
+impl Default for CardworderClock {
+    fn default() -> Self {
+        CardworderClock {}
+    }
+}
+
+impl embedded_time::clock::Clock for CardworderClock {
+    type T = u64;
+    const SCALING_FACTOR: Fraction = Fraction::new(1, 1000000);
+
+    fn try_now(&self) -> Result<embedded_time::Instant<Self>, embedded_time::clock::Error> {
+        let now = unsafe { esp_idf_svc::sys::esp_timer_get_time() };
+        Ok(embedded_time::Instant::<Self>::new(now as u64))
+    }
+
+    fn new_timer<Dur: embedded_time::duration::Duration>(
+        &self,
+        duration: Dur,
+    ) -> embedded_time::Timer<
+        embedded_time::timer::param::OneShot,
+        embedded_time::timer::param::Armed,
+        Self,
+        Dur,
+    >
+    where
+        Dur: embedded_time::fixed_point::FixedPoint,
+    {
+        embedded_time::Timer::<
+            embedded_time::timer::param::None,
+            embedded_time::timer::param::None,
+            Self,
+            Dur,
+        >::new(&self, duration)
+    }
+}
+
 impl CardworderUi<'_> {
     pub fn build<'b>(screen: CardputerScreen<'b>) -> CardworderUi<'b> {
-        let fps_counter = FPS::<45, _>::new(StdClock::default());
+        let fps_counter = FPS::<45, _>::new(CardworderClock::default());
         let debug_small_text_style = MonoTextStyle::new(&FONT_4X6, Rgb565::WHITE);
         CardworderUi {
             screen: screen,
@@ -145,8 +182,8 @@ impl CardworderUi<'_> {
 
         let font1 = FontRenderer::new::<fonts::u8g2_font_4x6_t_cyrillic>();
         let (lang_text, lang_color) = match input_state.lang {
-            crate::input::InputLanguage::En => ("ENG", Rgb565::BLUE),
-            crate::input::InputLanguage::Ru => ("РУС", Rgb565::RED),
+            InputLanguage::En => ("ENG", Rgb565::BLUE),
+            InputLanguage::Ru => ("РУС", Rgb565::RED),
         };
         let lang_shower_rect = font1
             .render(

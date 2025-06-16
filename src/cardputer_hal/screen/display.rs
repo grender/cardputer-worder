@@ -16,7 +16,7 @@ use mipidsi::{
     Builder, Display,
 };
 
-use crate::screen::st7789v2::ST7789V2;
+use crate::cardputer_hal::screen::st7789v2::ST7789V2;
 
 type Drawable<'a> = Display<
     SPIInterface<SpiDeviceDriver<'a, SpiDriver<'a>>, PinDriver<'a, Gpio34, Output>>,

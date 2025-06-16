@@ -24,14 +24,15 @@ experimental = ["esp-idf-svc/experimental"]
 [dependencies]
 # can't up esp-idf-svc to last cuz embassy does'nt support latest extenza rust toolchain
 # if not need embassy - be happy to upgrade
-esp-idf-svc = { version = "0.50.1", features = ["std", "critical-section", "embassy-time-driver"] }
+esp-idf-svc = { version = "0.50.1", features = ["critical-section", "embassy-time-driver"] }
 esp-idf-hal = {version="0.45.2"}
 esp-idf-sys = { version = "0.36.1", features = ["native", "panic_handler"] }
 embedded-hal = "1.0.0"
 embedded-graphics = "0.8.1"
-embedded-fps = { version = "0.1.0", features = ["std"] }
+embedded-fps = { version = "0.1.0", features = [] }
+embedded-time = { version = "0.12.1", features = [] }
 embedded-graphics-framebuf = "0.5.0"
-u8g2-fonts = { version = "0.5.1", features = ["embedded_graphics_textstyle", "std"] }
+u8g2-fonts = { version = "0.5.1", features = ["embedded_graphics_textstyle"] }
 embedded-text = { version = "0.7.2", features = ["plugin"] }
 display-interface = "0.5.0"
 display-interface-spi = "0.5.0"

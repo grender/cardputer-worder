@@ -1,10 +1,11 @@
-use std::ffi::CStr;
-
-use cardworder::input::{InputLanguage, InputState, PressedSymbol};
-use cardworder::keyboard::{CardputerKeyboard, Key, KeyEvent};
-use cardworder::screen::{cardputer_screen, cardworder_ui};
-use cardworder::sd::cardputer_sd::CardputerSd;
-use cardworder::wifi::wifi::{self, WifiConfig};
+use cardworder::cardputer_hal::input::keyboard::InputLanguage;
+use cardworder::cardputer_hal::input::keyboard::InputState;
+use cardworder::cardputer_hal::input::keyboard::PressedSymbol;
+use cardworder::cardputer_hal::input::keyboard_io::{CardputerKeyboard, Key, KeyEvent};
+use cardworder::cardputer_hal::screen::cardputer_screen::CardputerScreen;
+use cardworder::cardputer_hal::sd::cardputer_sd::CardputerSd;
+use cardworder::cardputer_hal::wifi::wifi::{self};
+use cardworder::ui::cardworder_ui::CardworderUi;
 use embedded_graphics::prelude::{RgbColor, WebColors};
 use esp_idf_hal::gpio::{self, IOPin, Output, OutputPin, PinDriver};
 use esp_idf_svc::eventloop::EspSystemEventLoop;
@@ -13,13 +14,13 @@ use esp_idf_svc::hal::prelude::Peripherals;
 use embedded_graphics::pixelcolor::Rgb565;
 use esp_idf_svc::sntp::{EspSntp, SyncStatus};
 use esp_idf_svc::wifi::EspWifi;
-use esp_idf_sys::{getenv, setenv, tzset};
+use esp_idf_sys::{setenv, tzset};
 
 pub trait ResultExt<R, E> {
     fn unwrap_or_log(self, message: &str) -> R;
 }
 
-impl<R, E: std::fmt::Debug> ResultExt<R, E> for Result<R, E> {
+impl<R, E: core::fmt::Debug> ResultExt<R, E> for Result<R, E> {
     fn unwrap_or_log(self, message: &str) -> R {
         match self {
             Ok(t) => t,
@@ -39,7 +40,7 @@ fn main() {
 
     let peripherals = Peripherals::take().unwrap_or_log("error get peripherals");
 
-    let display = cardputer_screen::CardputerScreen::build(
+    let display = CardputerScreen::build(
         Rgb565::CSS_BLACK,
         peripherals.spi2,
         peripherals.pins.gpio36,
@@ -50,7 +51,7 @@ fn main() {
         peripherals.pins.gpio38,
     );
 
-    let mut ui = cardworder_ui::CardworderUi::build(display);
+    let mut ui = CardworderUi::build(display);
 
     let sd = CardputerSd::build(
         peripherals.spi3,
