@@ -56,7 +56,7 @@ impl<'a> CardputerKeyboard<'a> {
     }
 
     /// Reads the state of the keyboard and returns a list of pressed keys.
-    pub fn read_keys(&mut self) -> Vec<Key> {
+    pub fn read_keys(&mut self) -> Vec<Scancode> {
         let raw = self.read_keys_raw();
         let mut result = Vec::new();
         for (i, byte) in raw.iter().enumerate() {
@@ -82,7 +82,7 @@ impl<'a> CardputerKeyboard<'a> {
 
     /// Returns the Pressed/Released events since the last call.
     /// WARNING: This assumes that only one key is pressed / released at a time.
-    pub fn read_events(&mut self) -> Option<(KeyEvent, Key)> {
+    pub fn read_events(&mut self) -> Option<(KeyEvent, Scancode)> {
         let raw = self.read_events_raw();
         for (i, byte) in raw.iter().enumerate() {
             for j in 0..8 {
@@ -104,7 +104,7 @@ impl<'a> CardputerKeyboard<'a> {
 }
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
-pub enum Key {
+pub enum Scancode {
     Space = 6, // register 0 msb
     Period = 5,
     M = 4,
@@ -176,61 +176,61 @@ pub enum KeyEvent {
     Released,
 }
 
-const KEY_MAP: [Key; 56] = [
-    Key::Opt,
-    Key::Z,
-    Key::C,
-    Key::B,
-    Key::M,
-    Key::Period,
-    Key::Space,
-    Key::Shift,
-    Key::S,
-    Key::F,
-    Key::H,
-    Key::K,
-    Key::Semicolon,
-    Key::Enter,
-    Key::Q,
-    Key::E,
-    Key::T,
-    Key::U,
-    Key::O,
-    Key::LeftSquareBracket,
-    Key::BackSlash,
-    Key::_1,
-    Key::_3,
-    Key::_5,
-    Key::_7,
-    Key::_9,
-    Key::Underscore,
-    Key::Backspace,
-    Key::Ctrl,
-    Key::Alt,
-    Key::X,
-    Key::V,
-    Key::N,
-    Key::Comma,
-    Key::Slash,
-    Key::Fn,
-    Key::A,
-    Key::D,
-    Key::G,
-    Key::J,
-    Key::L,
-    Key::Quote,
-    Key::Tab,
-    Key::W,
-    Key::R,
-    Key::Y,
-    Key::I,
-    Key::P,
-    Key::RightSquareBracket,
-    Key::Tilde,
-    Key::_2,
-    Key::_4,
-    Key::_6,
-    Key::_8,
-    Key::_0,
-    Key::Equal,
+const KEY_MAP: [Scancode; 56] = [
+    Scancode::Opt,
+    Scancode::Z,
+    Scancode::C,
+    Scancode::B,
+    Scancode::M,
+    Scancode::Period,
+    Scancode::Space,
+    Scancode::Shift,
+    Scancode::S,
+    Scancode::F,
+    Scancode::H,
+    Scancode::K,
+    Scancode::Semicolon,
+    Scancode::Enter,
+    Scancode::Q,
+    Scancode::E,
+    Scancode::T,
+    Scancode::U,
+    Scancode::O,
+    Scancode::LeftSquareBracket,
+    Scancode::BackSlash,
+    Scancode::_1,
+    Scancode::_3,
+    Scancode::_5,
+    Scancode::_7,
+    Scancode::_9,
+    Scancode::Underscore,
+    Scancode::Backspace,
+    Scancode::Ctrl,
+    Scancode::Alt,
+    Scancode::X,
+    Scancode::V,
+    Scancode::N,
+    Scancode::Comma,
+    Scancode::Slash,
+    Scancode::Fn,
+    Scancode::A,
+    Scancode::D,
+    Scancode::G,
+    Scancode::J,
+    Scancode::L,
+    Scancode::Quote,
+    Scancode::Tab,
+    Scancode::W,
+    Scancode::R,
+    Scancode::Y,
+    Scancode::I,
+    Scancode::P,
+    Scancode::RightSquareBracket,
+    Scancode::Tilde,
+    Scancode::_2,
+    Scancode::_4,
+    Scancode::_6,
+    Scancode::_8,
+    Scancode::_0,
+    Scancode::Equal,
 ];

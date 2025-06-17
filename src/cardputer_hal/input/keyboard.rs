@@ -1,4 +1,4 @@
-use crate::cardputer_hal::input::keyboard_io::{Key, KeyEvent};
+use crate::cardputer_hal::input::keyboard_io::{Scancode, KeyEvent};
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum InputLanguage {
@@ -20,6 +20,7 @@ pub enum PressedSymbol {
     ArrowRight,
 }
 
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct InputState {
     pub ctrl_pressed: bool,
     pub shift_pressed: bool,
@@ -30,7 +31,7 @@ pub struct InputState {
 }
 
 impl InputState {
-    fn key_to_pressed_symbol(&self, key: Key) -> Option<PressedSymbol> {
+    fn key_to_pressed_symbol(&self, key: Scancode) -> Option<PressedSymbol> {
         let symbol_map = match (self.lang, self.shift_pressed) {
             (InputLanguage::En, true) => SYMBOL_MAP_EN_SHIFTED,
             (InputLanguage::En, false) => SYMBOL_MAP_EN,
@@ -48,33 +49,33 @@ impl InputState {
         }
     }
 
-    pub fn eat_keys(&mut self, event: KeyEvent, key: Key) -> Option<PressedSymbol> {
+    pub fn eat_keys(&mut self, event: KeyEvent, key: Scancode) -> Option<PressedSymbol> {
         match (event, key) {
-            (KeyEvent::Pressed, Key::Opt) => self.opt_pressed = true,
-            (KeyEvent::Pressed, Key::Shift) => self.shift_pressed = true,
-            (KeyEvent::Pressed, Key::Alt) => self.alt_pressed = true,
-            (KeyEvent::Pressed, Key::Ctrl) => self.ctrl_pressed = true,
-            (KeyEvent::Pressed, Key::Fn) => self.fn_pressed = true,
+            (KeyEvent::Pressed, Scancode::Opt) => self.opt_pressed = true,
+            (KeyEvent::Pressed, Scancode::Shift) => self.shift_pressed = true,
+            (KeyEvent::Pressed, Scancode::Alt) => self.alt_pressed = true,
+            (KeyEvent::Pressed, Scancode::Ctrl) => self.ctrl_pressed = true,
+            (KeyEvent::Pressed, Scancode::Fn) => self.fn_pressed = true,
 
-            (KeyEvent::Released, Key::Opt) => self.opt_pressed = false,
-            (KeyEvent::Released, Key::Shift) => self.shift_pressed = false,
-            (KeyEvent::Released, Key::Alt) => self.alt_pressed = false,
-            (KeyEvent::Released, Key::Ctrl) => self.ctrl_pressed = false,
-            (KeyEvent::Released, Key::Fn) => self.fn_pressed = false,
+            (KeyEvent::Released, Scancode::Opt) => self.opt_pressed = false,
+            (KeyEvent::Released, Scancode::Shift) => self.shift_pressed = false,
+            (KeyEvent::Released, Scancode::Alt) => self.alt_pressed = false,
+            (KeyEvent::Released, Scancode::Ctrl) => self.ctrl_pressed = false,
+            (KeyEvent::Released, Scancode::Fn) => self.fn_pressed = false,
             _ => {}
         }
 
         return match (event, key, self.ctrl_pressed, self.fn_pressed) {
-            (KeyEvent::Pressed, Key::Space, true, _) => {
+            (KeyEvent::Pressed, Scancode::Space, true, _) => {
                 self.switch_language();
                 None
             }
-            (_, Key::Tilde, _, true) => Some(PressedSymbol::Esc),
-            (_, Key::Backspace, _, true) => Some(PressedSymbol::Del),
-            (_, Key::Semicolon, _, true) => Some(PressedSymbol::ArrowUp),
-            (_, Key::Slash, _, true) => Some(PressedSymbol::ArrowRight),
-            (_, Key::Comma, _, true) => Some(PressedSymbol::ArrowLeft),
-            (_, Key::Period, _, true) => Some(PressedSymbol::ArrowDown),
+            (_, Scancode::Tilde, _, true) => Some(PressedSymbol::Esc),
+            (_, Scancode::Backspace, _, true) => Some(PressedSymbol::Del),
+            (_, Scancode::Semicolon, _, true) => Some(PressedSymbol::ArrowUp),
+            (_, Scancode::Slash, _, true) => Some(PressedSymbol::ArrowRight),
+            (_, Scancode::Comma, _, true) => Some(PressedSymbol::ArrowLeft),
+            (_, Scancode::Period, _, true) => Some(PressedSymbol::ArrowDown),
             _ => self.key_to_pressed_symbol(key),
         };
     }
