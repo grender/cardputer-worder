@@ -4,7 +4,6 @@ use esp_idf_sys::usleep;
 use heapless::String;
 use serde::{Deserialize, Serialize};
 
-use crate::cardputer_hal::sd::cardputer_sd::CardputerSd;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct WifiConfig {

@@ -18,8 +18,7 @@ use embedded_text::TextBox;
 use embedded_graphics::{pixelcolor::Rgb565, prelude::*};
 
 use embedded_time::rate::Fraction;
-use esp_idf_sys::tzset;
-use esp_idf_sys::{localtime, localtime_r, time, time_t, tm};
+use esp_idf_sys::{localtime_r, time, time_t, tm};
 use u8g2_fonts::types::{FontColor, VerticalPosition};
 use u8g2_fonts::{fonts, FontRenderer};
 

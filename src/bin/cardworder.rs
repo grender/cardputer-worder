@@ -1,7 +1,6 @@
 use cardworder::cardputer_hal::cardputer_hal::CardputerHal;
 use cardworder::cardputer_hal::input::keyboard::PressedSymbol;
 use cardworder::cardputer_hal::input::keyboard_io::{Scancode, KeyEvent};
-use cardworder::cardputer_hal::screen::cardputer_screen::CardputerScreen;
 use cardworder::ui::cardworder_ui::CardworderUi;
 use embedded_graphics::prelude::{RgbColor, WebColors};
 use esp_idf_svc::eventloop::EspSystemEventLoop;
@@ -37,7 +36,7 @@ fn main() {
     let sysloop = EspSystemEventLoop::take().unwrap_or_log("error init event loop");
     let mut cardputer_hal = CardputerHal::new(peripherals, sysloop.clone());
 
-    let mut screen = cardputer_hal.take_screen();
+    let screen = cardputer_hal.take_screen();
     let mut ui = CardworderUi::build(screen);
 
     let mut is_bold = false;
@@ -46,7 +45,7 @@ fn main() {
     cardputer_hal.create_wifi_file_if_non_exists(
         heapless::String::try_from("John24").unwrap(),
         heapless::String::try_from("52525252").unwrap(),
-    );
+    ).unwrap_or_log("error create wifi file");
 
     let wifi_config = cardputer_hal.load_wifi_config().unwrap_or_log("error load wifi config");
     
@@ -81,8 +80,8 @@ fn main() {
     ui.flip_buffer();
 
     loop {
-        let keyboard_state = cardputer_hal.update_keyboard_state();
-
+        cardputer_hal.update_keyboard_state();
+        let keyboard_state = &cardputer_hal.keyboard_state;
         match (keyboard_state.input_state.opt_pressed, keyboard_state.key) {
             (true, Some((KeyEvent::Pressed, Scancode::F))) => {
                 ui.show_fps = !ui.show_fps;

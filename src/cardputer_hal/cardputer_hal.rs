@@ -4,11 +4,11 @@ use esp_idf_svc::eventloop::EspSystemEventLoop;
 use esp_idf_hal::gpio::{self, IOPin, Output, OutputPin, PinDriver};
 use esp_idf_svc::wifi::EspWifi;
 
-use crate::{cardputer_hal::{
+use crate::cardputer_hal::{
     input::{keyboard::{InputLanguage, InputState, PressedSymbol}, keyboard_io::{CardputerKeyboard, Scancode, KeyEvent}},
     screen::cardputer_screen::CardputerScreen,
     sd::cardputer_sd::CardputerSd,
-    wifi::wifi::{CardWorderWifi, WifiConfig}}, ui::cardworder_ui::CardworderUi};
+    wifi::wifi::{CardWorderWifi, WifiConfig}};
 
 pub struct CardputerHal<'a> {
     screen: Option<CardputerScreen<'a>>,
@@ -16,7 +16,7 @@ pub struct CardputerHal<'a> {
     keyboard: CardputerKeyboard<'a>,
     wifi: CardWorderWifi<'a>,
 
-    input_state: InputState,
+    pub keyboard_state: KeyboardState,
 }
 
 pub struct KeyboardState {
@@ -71,7 +71,7 @@ impl <'a>CardputerHal<'a> {
 
         let wifi = CardWorderWifi::new(esp_wifi);
 
-        let mut input_state = InputState {
+        let input_state = InputState {
             ctrl_pressed: false,
             shift_pressed: false,
             opt_pressed: false,
@@ -80,7 +80,13 @@ impl <'a>CardputerHal<'a> {
             lang: InputLanguage::En,
         };
 
-        Self { screen:Some(screen), sd, keyboard, wifi, input_state }
+        let keyboard_state = KeyboardState {
+            key: None,
+            input_state,
+            pressed: None,
+        };
+
+        Self { screen:Some(screen), sd, keyboard, wifi, keyboard_state }
     }
 
     pub fn create_wifi_file_if_non_exists(
@@ -118,13 +124,14 @@ impl <'a>CardputerHal<'a> {
         core::mem::replace(&mut self.screen, None).unwrap()
     }
 
-    pub fn update_keyboard_state(&mut self) -> KeyboardState {
+    pub fn update_keyboard_state(&mut self) {
         let key = self.keyboard.read_events();
 
         let pressed = match key {
-            Some((event, key)) => self.input_state.eat_keys(event, key).map(|f| (event, f)),
+            Some((event, key)) => self.keyboard_state.input_state.eat_keys(event, key).map(|f| (event, f)),
             None => None,
         };
-        KeyboardState { key, input_state: self.input_state, pressed }
+        self.keyboard_state.key = key;
+        self.keyboard_state.pressed = pressed;
     }
 }

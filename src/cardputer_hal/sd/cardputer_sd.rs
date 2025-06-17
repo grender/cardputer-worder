@@ -71,17 +71,17 @@ impl CardputerSd<'_, Delay> {
 
         log::info!("Card size is {} bytes", sdcard.num_bytes().unwrap());
 
-        let mut volume_manager = embedded_sdmmc::VolumeManager::new(sdcard, FakeTimesource());
+        let volume_manager = embedded_sdmmc::VolumeManager::new(sdcard, FakeTimesource());
         return CardputerSd {
             volume_manager: volume_manager,
         };
     }
 
     pub fn read_file(&mut self, path: &str) -> Result<String, Error<SdCardError>> {
-        let mut volume0 = self.volume_manager.open_volume(VolumeIdx(0))?;
-        let mut root_dir = volume0.open_root_dir()?;
+        let volume0 = self.volume_manager.open_volume(VolumeIdx(0))?;
+        let root_dir = volume0.open_root_dir()?;
 
-        let mut file = root_dir.open_file_in_dir(path, Mode::ReadOnly)?;
+        let file = root_dir.open_file_in_dir(path, Mode::ReadOnly)?;
         let mut contents = Vec::new();
 
         let mut buffer = [0u8; 512];
@@ -99,10 +99,10 @@ impl CardputerSd<'_, Delay> {
     }
 
     pub fn write_file(&mut self, path: &str, contents: &str) -> Result<(), Error<SdCardError>> {
-        let mut volume0 = self.volume_manager.open_volume(VolumeIdx(0))?;
-        let mut root_dir = volume0.open_root_dir()?;
+        let volume0 = self.volume_manager.open_volume(VolumeIdx(0))?;
+        let root_dir = volume0.open_root_dir()?;
 
-        let mut file = root_dir.open_file_in_dir(path, Mode::ReadWriteCreate)?;
+        let file = root_dir.open_file_in_dir(path, Mode::ReadWriteCreate)?;
         file.write(contents.as_bytes())?;
         file.flush()?;
         file.close()?;
@@ -110,8 +110,8 @@ impl CardputerSd<'_, Delay> {
     }
 
     pub fn is_file_exists(&mut self, path: &str) -> Result<bool, Error<SdCardError>> {
-        let mut volume0 = self.volume_manager.open_volume(VolumeIdx(0))?;
-        let mut root_dir = volume0.open_root_dir()?;
+        let volume0 = self.volume_manager.open_volume(VolumeIdx(0))?;
+        let root_dir = volume0.open_root_dir()?;
         let file = root_dir.open_file_in_dir(path, Mode::ReadOnly);
         Ok(file.is_ok())
     }
@@ -124,7 +124,7 @@ fn list_dir<
     const MAX_FILES: usize,
     const MAX_VOLUMES: usize,
 >(
-    mut directory: Directory<B, T, MAX_DIRS, MAX_FILES, MAX_VOLUMES>,
+    directory: Directory<B, T, MAX_DIRS, MAX_FILES, MAX_VOLUMES>,
     path: &str,
 ) -> Result<(), embedded_sdmmc::Error<B::Error>> {
     log::info!("Listing {}", path);

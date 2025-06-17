@@ -3,7 +3,7 @@ use core::convert::Infallible;
 use display_interface::{DataFormat, DisplayError};
 use embedded_graphics::{
     pixelcolor::Rgb565,
-    prelude::{DrawTarget, IntoStorage, Point},
+    prelude::{IntoStorage, Point},
 };
 use embedded_graphics_framebuf::FrameBuf;
 use esp_idf_hal::{
@@ -83,12 +83,12 @@ impl CardputerScreen<'_> {
         }
     }
 
-    pub fn backlight_off(&mut self) {
-        self.cardputer_display.backlight_pin.set_low();
+    pub fn backlight_off(&mut self) -> Result<(), DisplayError> {
+        self.cardputer_display.backlight_pin.set_low().map_err(|_| DisplayError::BusWriteError)
     }
 
-    pub fn backlight_on(&mut self) {
-        self.cardputer_display.backlight_pin.set_high();
+    pub fn backlight_on(&mut self) -> Result<(), DisplayError> {
+        self.cardputer_display.backlight_pin.set_high().map_err(|_| DisplayError::BusWriteError)
     }
 
     pub fn flush_framebuffer(&mut self) -> Result<(), DisplayError> {
