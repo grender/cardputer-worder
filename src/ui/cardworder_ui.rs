@@ -300,6 +300,12 @@ impl CardworderUi<'_> {
             .unwrap();
     }
 
+
+    pub fn draw_text_huge(&mut self, text: &str, x: i32, y: i32, font_color: Rgb565) {
+        let font1 = FontRenderer::new::<fonts::u8g2_font_6x12_t_cyrillic>();
+        font1.render(text, Point::new(x, y), VerticalPosition::Top, FontColor::Transparent(font_color), &mut self.screen).unwrap();
+    }
+
     pub fn draw_long_text(&mut self, is_bold: bool) {
         let text = "- В мои 27 меня уже ничем не удивить!\n- Тебе 35.\n- Что, блин?!";
         let font1 = FontRenderer::new::<fonts::u8g2_font_4x6_t_cyrillic>();

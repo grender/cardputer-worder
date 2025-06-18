@@ -20,7 +20,7 @@ impl<'a> CardWorderWifi<'a> {
             driver: wifi
         }
     }
-
+    
     pub fn connect(&mut self, wifi_config: WifiConfig) -> Result<()> {
 
         let wifi_configuration = ClientConfiguration {
