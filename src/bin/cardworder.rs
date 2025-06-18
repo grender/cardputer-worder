@@ -1,16 +1,11 @@
 use cardworder::cardputer_hal::cardputer_hal::CardputerHal;
-use cardworder::cardputer_hal::input::keyboard::PressedSymbol;
 use cardworder::logic::view_manager::{ViewManager};
 use cardworder::logic::views::start::StartView;
 use cardworder::ui::cardworder_ui::CardworderUi;
 use cardworder::ResultExt;
-use embedded_graphics::prelude::{RgbColor, WebColors};
 use esp_idf_svc::eventloop::EspSystemEventLoop;
 use esp_idf_svc::hal::prelude::Peripherals;
 
-use embedded_graphics::pixelcolor::Rgb565;
-use esp_idf_svc::sntp::{EspSntp, SyncStatus};
-use esp_idf_sys::{setenv, tzset};
 
 fn main() {
     esp_idf_svc::sys::link_patches();

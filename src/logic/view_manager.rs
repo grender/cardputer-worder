@@ -1,7 +1,6 @@
 use embedded_graphics::{pixelcolor::Rgb565, prelude::RgbColor};
-use esp_idf_svc::sntp::{EspSntp, SyncStatus};
 
-use crate::{cardputer_hal::cardputer_hal::{CardputerHal, KeyboardState}, ui::cardworder_ui::CardworderUi, ResultExt};
+use crate::{cardputer_hal::cardputer_hal::{CardputerHal, KeyboardState}, ui::cardworder_ui::CardworderUi};
 
 pub struct ViewManager<'a> {
     hal: CardputerHal<'a>,

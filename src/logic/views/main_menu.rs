@@ -1,6 +1,6 @@
 use embedded_graphics::{pixelcolor::Rgb565, prelude::RgbColor};
 
-use crate::{cardputer_hal::{cardputer_hal::{CardputerHal, KeyboardState}, input::keyboard_io::{KeyEvent, Scancode}}, logic::view_manager::CardputerView, ui::cardworder_ui::CardworderUi, ResultExt};
+use crate::{cardputer_hal::{cardputer_hal::{CardputerHal, KeyboardState}, input::keyboard_io::{KeyEvent, Scancode}}, logic::view_manager::CardputerView, ui::cardworder_ui::CardworderUi};
 
 
 pub struct MainMenuView {
