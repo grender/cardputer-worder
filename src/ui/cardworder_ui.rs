@@ -150,6 +150,7 @@ impl CardworderUi<'_> {
                 &mut self.screen,
             )
             .unwrap();
+        
     }
 
     pub fn draw_top_line(
@@ -266,6 +267,10 @@ impl CardworderUi<'_> {
             }
             _ => {}
         };
+
+
+        let fontIcon = FontRenderer::new::<fonts::u8g2_font_open_iconic_embedded_1x_t>();
+        fontIcon.render(80 as char, Point::new(240 - 1 - 4 * 8 - 9, 0), VerticalPosition::Top, FontColor::Transparent(Rgb565::WHITE), &mut self.screen).unwrap();
 
         let time_x = 240 - 1 - 4 * 8;
 

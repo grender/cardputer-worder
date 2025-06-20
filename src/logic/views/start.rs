@@ -12,6 +12,10 @@ impl CardputerView for StartView {
         false
     }
 
+    fn is_need_clear_on_update(&self) -> bool {
+        false
+    }
+
     fn init(&mut self, hal: &mut CardputerHal<'_>, ui: &mut CardworderUi<'_>) {
         ui.clear(Rgb565::BLACK);
         ui.draw_starting_line("Starting...", Rgb565::BLACK, Rgb565::WHITE);
@@ -61,7 +65,7 @@ impl CardputerView for StartView {
         ui.draw_starting_line("Got NTP!", Rgb565::BLACK, Rgb565::WHITE);
         ui.flip_buffer();
     
-    
+        hal.stop_wifi().unwrap_or_log("error stopping wifi");
     }
 
     fn update(&mut self, keyboard_state: &KeyboardState) -> Option<Box<dyn CardputerView>> {

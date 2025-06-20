@@ -10,6 +10,7 @@ pub struct ViewManager<'a> {
 }
 
 pub trait CardputerView {
+    fn is_need_clear_on_update(&self) -> bool;
     fn is_need_top_line(&self) -> bool;
 
     fn init(&mut self, hal: &mut CardputerHal<'_>, ui: &mut CardworderUi<'_>);
@@ -37,6 +38,11 @@ impl <'a> ViewManager<'a> {
             self.ui.clear(Rgb565::BLACK);
             self.current_view.update(&self.hal.keyboard_state);
         }
+
+        if self.current_view.is_need_clear_on_update() {
+            self.ui.clear(Rgb565::BLACK);
+        }
+
         self.current_view.draw(&mut self.ui);
         if self.current_view.is_need_top_line() {
             self.ui.draw_top_line(&self.hal.keyboard_state.input_state, &self.hal.keyboard_state.pressed);

@@ -120,6 +120,10 @@ impl <'a>CardputerHal<'a> {
         self.wifi.connect(wifi_config).map_err(|e| anyhow::anyhow!("Failed to connect to wifi"))
     }
 
+    pub fn stop_wifi(&mut self) -> anyhow::Result<()> {
+        self.wifi.stop().map_err(|e| anyhow::anyhow!("Failed to stop wifi"))
+    }
+
     pub fn take_screen(&mut self) -> CardputerScreen<'a> {
         core::mem::replace(&mut self.screen, None).unwrap()
     }

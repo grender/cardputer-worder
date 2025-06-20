@@ -42,6 +42,12 @@ impl<'a> CardWorderWifi<'a> {
         }
 
         log::info!("Connected to WiFi network");
+
+        Ok(())
+    }
+
+    pub fn stop(&mut self) -> Result<()> {
+        self.driver.stop()?;
         Ok(())
     }
 }
