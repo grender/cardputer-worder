@@ -18,7 +18,7 @@ impl CardputerView for StartView {
 
     fn init(&mut self, hal: &mut CardputerHal<'_>, ui: &mut CardworderUi<'_>) {
         ui.clear(Rgb565::BLACK);
-        ui.draw_starting_line("Starting...", Rgb565::BLACK, Rgb565::WHITE);
+        ui.draw_starting_line_text("Starting...", Rgb565::BLACK, Rgb565::WHITE);
         ui.flip_buffer();
 
         unsafe {
@@ -45,27 +45,31 @@ impl CardputerView for StartView {
         };
         
     
-        ui.draw_starting_line("Starting Wifi...", Rgb565::BLACK, Rgb565::WHITE);
+        ui.draw_starting_line_text("Starting Wifi...", Rgb565::BLACK, Rgb565::WHITE);
         ui.flip_buffer();
     
 
 
         hal.connect_wifi(wifi_config).unwrap_or_log("error connecting to wifi");
 
-        ui.draw_starting_line("Starting NTP...", Rgb565::BLACK, Rgb565::WHITE);
+        ui.draw_starting_line_text("Starting NTP...", Rgb565::BLACK, Rgb565::WHITE);
         ui.flip_buffer();
     
         let ntp = EspSntp::new_default().unwrap();
     
-        ui.draw_starting_line("Awaiting NTP...", Rgb565::BLACK, Rgb565::WHITE);
+        ui.draw_starting_line_text("Awaiting NTP...", Rgb565::BLACK, Rgb565::WHITE);
         ui.flip_buffer();
     
         while ntp.get_sync_status() != SyncStatus::Completed {}
     
-        ui.draw_starting_line("Got NTP!", Rgb565::BLACK, Rgb565::WHITE);
+        ui.draw_starting_line_text("Got NTP!", Rgb565::BLACK, Rgb565::WHITE);
         ui.flip_buffer();
     
         hal.stop_wifi().unwrap_or_log("error stopping wifi");
+    }
+
+    fn destruct(&mut self) {
+        
     }
 
     fn update(&mut self, keyboard_state: &KeyboardState) -> Option<Box<dyn CardputerView>> {
@@ -73,5 +77,9 @@ impl CardputerView for StartView {
     }
 
     fn draw(&mut self, ui: &mut CardworderUi<'_>) {
+    }
+    
+    fn form(&mut self) -> Vec<crate::logic::views::UiLineType> {
+        Vec::new()
     }
 }

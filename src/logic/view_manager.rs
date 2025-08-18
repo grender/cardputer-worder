@@ -14,8 +14,11 @@ pub trait CardputerView {
     fn is_need_top_line(&self) -> bool;
 
     fn init(&mut self, hal: &mut CardputerHal<'_>, ui: &mut CardworderUi<'_>);
+    fn destruct(&mut self);
     fn update(&mut self, keyboard_state: &KeyboardState) -> Option<Box<dyn CardputerView>>;
     fn draw(&mut self, ui: &mut CardworderUi<'_>);
+
+    fn form(&mut self) -> Vec<crate::logic::views::UiLineType>;
 }
 
 impl <'a> ViewManager<'a> {
@@ -33,6 +36,7 @@ impl <'a> ViewManager<'a> {
 
         let next_view = self.current_view.update(&self.hal.keyboard_state);
         if let Some(next_view) = next_view {
+            self.current_view.destruct();
             self.current_view = next_view;
             self.view_need_init = true;
             self.ui.clear(Rgb565::BLACK);

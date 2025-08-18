@@ -1,7 +1,10 @@
+use std::collections::HashMap;
+
 use embedded_fps::FPS;
 use embedded_graphics::geometry::AnchorPoint;
 use embedded_graphics::mono_font::iso_8859_5::FONT_6X13;
 use embedded_graphics::mono_font::iso_8859_5::FONT_6X13_BOLD;
+use embedded_graphics::mono_font::MonoFont;
 use embedded_graphics::prelude::WebColors;
 use embedded_graphics::primitives::Rectangle;
 use embedded_graphics::text::{Alignment, Baseline, TextStyleBuilder};
@@ -20,6 +23,7 @@ use embedded_graphics::{pixelcolor::Rgb565, prelude::*};
 use embedded_time::rate::Fraction;
 use esp_idf_sys::{localtime_r, time, time_t, tm};
 use u8g2_fonts::types::{FontColor, VerticalPosition};
+use u8g2_fonts::Content;
 use u8g2_fonts::{fonts, FontRenderer};
 
 use crate::cardputer_hal::input::keyboard::InputLanguage;
@@ -32,8 +36,28 @@ pub struct CardworderClock {}
 pub struct CardworderUi<'a> {
     screen: CardputerScreen<'a>,
     fps_counter: FPS<45, CardworderClock>,
-    debug_small_text_style: MonoTextStyle<'a, Rgb565>,
+    renderers: HashMap<CardFont, FontRenderer>,
     pub show_fps: bool,
+}
+
+#[derive(Copy, Clone)]
+pub enum ThemeColor {
+    Background,
+    Text,
+    Selected,
+    Error,
+    Color(Rgb565),
+}
+
+#[derive(Eq, PartialEq, Hash, Copy, Clone)]
+pub enum CardFont {
+    XSmall,
+    Small,
+    Medium,
+    Large,
+    XLarge,
+    Icons,
+    IconsHuge,
 }
 
 impl Default for CardworderClock {
@@ -72,16 +96,66 @@ impl embedded_time::clock::Clock for CardworderClock {
     }
 }
 
+fn get_rgb565(color: ThemeColor) -> Rgb565 {
+    match color {
+        ThemeColor::Background => Rgb565::BLACK,
+        ThemeColor::Text => Rgb565::WHITE,
+        ThemeColor::Selected => Rgb565::CSS_LIGHT_BLUE,
+        ThemeColor::Error => Rgb565::RED,
+        ThemeColor::Color(c) => c,
+    }
+}
+
 impl CardworderUi<'_> {
     pub fn build<'b>(screen: CardputerScreen<'b>) -> CardworderUi<'b> {
         let fps_counter = FPS::<45, _>::new(CardworderClock::default());
-        let debug_small_text_style = MonoTextStyle::new(&FONT_4X6, Rgb565::WHITE);
+        let mut renderers = HashMap::new();
+        renderers.insert(
+            CardFont::XSmall,
+            FontRenderer::new::<fonts::u8g2_font_4x6_t_cyrillic>(),
+        );
+        renderers.insert(
+            CardFont::Small,
+            FontRenderer::new::<fonts::u8g2_font_5x8_t_cyrillic>(),
+        );
+        renderers.insert(
+            CardFont::Medium,
+            FontRenderer::new::<fonts::u8g2_font_6x12_t_cyrillic>(),
+        );
+        renderers.insert(
+            CardFont::Large,
+            FontRenderer::new::<fonts::u8g2_font_9x15_t_cyrillic>(),
+        );
+        renderers.insert(
+            CardFont::XLarge,
+            FontRenderer::new::<fonts::u8g2_font_10x20_t_cyrillic>(),
+        );
+        renderers.insert(
+            CardFont::Icons,
+            FontRenderer::new::<fonts::u8g2_font_open_iconic_embedded_1x_t>(),
+        );
+        renderers.insert(
+            CardFont::IconsHuge,
+            FontRenderer::new::<fonts::u8g2_font_streamline_all_t>(),
+        );
         CardworderUi {
             screen: screen,
             fps_counter: fps_counter,
-            debug_small_text_style,
+            renderers: renderers,
             show_fps: false,
         }
+    }
+
+    /// Returns the pixel height for a given CardFont.
+    pub fn font_height(&self, font: CardFont) -> u32 {
+        let font_renderer = self.renderers.get(&font).unwrap();
+        return font_renderer.get_default_line_height() as u32
+    }
+
+    /// Returns the pixel width for a given CardFont.
+    pub fn font_width(&self, font: CardFont) -> u32 {
+        let font_renderer = self.renderers.get(&font).unwrap();
+        return font_renderer.get_glyph_bounding_box(VerticalPosition::Top).size.width as u32
     }
 
     pub fn clear(&mut self, color: Rgb565) {
@@ -92,28 +166,31 @@ impl CardworderUi<'_> {
         let fps = self.fps_counter.tick();
         if self.show_fps {
             let fps_text = format!("FPS: {}", fps);
-            let text_style = TextStyleBuilder::new()
-                .baseline(Baseline::Top)
-                .alignment(Alignment::Left)
-                .build();
-            let text = Text::with_text_style(
-                &fps_text,
-                Point::new(0, 0),
-                self.debug_small_text_style,
-                text_style,
-            );
 
-            let text_box = text.bounding_box();
+            let fontRenderer = self.renderers.get(&CardFont::XSmall).unwrap();
+            let glyph_size = fontRenderer
+                .get_glyph_bounding_box(VerticalPosition::Top)
+                .size;
 
-            let mut new_size = text_box.size.clone();
-            new_size.height += 1;
-            new_size.width += 1;
-            let fill_box = text_box.resized(new_size, AnchorPoint::TopLeft);
+            let area = Rectangle {
+                top_left: Point::new(0, 0),
+                size: Size::new(
+                    glyph_size.width as u32 * fps_text.len() as u32 + 2,
+                    glyph_size.height as u32 + 2,
+                ),
+            };
             self.screen
-                .fill_solid(&fill_box, Rgb565::CSS_BLACK)
-                .unwrap();
+                .fill_solid(&area, get_rgb565(ThemeColor::Background));
 
-            text.draw(&mut self.screen).unwrap();
+            fontRenderer
+                .render(
+                    fps_text.as_str(),
+                    Point::new(1, 1),
+                    VerticalPosition::Top,
+                    FontColor::Transparent(get_rgb565(ThemeColor::Text)),
+                    &mut self.screen,
+                )
+                .unwrap();
         }
         self.screen.flush_framebuffer();
     }
@@ -126,7 +203,7 @@ impl CardworderUi<'_> {
         self.screen.backlight_on();
     }
 
-    pub fn draw_starting_line(&mut self, text: &str, bg_color: Rgb565, font_color: Rgb565) {
+    pub fn draw_starting_line_text(&mut self, text: &str, bg_color: Rgb565, font_color: Rgb565) {
         let font1 = FontRenderer::new::<fonts::u8g2_font_6x12_t_cyrillic>();
 
         let top_line_area = Rectangle {
@@ -150,7 +227,37 @@ impl CardworderUi<'_> {
                 &mut self.screen,
             )
             .unwrap();
-        
+    }
+
+    pub fn draw_line(self, s1: Point, s2: Point, color: ThemeColor) {}
+
+    pub fn draw_text_oneline(
+        &mut self,
+        s: impl Content,
+        font: CardFont,
+        color: ThemeColor,
+        point: Point,
+        vertical_position: VerticalPosition,
+    ) -> Option<Rectangle> {
+        self.renderers
+            .get(&font)
+            .unwrap()
+            .render(
+                s,
+                point,
+                vertical_position,
+                FontColor::Transparent(get_rgb565(color)),
+                &mut self.screen,
+            )
+            .unwrap()
+            .bounding_box
+    }
+
+    pub fn draw_text_multiline(self, s: &str, font: CardFont, color: ThemeColor) {}
+
+    pub fn draw_rect(self, r: Rectangle, color: ThemeColor) {
+        /*self.screen.fill_solid(
+        r, get_rgb565(color));*/
     }
 
     pub fn draw_top_line(
@@ -162,7 +269,7 @@ impl CardworderUi<'_> {
             top_left: Point { x: 0, y: 0 },
             size: Size {
                 width: 240,
-                height: 8,
+                height: 10,
             },
         };
         self.screen
@@ -170,7 +277,7 @@ impl CardworderUi<'_> {
             .unwrap();
 
         let top_line_area_separator = Rectangle {
-            top_left: Point { x: 0, y: 9 },
+            top_left: Point { x: 0, y: 11 },
             size: Size {
                 width: 240,
                 height: 1,
@@ -180,7 +287,7 @@ impl CardworderUi<'_> {
             .fill_solid(&top_line_area_separator, Rgb565::CSS_GRAY)
             .unwrap();
 
-        let font1 = FontRenderer::new::<fonts::u8g2_font_4x6_t_cyrillic>();
+        let font1 = FontRenderer::new::<fonts::u8g2_font_6x12_t_cyrillic>();
         let (lang_text, lang_color) = match input_state.lang {
             InputLanguage::En => ("ENG", Rgb565::BLUE),
             InputLanguage::Ru => ("РУС", Rgb565::RED),
@@ -208,7 +315,7 @@ impl CardworderUi<'_> {
             },
             size: Size {
                 width: 2,
-                height: 6,
+                height: 8,
             },
         };
 
@@ -268,11 +375,21 @@ impl CardworderUi<'_> {
             _ => {}
         };
 
+        let time_x = 240 - 2 - 5 * 8;
+        // 2 - ширина иконки
+        // 5 - количество символов
+        // 8 - ширина символа
 
         let fontIcon = FontRenderer::new::<fonts::u8g2_font_open_iconic_embedded_1x_t>();
-        fontIcon.render(80 as char, Point::new(240 - 1 - 4 * 8 - 9, 0), VerticalPosition::Top, FontColor::Transparent(Rgb565::WHITE), &mut self.screen).unwrap();
-
-        let time_x = 240 - 1 - 4 * 8;
+        fontIcon
+            .render(
+                80 as char,
+                Point::new(time_x - 9, 0),
+                VerticalPosition::Top,
+                FontColor::Transparent(Rgb565::WHITE),
+                &mut self.screen,
+            )
+            .unwrap();
 
         let mut tm = tm {
             tm_sec: 0,
@@ -305,13 +422,21 @@ impl CardworderUi<'_> {
             .unwrap();
     }
 
-
-    pub fn draw_text_huge(&mut self, text: &str, x: i32, y: i32, font_color: Rgb565) {
-        let font1 = FontRenderer::new::<fonts::u8g2_font_6x12_t_cyrillic>();
-        font1.render(text, Point::new(x, y), VerticalPosition::Top, FontColor::Transparent(font_color), &mut self.screen).unwrap();
+    pub fn draw_text_large(&mut self, text: &str, x: i32, y: i32, font_color: Rgb565) {
+        self.renderers
+            .get(&CardFont::Large)
+            .unwrap()
+            .render(
+                text,
+                Point::new(x, y),
+                VerticalPosition::Top,
+                FontColor::Transparent(font_color),
+                &mut self.screen,
+            )
+            .unwrap();
     }
 
-    pub fn draw_long_text(&mut self, is_bold: bool) {
+    fn draw_long_text(&mut self, is_bold: bool) {
         let text = "- В мои 27 меня уже ничем не удивить!\n- Тебе 35.\n- Что, блин?!";
         let font1 = FontRenderer::new::<fonts::u8g2_font_4x6_t_cyrillic>();
         let result1 = font1
