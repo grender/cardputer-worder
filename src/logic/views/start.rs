@@ -7,7 +7,7 @@ use crate::{cardputer_hal::{cardputer_hal::{CardputerHal, KeyboardState}, wifi::
 pub struct StartView {
 }
 
-impl CardputerView for StartView {
+impl <'a> CardputerView<'a> for StartView {
     fn is_need_top_line(&self) -> bool {
         false
     }
@@ -72,14 +72,14 @@ impl CardputerView for StartView {
         
     }
 
-    fn update(&mut self, keyboard_state: &KeyboardState) -> Option<Box<dyn CardputerView>> {
+    fn update(&mut self, keyboard_state: &KeyboardState) -> Option<Box<dyn CardputerView<'a>>> {
         Some(Box::new(MainMenuView::default()))
     }
 
-    fn draw(&mut self, ui: &mut CardworderUi<'_>) {
+    fn draw(&self, ui: &mut CardworderUi<'_>) {
     }
     
-    fn form(&mut self) -> Vec<crate::logic::views::UiLineType> {
+    fn form(&'a self) -> Vec<crate::logic::views::UiLineType<'a>> {
         Vec::new()
     }
 }

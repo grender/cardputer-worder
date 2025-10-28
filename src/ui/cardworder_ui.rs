@@ -260,6 +260,11 @@ impl CardworderUi<'_> {
         r, get_rgb565(color));*/
     }
 
+    /// Fill a rectangle with a solid color
+    pub fn fill_rect(&mut self, rect: Rectangle, color: Rgb565) {
+        self.screen.fill_solid(&rect, color).unwrap();
+    }
+
     pub fn draw_top_line(
         &mut self,
         input_state: &InputState,
@@ -375,10 +380,10 @@ impl CardworderUi<'_> {
             _ => {}
         };
 
-        let time_x = 240 - 2 - 5 * 8;
+        let time_x = 240 - 2 - 5 * 10;
         // 2 - ширина иконки
         // 5 - количество символов
-        // 8 - ширина символа
+        // 10 - ширина символа
 
         let fontIcon = FontRenderer::new::<fonts::u8g2_font_open_iconic_embedded_1x_t>();
         fontIcon
@@ -483,5 +488,41 @@ impl CardworderUi<'_> {
 
         let text_box = TextBox::with_textbox_style(text, bounds, character_style, textbox_style);
         text_box.draw(&mut self.screen).unwrap();
+    }
+
+    /// Measure the width of text up to a specific character position
+    pub fn measure_text_width(&self, text: &str, font: CardFont, cursor_pos: u32) -> i32 {
+        let renderer = self.renderers.get(&font).unwrap();
+        let text_up_to_cursor = if cursor_pos < text.len() as u32 {
+            &text[..cursor_pos as usize]
+        } else {
+            text
+        };
+        
+        // For now, return a simple approximation based on character count
+        // This could be improved by actually measuring the rendered text
+        let char_width = match font {
+            CardFont::XSmall => 4,
+            CardFont::Small => 6,
+            CardFont::Medium => 8,
+            CardFont::Large => 12,
+            CardFont::XLarge => 16,
+            CardFont::Icons => 8,
+            CardFont::IconsHuge => 16,
+        };
+        
+        text_up_to_cursor.len() as i32 * char_width
+    }
+
+    /// Draw a cursor indicator at the specified position
+    pub fn draw_cursor(&mut self, point: Point, height: u32, color: ThemeColor) {
+        let cursor_width = 2;
+        let cursor_rect = Rectangle::new(
+            point,
+            Size::new(cursor_width, height),
+        );
+        
+        // Draw cursor as a vertical line
+        self.fill_rect(cursor_rect, get_rgb565(color));
     }
 }

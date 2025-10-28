@@ -5,28 +5,28 @@ use crate::{cardputer_hal::cardputer_hal::{CardputerHal, KeyboardState}, ui::car
 pub struct ViewManager<'a> {
     hal: CardputerHal<'a>,
     ui: CardworderUi<'a>,
-    current_view: Box<dyn CardputerView>,
+    current_view: Box<dyn CardputerView<'a>>,
     view_need_init: bool,
 }
 
-pub trait CardputerView {
-    fn is_need_clear_on_update(&self) -> bool;
-    fn is_need_top_line(&self) -> bool;
+pub trait CardputerView<'a> {
+    fn is_need_clear_on_update(&'a self) -> bool;
+    fn is_need_top_line(&'a self) -> bool;
 
-    fn init(&mut self, hal: &mut CardputerHal<'_>, ui: &mut CardworderUi<'_>);
-    fn destruct(&mut self);
-    fn update(&mut self, keyboard_state: &KeyboardState) -> Option<Box<dyn CardputerView>>;
-    fn draw(&mut self, ui: &mut CardworderUi<'_>);
+    fn init(&'a mut self, hal: &mut CardputerHal<'_>, ui: &mut CardworderUi<'_>);
+    fn destruct(&'a mut self);
+    fn update(&'a mut self, keyboard_state: &KeyboardState) -> Option<Box<dyn CardputerView<'a>>>;
+    fn draw(&'a self, ui: &mut CardworderUi<'_>);
 
-    fn form(&mut self) -> Vec<crate::logic::views::UiLineType>;
+    fn form(&'a self) -> Vec<crate::logic::views::UiLineType<'a>>;
 }
 
 impl <'a> ViewManager<'a> {
-    pub fn new(hal: CardputerHal<'a>, ui: CardworderUi<'a>, view: Box<dyn CardputerView>) -> Self {
+    pub fn new(hal: CardputerHal<'a>, ui: CardworderUi<'a>, view: Box<dyn CardputerView<'a>>) -> Self {
         Self { hal, ui, current_view: view, view_need_init: true }
     }
 
-    pub fn loop_logic(&mut self) {
+    pub fn loop_logic(&'a mut self) {
         self.hal.update_keyboard_state();
 
         if self.view_need_init {

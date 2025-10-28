@@ -9,6 +9,7 @@ pub fn measure_element_height(ui: &crate::ui::cardworder_ui::CardworderUi, eleme
     match element {
         UiLineElement::Icon(_, font, _) => ui.font_height(*font),
         UiLineElement::Text(_, font, _, _) => ui.font_height(*font),
+        UiLineElement::InputText(_, font, _, _) => ui.font_height(*font),
         UiLineElement::Spacer(pixels) => *pixels as u32,
         UiLineElement::Filler => 0, // Filler does not contribute height
     }
