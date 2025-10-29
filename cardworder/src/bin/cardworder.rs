@@ -1,7 +1,6 @@
 use cardworder::cardputer_hal::cardputer_hal::CardputerHal;
 use cardworder::logic::view_manager::{ViewManager};
 use cardworder::logic::views::main_menu::MainMenuView;
-use cardworder::logic::views::start::StartView;
 use cardworder::ui::cardworder_ui::CardworderUi;
 use cardworder::ResultExt;
 use esp_idf_svc::eventloop::EspSystemEventLoop;

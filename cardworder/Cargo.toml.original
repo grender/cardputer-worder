@@ -1,0 +1,57 @@
+[package]
+name = "cardworder"
+version = "0.1.0"
+authors = ["Aleksandr Kopytov <grender.no8@gmail.com>"]
+edition = "2021"
+resolver = "2"
+rust-version = "1.77"
+
+[[bin]]
+name = "cardworder"
+harness = false # do not use the built in cargo test harness -> resolve rust-analyzer errors
+
+[profile.release]
+opt-level = "z"
+
+[profile.dev]
+debug = true    # Symbols are nice and they don't increase the size on Flash
+opt-level = "s"
+
+[features]
+default = []
+experimental = ["esp-idf-svc/experimental"]
+
+[dependencies]
+# can't up esp-idf-svc to last cuz embassy does'nt support latest extenza rust toolchain
+# if not need embassy - be happy to upgrade
+esp-idf-svc = { version = "0.50.1", features = ["critical-section", "embassy-time-driver"] }
+esp-idf-hal = {version="0.45.2"}
+esp-idf-sys = { version = "0.36.1", features = ["native", "panic_handler"] }
+embedded-hal = "1.0.0"
+embedded-graphics = "0.8.1"
+embedded-fps = { version = "0.1.0", features = [] }
+embedded-time = { version = "0.12.1", features = [] }
+embedded-graphics-framebuf = "0.5.0"
+u8g2-fonts = { version = "0.5.1", features = ["embedded_graphics_textstyle"] }
+embedded-text = { version = "0.7.2", features = ["plugin"] }
+display-interface = "0.5.0"
+display-interface-spi = "0.5.0"
+mipidsi = "0.8.0" # can't update cuz codebase change
+embedded-sdmmc = { version = "0.9.0", features = ["log"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+heapless = { version = "0.8.0", features = ["serde"] }
+anyhow = "1.0.94"
+log = "0.4"
+rs-fsrs = { version = "1.2.1" }
+
+# ws2812-esp32-rmt-driver = { version = "0.10.0", features = ["embedded-graphics-core", "smart-leds-trait"] }
+# smart-leds = "0.4.0"
+# smart-leds-trait = "0.3.0"
+
+[dev-dependencies]
+# for examples
+
+[build-dependencies]
+embuild = { version = "0.33.0", features = ["espidf"] }
+# cc = "=1.1.30" # Version "1.1.30" necessary until a new version of `esp-idf-sys` is released

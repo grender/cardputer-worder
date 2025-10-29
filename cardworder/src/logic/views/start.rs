@@ -79,7 +79,7 @@ impl <'a> CardputerView<'a> for StartView {
     fn draw(&self, ui: &mut CardworderUi<'_>) {
     }
     
-    fn form(&'a self) -> Vec<crate::logic::views::UiLineType<'a>> {
+    fn form(&self) -> Vec<crate::logic::views::UiLineType<'a>> {
         Vec::new()
     }
 }

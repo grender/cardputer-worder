@@ -10,15 +10,15 @@ pub struct ViewManager<'a> {
 }
 
 pub trait CardputerView<'a> {
-    fn is_need_clear_on_update(&'a self) -> bool;
-    fn is_need_top_line(&'a self) -> bool;
+    fn is_need_clear_on_update(&self) -> bool;
+    fn is_need_top_line(&self) -> bool;
 
-    fn init(&'a mut self, hal: &mut CardputerHal<'_>, ui: &mut CardworderUi<'_>);
-    fn destruct(&'a mut self);
-    fn update(&'a mut self, keyboard_state: &KeyboardState) -> Option<Box<dyn CardputerView<'a>>>;
-    fn draw(&'a self, ui: &mut CardworderUi<'_>);
+    fn init(&mut self, hal: &mut CardputerHal<'_>, ui: &mut CardworderUi<'_>);
+    fn destruct(&mut self);
+    fn update(&mut self, keyboard_state: &KeyboardState) -> Option<Box<dyn CardputerView<'a>>>;
+    fn draw(&self, ui: &mut CardworderUi<'_>);
 
-    fn form(&'a self) -> Vec<crate::logic::views::UiLineType<'a>>;
+    fn form(&self) -> Vec<crate::logic::views::UiLineType<'a>>;
 }
 
 impl <'a> ViewManager<'a> {
@@ -26,7 +26,7 @@ impl <'a> ViewManager<'a> {
         Self { hal, ui, current_view: view, view_need_init: true }
     }
 
-    pub fn loop_logic(&'a mut self) {
+    pub fn loop_logic(&mut self) {
         self.hal.update_keyboard_state();
 
         if self.view_need_init {
@@ -34,23 +34,33 @@ impl <'a> ViewManager<'a> {
             self.view_need_init = false;
         }
 
+        // Get next view without keeping mutable borrow
         let next_view = self.current_view.update(&self.hal.keyboard_state);
-        if let Some(next_view) = next_view {
+        
+        if let Some(mut new_view) = next_view {
             self.current_view.destruct();
-            self.current_view = next_view;
+            self.current_view = new_view;
             self.view_need_init = true;
             self.ui.clear(Rgb565::BLACK);
-            self.current_view.update(&self.hal.keyboard_state);
+            // Update the new view once
+            let _ = self.current_view.update(&self.hal.keyboard_state);
         }
 
-        if self.current_view.is_need_clear_on_update() {
+        // Check if need to clear
+        let need_clear = self.current_view.is_need_clear_on_update();
+        if need_clear {
             self.ui.clear(Rgb565::BLACK);
         }
 
+        // Draw the view
         self.current_view.draw(&mut self.ui);
-        if self.current_view.is_need_top_line() {
+        
+        // Check if need top line
+        let need_top_line = self.current_view.is_need_top_line();
+        if need_top_line {
             self.ui.draw_top_line(&self.hal.keyboard_state.input_state, &self.hal.keyboard_state.pressed);
         }
+        
         self.ui.flip_buffer();
     }
 }

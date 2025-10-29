@@ -37,7 +37,7 @@ enum MainMenuOption {
     Test5,
 }
 
-pub struct MainMenuView<'a> {
+pub struct MainMenuView {
     show_fps: bool,
     options: Vec<MainMenuOption>,
     current_item_idx: usize,
@@ -45,11 +45,9 @@ pub struct MainMenuView<'a> {
     lang: InputLanguage,
     timer_task_handler: Option<TaskHandle_t>,
     scroll_offset: u32, // New: scroll offset for the menu
-    form_lines: Option<Vec<UiLineType<'a>>>,
-    input_value: String
 }
 
-impl <'a> Default for MainMenuView<'a> {
+impl Default for MainMenuView {
     fn default() -> Self {
         Self {
             show_fps: false,
@@ -72,8 +70,6 @@ impl <'a> Default for MainMenuView<'a> {
             lang: InputLanguage::En,
             timer_task_handler: None,
             scroll_offset: 0,
-            form_lines: None,
-            input_value: "".to_string(),
         }
     }
 }
@@ -133,7 +129,7 @@ unsafe extern "C" fn update_counter(arg: *mut core::ffi::c_void) {
     }
 }
 
-impl <'a> CardputerView<'a> for MainMenuView<'a> {
+impl<'a> CardputerView<'a> for MainMenuView {
 
     fn is_need_top_line(&self) -> bool {
         true
@@ -144,7 +140,7 @@ impl <'a> CardputerView<'a> for MainMenuView<'a> {
     }
 
     /// Build the menu as a list of UiLineType
-    fn form(&'a self) -> Vec<UiLineType<'a>> {
+    fn form(&self) -> Vec<UiLineType<'a>> {
         let mut lines= self.options.iter().enumerate().map(|(idx, o)| {
             let color = if self.current_item_idx == idx {
                 ThemeColor::Selected
@@ -158,12 +154,6 @@ impl <'a> CardputerView<'a> for MainMenuView<'a> {
             ]);
             r
         }).collect::<Vec<UiLineType<'a>>>();
-        
-        // Add a test input field to demonstrate the new InputText element
-        lines.push(UiLineType::Elements(vec![
-            UiLineElement::<'a>::Text("Input: ", CardFont::Medium, VerticalPosition::Top, ThemeColor::Text),
-            UiLineElement::<'a>::InputText(&self.input_value, CardFont::Medium, ThemeColor::Selected, 0)
-        ]));
 
         lines
         
@@ -185,8 +175,6 @@ impl <'a> CardputerView<'a> for MainMenuView<'a> {
             )
         };
         self.timer_task_handler = Some(task_id);
-        let form_lines = self.form();
-        self.form_lines = Some(form_lines)
     }
 
     fn destruct(&mut self) {
@@ -236,8 +224,12 @@ impl <'a> CardputerView<'a> for MainMenuView<'a> {
         // Clear the screen first
         ui.clear(Rgb565::BLACK);
         let scroll_offset = self.scroll_offset;
+        
+        // Generate the form lines
+        let form_lines = self.form();
+        
         // Compose the form with current scroll offset
-        let composed = compose_form(self.form_lines.as_ref().unwrap().as_slice(), scroll_offset, 125, ui); // 125 = viewport height (135 - 10 for top line)
+        let composed = compose_form(form_lines.as_slice(), scroll_offset, 125, ui); // 125 = viewport height (135 - 10 for top line)
         
         // Render the visible lines and scroll bar
         render_visible_lines(&composed, ui);
