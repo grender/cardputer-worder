@@ -25,7 +25,7 @@ impl <'a> CardputerView<'a> for StartView {
             let env_tz = b"TZ\0";
             let tz = b"GMT-3\0";
             // TODO: move to a separate file
-            setenv(env_tz.as_ptr() as *const i8, tz.as_ptr() as *const i8, 1);
+            setenv(env_tz.as_ptr() as *const u8, tz.as_ptr() as *const u8, 1);
             tzset();
             // let tz = getenv(env_tz.as_ptr() as *const i8);
             // let tz_str = CStr::from_ptr(tz).to_str().unwrap();
