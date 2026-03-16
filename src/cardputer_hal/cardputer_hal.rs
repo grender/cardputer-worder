@@ -109,7 +109,7 @@ impl <'a>CardputerHal<'a> {
             let config_str = self
             .sd
             .read_file("wifi_cfg.jsn")
-            .map_err(|e| anyhow::anyhow!("Failed to read wifi_cfg.jsn"))?;
+            .map_err(|_e| anyhow::anyhow!("Failed to read wifi_cfg.jsn"))?;
 
         let config: WifiConfig = serde_json::from_str(&config_str)?;
 
@@ -117,11 +117,11 @@ impl <'a>CardputerHal<'a> {
     }
     
     pub fn connect_wifi(&mut self, wifi_config: WifiConfig) -> anyhow::Result<()> {
-        self.wifi.connect(wifi_config).map_err(|e| anyhow::anyhow!("Failed to connect to wifi"))
+        self.wifi.connect(wifi_config).map_err(|_e| anyhow::anyhow!("Failed to connect to wifi"))
     }
 
     pub fn stop_wifi(&mut self) -> anyhow::Result<()> {
-        self.wifi.stop().map_err(|e| anyhow::anyhow!("Failed to stop wifi"))
+        self.wifi.stop().map_err(|_e| anyhow::anyhow!("Failed to stop wifi"))
     }
 
     pub fn take_screen(&mut self) -> CardputerScreen<'a> {

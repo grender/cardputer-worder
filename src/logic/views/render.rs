@@ -1,9 +1,6 @@
 //! Compose, scroll, and render logic for scrollable forms in Cardputer UI.
 
 use crate::logic::views::{UiLineType, UiLineElement};
-use crate::logic::views::fonts::measure_line_height;
-use embedded_graphics::primitives::Rectangle;
-use embedded_graphics::prelude::{Size, Point};
 use crate::ui::cardworder_ui::CardworderUi;
 
 /// State for a composed form, including scroll offset.
@@ -34,7 +31,7 @@ pub fn compose_form(
 
     for line in lines {
         let height = crate::logic::views::fonts::measure_line_height(ui, line);
-        let rect = embedded_graphics::primitives::Rectangle::new(
+        let _rect = embedded_graphics::primitives::Rectangle::new(
             embedded_graphics::prelude::Point::new(0, y as i32),
             embedded_graphics::prelude::Size::new(width, height),
         );
@@ -63,7 +60,7 @@ pub fn compose_form(
 }
 
 /// Scroll up by one line (returns new offset).
-pub fn scroll_up(current_offset: u32, lines: &[ComposedUiLine], viewport_height: u32) -> u32 {
+pub fn scroll_up(current_offset: u32, lines: &[ComposedUiLine], _viewport_height: u32) -> u32 {
     // Find the first line that starts at or above the current offset
     if lines.is_empty() || current_offset == 0 {
         return 0;

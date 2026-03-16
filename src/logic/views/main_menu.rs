@@ -1,11 +1,7 @@
-use std::{cmp, ffi::CString};
+use std::ffi::CString;
 
-use embedded_graphics::{
-    pixelcolor::Rgb565,
-    prelude::{Point, RgbColor, WebColors},
-};
 use esp_idf_hal::delay::FreeRtos;
-use esp_idf_sys::{vTaskDelete, xTaskCreatePinnedToCore, BaseType_t, TaskHandle_t};
+use esp_idf_sys::{vTaskDelete, xTaskCreatePinnedToCore, TaskHandle_t};
 use u8g2_fonts::types::VerticalPosition;
 
 use crate::{
@@ -108,7 +104,7 @@ impl CardputerView for MainMenuView {
         }).collect()
     }
 
-    fn init(&mut self, hal: &mut CardputerHal<'_>, ui: &mut CardworderUi<'_>) {
+    fn init(&mut self, _hal: &mut CardputerHal<'_>, _ui: &mut CardworderUi<'_>) {
         let mut task_id: TaskHandle_t = core::ptr::null_mut();
         let task_name = CString::new("main_menu_update_counter").unwrap();
         let self_ptr: *mut MainMenuView = self as *mut _;

@@ -2,7 +2,7 @@ use embedded_graphics::{pixelcolor::Rgb565, prelude::RgbColor};
 use esp_idf_svc::sntp::{EspSntp, SyncStatus};
 use esp_idf_sys::{setenv, tzset};
 
-use crate::{cardputer_hal::{cardputer_hal::{CardputerHal, KeyboardState}, wifi::wifi::WifiConfig}, logic::{view_manager::CardputerView, views::main_menu::MainMenuView}, ui::cardworder_ui::CardworderUi, ResultExt};
+use crate::{cardputer_hal::cardputer_hal::{CardputerHal, KeyboardState}, logic::{view_manager::CardputerView, views::main_menu::MainMenuView}, ui::cardworder_ui::CardworderUi, ResultExt};
 
 pub struct StartView {
 }
@@ -72,11 +72,11 @@ impl CardputerView for StartView {
         
     }
 
-    fn update(&mut self, keyboard_state: &KeyboardState) -> Option<Box<dyn CardputerView>> {
+    fn update(&mut self, _keyboard_state: &KeyboardState) -> Option<Box<dyn CardputerView>> {
         Some(Box::new(MainMenuView::default()))
     }
 
-    fn draw(&mut self, ui: &mut CardworderUi<'_>) {
+    fn draw(&mut self, _ui: &mut CardworderUi<'_>) {
     }
     
     fn form(&mut self) -> Vec<crate::logic::views::UiLineType> {

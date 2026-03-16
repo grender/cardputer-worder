@@ -1,5 +1,3 @@
-use core::iter;
-use embedded_graphics::{pixelcolor::Rgb565, prelude::Size, primitives::Rectangle};
 use u8g2_fonts::types::VerticalPosition;
 
 use crate::ui::cardworder_ui::{CardFont, ThemeColor};

@@ -1,17 +1,13 @@
 use std::collections::HashMap;
 
 use embedded_fps::FPS;
-use embedded_graphics::geometry::AnchorPoint;
 use embedded_graphics::mono_font::iso_8859_5::FONT_6X13;
 use embedded_graphics::mono_font::iso_8859_5::FONT_6X13_BOLD;
-use embedded_graphics::mono_font::MonoFont;
 use embedded_graphics::prelude::WebColors;
 use embedded_graphics::primitives::Rectangle;
-use embedded_graphics::text::{Alignment, Baseline, TextStyleBuilder};
 use embedded_graphics::{
-    mono_font::{ascii::FONT_4X6, MonoTextStyle},
+    mono_font::MonoTextStyle,
     prelude::{Point, RgbColor},
-    text::Text,
 };
 
 use embedded_text::alignment::HorizontalAlignment;
@@ -78,7 +74,7 @@ impl embedded_time::clock::Clock for CardworderClock {
     fn new_timer<Dur: embedded_time::duration::Duration>(
         &self,
         duration: Dur,
-    ) -> embedded_time::Timer<
+    ) -> embedded_time::Timer<'_, 
         embedded_time::timer::param::OneShot,
         embedded_time::timer::param::Armed,
         Self,
@@ -229,7 +225,7 @@ impl CardworderUi<'_> {
             .unwrap();
     }
 
-    pub fn draw_line(self, s1: Point, s2: Point, color: ThemeColor) {}
+    pub fn draw_line(self, _s1: Point, _s2: Point, _color: ThemeColor) {}
 
     pub fn draw_text_oneline(
         &mut self,
@@ -253,9 +249,9 @@ impl CardworderUi<'_> {
             .bounding_box
     }
 
-    pub fn draw_text_multiline(self, s: &str, font: CardFont, color: ThemeColor) {}
+    pub fn draw_text_multiline(self, _s: &str, _font: CardFont, _color: ThemeColor) {}
 
-    pub fn draw_rect(self, r: Rectangle, color: ThemeColor) {
+    pub fn draw_rect(self, _r: Rectangle, _color: ThemeColor) {
         /*self.screen.fill_solid(
         r, get_rgb565(color));*/
     }
