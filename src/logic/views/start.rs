@@ -25,7 +25,7 @@ impl CardputerView for StartView {
             let env_tz = b"TZ\0";
             let tz = b"GMT-3\0";
             // TODO: move to a separate file
-            setenv(env_tz.as_ptr() as *const i8, tz.as_ptr() as *const i8, 1);
+            setenv(env_tz.as_ptr() as *const u8, tz.as_ptr() as *const u8, 1);
             tzset();
             // let tz = getenv(env_tz.as_ptr() as *const i8);
             // let tz_str = CStr::from_ptr(tz).to_str().unwrap();
@@ -38,11 +38,11 @@ impl CardputerView for StartView {
             heapless::String::try_from("52525252").unwrap(),
         ).unwrap_or_log("error create wifi file");
     
-        //let wifi_config = hal.load_wifi_config().unwrap_or_log("error load wifi config");
-        let wifi_config = WifiConfig {
-            ssid: heapless::String::try_from("ATOM").unwrap(),
-            password: heapless::String::try_from("pw!!ATOM2023@@").unwrap(),
-        };
+        let wifi_config = hal.load_wifi_config().unwrap_or_log("error load wifi config");
+        //let wifi_config = WifiConfig {
+        //    ssid: heapless::String::try_from("ATOM").unwrap(),
+        //    password: heapless::String::try_from("pw!!ATOM2023@@").unwrap(),
+        //};
         
     
         ui.draw_starting_line_text("Starting Wifi...", Rgb565::BLACK, Rgb565::WHITE);

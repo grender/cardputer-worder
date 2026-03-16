@@ -1,3 +1,4 @@
+[idf_format_args]
 partition_table = "./partition-table.csv"
 
 [connection]
