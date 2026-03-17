@@ -13,7 +13,7 @@ use crate::{
         },
     },
     logic::{view_manager::CardputerView, views::{start::StartView, UiLineElement}},
-    ui::cardworder_ui::{CardFont, CardworderUi, ThemeColor},
+    ui::cardworder_ui::{CardFont, CardworderUi, ThemeColor, TOP_BAR_HEIGHT},
 };
 
 use crate::logic::views::UiLineType;
@@ -40,6 +40,7 @@ impl Default for MainMenuView {
             show_fps: false,
             options: vec![
                 MainMenuOption::ConnectWifi, MainMenuOption::UpdateNtp, MainMenuOption::AdditionalInfo,
+                MainMenuOption::ConnectWifi, MainMenuOption::UpdateNtp, MainMenuOption::AdditionalInfo,
                 MainMenuOption::ConnectWifi, MainMenuOption::UpdateNtp, MainMenuOption::AdditionalInfo
                 ],
             current_item_idx: 0,
@@ -58,7 +59,7 @@ fn get_option_text(option: &MainMenuOption, lang: InputLanguage) -> &'static str
         (InputLanguage::Ru, MainMenuOption::ConnectWifi) => "Подключить Wi-Fi",
         (InputLanguage::Ru, MainMenuOption::UpdateNtp) => "Обновить время по NTP",
         (InputLanguage::En, MainMenuOption::AdditionalInfo) => "Additional info",
-        (InputLanguage::Ru, MainMenuOption::AdditionalInfo) => "Дополнительная информация",
+        (InputLanguage::Ru, MainMenuOption::AdditionalInfo) => "Дополнительная информация LONG LONG LONG LONG LONG LONG",
     }
 }
 
@@ -140,14 +141,12 @@ impl CardputerView for MainMenuView {
 
         match keyboard_state.pressed {
             Some((KeyEvent::Pressed, PressedSymbol::ArrowDown)) => {
+                // Wrap: last -> first
                 self.current_item_idx = (self.current_item_idx + 1) % self.options.len();
-                // Simple scroll down by estimated line height (will be refined in draw)
-                self.scroll_offset = self.scroll_offset.saturating_add(20);
             }
             Some((KeyEvent::Pressed, PressedSymbol::ArrowUp)) => {
+                // Wrap: first -> last
                 self.current_item_idx = (self.current_item_idx + self.options.len() - 1) % self.options.len();
-                // Simple scroll up by estimated line height (will be refined in draw)
-                self.scroll_offset = self.scroll_offset.saturating_sub(20);
             }
             Some((KeyEvent::Pressed, PressedSymbol::Enter)) => {
                 match self.options[self.current_item_idx] {
@@ -165,8 +164,31 @@ impl CardputerView for MainMenuView {
 
     fn draw(&mut self, ui: &mut CardworderUi<'_>) {
         use crate::logic::views::render::{compose_form, render_visible_lines};
+        use crate::logic::views::fonts;
         let lines = self.form();
-        let composed = compose_form(lines.as_slice(), self.scroll_offset, 135, ui); // 135 = viewport height
+        // Viewport below top bar: height = screen height - top bar
+        const SCREEN_HEIGHT: u32 = 135;
+        let viewport_height = SCREEN_HEIGHT - TOP_BAR_HEIGHT;
+        // Compute scroll so selected item is always first visible (at top of menu)
+        let mut y = 0u32;
+        let mut selected_top = 0u32;
+        for (idx, line) in lines.iter().enumerate() {
+            let h = fonts::measure_line_height(ui, line);
+            if idx == self.current_item_idx {
+                selected_top = y;
+            }
+            y += h;
+        }
+        let total_height = y;
+        let max_scroll = total_height.saturating_sub(viewport_height);
+        self.scroll_offset = selected_top.min(max_scroll);
+        let composed = compose_form(
+            lines.as_slice(),
+            self.scroll_offset,
+            viewport_height,
+            TOP_BAR_HEIGHT as i32,
+            ui,
+        );
         render_visible_lines(&composed, ui);
         ui.show_fps = self.show_fps;
     }

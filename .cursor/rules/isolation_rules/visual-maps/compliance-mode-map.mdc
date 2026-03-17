@@ -1,0 +1,54 @@
+---
+description: Visual process map for COMPLIANCE mode (Post-QA hardening and PRD revalidation)
+globs: compliance-mode-map.mdc
+alwaysApply: false
+---
+
+# COMPLIANCE MODE: POST-QA HARDENING & PRD REVALIDATION
+
+🚨 MANDATORY: WORKFLOW DEFINITION 🚨
+- The workflow is defined in **compliance-command.mdc** (cursor-commands). This map and the command are self-contained in .cursor; no external spec file required.
+- Do not deviate from the step order or report sections defined in compliance-command.mdc.
+
+🚨 MANDATORY: DATE/TIME FOR REPORT MUST USE sys8 MCP 🚨
+- When writing the compliance report file, call sys8 MCP get_current_datetime for the report timestamp and for the filename date (YYYY-MM-DD).
+- MUST NOT use JavaScript Date(), hardcoded dates, or any other method.
+
+> **TL;DR:** Run the 7-step compliance workflow (see compliance-command.mdc); load compliance-code-simplifier for step 2; produce report (file if memory-bank/reports/ exists, else chat) and summarize in chat.
+
+## 🧭 COMPLIANCE MODE PROCESS FLOW
+
+```mermaid
+graph TD
+    Start["START COMPLIANCE MODE"] --> ReadCommand["Read compliance-command.mdc (workflow definition)"]
+    ReadCommand --> ReadContext["Read activeContext, tasks, PRD if present (in project)"]
+    ReadContext --> Step1["Step 1: Change set & PRD/task alignment"]
+    Step1 --> Step2["Step 2: Code simplification<br>Load: compliance-code-simplifier.mdc"]
+    Step2 --> Step3["Step 3: References and dead code"]
+    Step3 --> Step4["Step 4: Test coverage"]
+    Step4 --> Step5["Step 5: Linters and formatters"]
+    Step5 --> Step6["Step 6: Test execution"]
+    Step6 --> Step7["Step 7: Optional hardening"]
+    Step7 --> Report["Write report (file if memory-bank/reports/ exists, else chat)"]
+    Report --> Summary["Summarize in chat<br>Next: /reflect"]
+
+    style Start fill:#4da6ff,stroke:#0066cc,color:white
+    style ReadCommand fill:#4dbb5f,stroke:#36873f,color:white
+    style Report fill:#ffa64d,stroke:#cc7a30,color:white
+```
+
+## 📋 RULE LOADING FOR STEP 2
+
+When executing **Step 2 (Code simplification)**:
+- Load: `.cursor/rules/isolation_rules/visual-maps/compliance-code-simplifier.mdc`
+- Apply principles from compliance-code-simplifier.mdc to **recently modified code** only.
+
+## 📋 REPORT OUTPUT
+
+- **Path:** If project has `memory-bank/reports/`, write compliance-report-[task_id]-[date].md there (task_id from activeContext; date from sys8 MCP, YYYY-MM-DD). Else output report in chat only.
+- **Sections:** PRD alignment, Simplification applied, References/unused, Coverage, Lint/format, Tests, Optional, Remaining risks/follow-ups (see compliance-command.mdc).
+- **Best-effort:** Run all 7 steps even if one fails; collect failures in the report.
+
+## 🔗 NEXT STEP
+
+After compliance: proceed to **/reflect** for task review.

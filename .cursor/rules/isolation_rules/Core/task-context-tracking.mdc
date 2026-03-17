@@ -1,0 +1,225 @@
+---
+description: Task Context Tracking System for Chat-Specific Task Management
+globs: task-context-tracking.mdc
+alwaysApply: true
+---
+
+# TASK CONTEXT TRACKING SYSTEM
+
+## 🚨 CRITICAL REQUIREMENT
+
+**The Memory Bank system MUST track which specific task is active in the current chat context.**
+
+This prevents the `/archive` command from archiving ALL open tasks when the user only wants to archive the task being discussed in the current chat.
+
+## 📋 CORE CONCEPT
+
+### Problem
+Previously, `/archive` would archive all tasks with status "completed" in `tasks.md`, regardless of which task was being discussed in the current chat.
+
+### Solution
+Introduce a `CURRENT_TASK` marker in `activeContext.md` that identifies which specific task is active in the current chat session.
+
+## 🔧 IMPLEMENTATION
+
+### 1. Active Context Structure
+
+The `activeContext.md` file MUST include a clear "Current Task" section at the top:
+
+```markdown
+# Active Context
+
+**Current Task:** [TASK-ID] - [Task Title]
+- **Status**: [Status]
+- **Started**: [Date]
+- **Complexity**: [Level]
+- **Type**: [Type]
+- **Priority**: [Priority]
+- **Repository**: [Repository]
+- **Branch**: [Branch name]
+
+[Rest of active context...]
+```
+
+### 2. Task Identification Format
+
+Task IDs MUST follow this format:
+
+**Standard Format**: `[PREFIX]-[4-digit-number]`
+
+**Examples:**
+- `DEV-0053` (Development task #53)
+- `FIN-0001` (Finance task #1)
+- `MARKET-0042` (Marketing task #42)
+- `CREATIVE-0015` (Creative task #15)
+- `DESIGN-0023` (Design task #23)
+- `QA-0008` (QA task #8)
+- `RESEARCH-0012` (Research task #12)
+
+**Format Rules:**
+- Prefix: 2-10 uppercase letters (DEV, FIN, MARKET, CREATIVE, DESIGN, QA, RESEARCH, etc.)
+- Number: Exactly 4 digits with leading zeros (0001, 0053, 0123)
+- Separator: Single hyphen (`-`)
+- No additional suffixes or prefixes allowed
+
+**Legacy Formats (still supported but deprecated):**
+- Jira/Issue Tracker: `DEV-123`, `BUG-456`, `FEAT-789` (will be converted to 4-digit format)
+- Descriptive: `task-name-YYYYMMDD` (will be converted to standard format)
+- Short Code: `T123`, `F456` (will be converted to standard format)
+
+**Automatic Numbering:**
+- If user does not provide task ID, system automatically generates one
+- See: `Core/task-numbering-system.mdc` for full details
+
+### 3. Task Activation Rules
+
+#### When Starting a New Task
+When the user starts working on a task (via `/van` or manual chat):
+1. Update `activeContext.md` with `**Current Task:** [TASK-ID]`
+2. Ensure this task exists in `tasks.md`
+3. Set task status to "in_progress"
+
+#### When Switching Tasks
+When the user wants to switch to a different task:
+1. Update `activeContext.md` to reflect the new current task
+2. Optionally pause the previous task (set status to "paused")
+3. Set the new task status to "in_progress"
+
+#### When Completing a Task
+When the task is ready for archiving:
+1. Set task status to "completed" in `tasks.md`
+2. Keep `**Current Task:** [TASK-ID]` in `activeContext.md` (needed for archiving)
+3. Only after successful archive, update `activeContext.md` to remove or mark as archived
+
+## 🔒 ARCHIVE COMMAND BEHAVIOR
+
+### New Archive Logic
+
+The `/archive` command MUST:
+1. **Read `activeContext.md`** to get the current task ID
+2. **Verify the task exists** in `tasks.md`
+3. **Check task status** (should be "completed" or explicitly marked for archiving)
+4. **Archive ONLY that specific task** (not all completed tasks)
+5. **Update `activeContext.md`** after successful archiving
+
+### Archive Command Example Flow
+
+```
+User types: /archive
+
+Agent actions:
+1. Read activeContext.md
+   → Found: "Current Task: DEV-762"
+2. Read tasks.md
+   → Found DEV-762 with status "completed"
+3. Confirm with user (optional):
+   "Архивировать задачу DEV-762 - Universal NoIP loader via Nginx?"
+4. Create archive document
+5. Update tasks.md (mark as archived)
+6. Update activeContext.md (clear current task or set to next task)
+7. Confirm to user:
+   "✅ Task DEV-762 archived successfully"
+```
+
+### Error Handling
+
+**If no current task found:**
+```
+⚠️ No active task found in current chat context.
+Please specify which task to archive:
+- DEV-762: Universal NoIP loader
+- DEV-697: Bing polling cron
+
+Usage: /archive DEV-762
+```
+
+**If task is not ready for archiving:**
+```
+⚠️ Task DEV-762 status is "in_progress" (not completed).
+Cannot archive incomplete task.
+Please complete the task first or use /reflect to review.
+```
+
+## 📝 TASKS.MD STRUCTURE
+
+### Required Fields for Task Tracking
+
+Each task in `tasks.md` MUST have:
+
+```markdown
+## [TASK-ID]: [Task Title]
+
+**Status**: [not_started|in_progress|completed|archived|paused]
+**Complexity**: Level [1-4]
+**Started**: [Date]
+**Type**: [Type]
+**Priority**: [Priority]
+**Repository**: [Repository]
+**Branch**: [Branch name]
+```
+
+### Task Status Lifecycle
+
+```
+not_started → in_progress → completed → archived
+                ↓              ↑
+              paused ←────────┘
+```
+
+## 🔄 COMMAND INTEGRATION
+
+### VAN Command
+When starting a new task with `/van [TASK-ID]`:
+1. Create/update task entry in `tasks.md`
+2. Set as current task in `activeContext.md`
+3. Set status to "in_progress"
+
+### Archive Command
+When archiving with `/archive`:
+1. Get current task from `activeContext.md`
+2. Verify task is completed
+3. Create archive document
+4. Update task status to "archived" in `tasks.md`
+5. Clear current task from `activeContext.md` (or set to next task)
+
+### Archive Specific Task
+When archiving specific task with `/archive [TASK-ID]`:
+1. Get specified task ID
+2. Verify it exists and is completed
+3. Create archive document
+4. Update task status to "archived"
+5. If it was current task, clear from `activeContext.md`
+
+## ✅ IMPLEMENTATION CHECKLIST
+
+When implementing this system:
+
+- [ ] Update `activeContext.md` with "Current Task" section
+- [ ] Ensure task ID is clearly visible at the top
+- [ ] Modify `/archive` command to read current task from `activeContext.md`
+- [ ] Add confirmation before archiving
+- [ ] Add error handling for missing/incomplete tasks
+- [ ] Update all mode maps to use task context tracking
+- [ ] Test with multiple tasks in `tasks.md`
+- [ ] Document task switching workflow
+
+## 🎯 BENEFITS
+
+1. **Precision**: Archive only the task being discussed
+2. **Safety**: Prevent accidental archiving of wrong tasks
+3. **Context**: Always know which task is active
+4. **Multi-tasking**: Support multiple tasks in flight
+5. **Clarity**: Clear task lifecycle and status tracking
+
+## 📚 RELATED RULES
+
+- `task-numbering-system.mdc` - Automatic task numbering system
+- `memory-bank-paths.mdc` - Memory Bank file locations
+- `archive-mode-map.mdc` - Archive mode process
+- `van-mode-map.mdc` - Task initialization
+- `main.mdc` - Memory Bank system overview
+
+---
+
+**Last Updated:** 2025-12-14
+**Version:** 2.0.0

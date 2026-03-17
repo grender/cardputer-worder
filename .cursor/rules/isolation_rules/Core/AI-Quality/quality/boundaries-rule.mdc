@@ -1,0 +1,298 @@
+---
+description: Rule #11 - Task Boundaries - Explicitly state what is out of scope
+globs: quality/boundaries-rule.mdc
+alwaysApply: false
+---
+
+# RULE #11: TASK BOUNDARIES
+
+> **Goal:** Prevent scope creep and wasted effort by explicitly stating what is NOT included.
+
+## 🎯 CORE PRINCIPLE
+
+**Explicitly define what is OUT OF SCOPE. Negative constraints are as important as positive requirements.**
+
+Without boundaries, AI (and humans) will expand scope indefinitely. Clear exclusions focus effort.
+
+---
+
+## 📋 RULE SPECIFICATION
+
+```yaml
+BOUNDARIES_RULE:
+  format: "Explicit 'What we DON'T do' section"
+  placement: "Every task definition, every prompt"
+  categories:
+    - features_excluded: "Features not in this task"
+    - optimization_excluded: "Performance work for later"
+    - refactoring_excluded: "Code cleanup not now"
+    - edge_cases_excluded: "Edge cases for future"
+  benefit: "50% reduction in scope creep"
+```
+
+---
+
+## ✅ HOW TO APPLY
+
+### In Task Definition
+
+```markdown
+## Task: Implement Like System
+
+### ✅ What We DO
+- Add like functionality for videos
+- Track unique likes by IP address
+- Return like count after adding
+- Handle duplicate like attempts gracefully
+
+### ❌ What We DON'T Do (Out of Scope)
+- Unlike functionality (separate task #124)
+- Like animations in UI (design task)
+- Like count caching (optimization task)
+- Analytics/tracking of likes (analytics team)
+- Notification when video gets likes (notifications service)
+- Rate limiting for likes (infrastructure task)
+- Migration of existing like data (DBA task)
+```
+
+### In Implementation Prompts
+
+```markdown
+## Implement addLike() Method
+
+### Requirements
+- Insert like if not exists
+- Return {added: bool, count: number}
+
+### Boundaries
+- We DON'T implement unlike()
+- We DON'T add caching
+- We DON'T handle analytics
+- We DON'T optimize for performance yet
+
+### Just implement the basic addLike functionality.
+```
+
+### In Code Review
+
+```markdown
+## Review: addLike() Implementation
+
+### Review Scope
+- Only review addLike() logic
+- Only check basic functionality
+
+### Out of Scope for This Review
+- Performance optimization suggestions
+- Refactoring of surrounding code
+- Feature suggestions (unlike, etc.)
+- Architecture improvements
+```
+
+---
+
+## 📊 BOUNDARY CATEGORIES
+
+### Feature Boundaries
+What features are NOT included.
+
+```markdown
+### ❌ Features Out of Scope
+- [Feature A] - Planned for Phase 2
+- [Feature B] - Requires design approval
+- [Feature C] - Different team responsibility
+- [Feature D] - Not in current sprint
+```
+
+### Technical Boundaries
+What technical work is NOT included.
+
+```markdown
+### ❌ Technical Out of Scope
+- Performance optimization (after MVP)
+- Code refactoring (tech debt backlog)
+- Infrastructure changes (ops team)
+- Database migration (DBA approval needed)
+- Test coverage improvements (QA sprint)
+```
+
+### Time Boundaries
+What won't be done in this iteration.
+
+```markdown
+### ❌ Not in This Iteration
+- Edge case X (handle in v1.1)
+- Feature enhancement Y (next sprint)
+- Bug fix Z (separate ticket)
+```
+
+### Quality Boundaries
+What quality level is acceptable now.
+
+```markdown
+### ❌ Quality Aspects Deferred
+- 100% test coverage (80% acceptable for now)
+- Full documentation (basic docs sufficient)
+- Performance benchmarks (defer to optimization phase)
+```
+
+---
+
+## 📋 BOUNDARY TEMPLATE
+
+```markdown
+## Task: [Task Name]
+
+### ✅ IN SCOPE (What We Do)
+1. [Specific deliverable 1]
+2. [Specific deliverable 2]
+3. [Specific deliverable 3]
+
+### ❌ OUT OF SCOPE (What We Don't Do)
+
+#### Features Excluded
+- [Feature] - Reason: [Why excluded]
+- [Feature] - Reason: [Why excluded]
+
+#### Technical Work Excluded
+- [Tech work] - Reason: [Why excluded]
+- [Tech work] - Reason: [Why excluded]
+
+#### Deferred Items
+- [Item] - Will be done: [When/ticket#]
+- [Item] - Will be done: [When/ticket#]
+
+### Rationale
+[Brief explanation of why these boundaries exist]
+```
+
+---
+
+## 📊 BENEFITS OF BOUNDARIES
+
+### Without Boundaries
+```
+Task: "Implement likes"
+AI Response: 
+├── Like functionality ✓
+├── Unlike functionality (not asked)
+├── Like animations (not asked)
+├── Caching layer (not asked)
+├── Analytics integration (not asked)
+├── Email notifications (not asked)
+└── 3x scope, 3x time, 3x bugs
+```
+
+### With Boundaries
+```
+Task: "Implement likes"
+Boundaries: "NOT: unlike, animations, caching, analytics"
+AI Response:
+├── Like functionality ✓
+└── Done. Clean, focused, correct.
+```
+
+---
+
+## ⚠️ COMMON SCOPE CREEP TRIGGERS
+
+### Trigger → Boundary Response
+
+| Trigger | AI Tendency | Boundary |
+|---------|-------------|----------|
+| "Make it work" | Add all features | "Only basic functionality" |
+| "Handle errors" | Every possible error | "Only listed error cases" |
+| "Optimize" | Premature optimization | "Basic implementation first" |
+| "Clean code" | Massive refactoring | "Only new code quality" |
+| "Good UX" | Animations, polish | "Functional UI only" |
+
+### Boundary Phrasing
+
+```markdown
+# Strong Boundaries (Clear, Specific)
+- ❌ We DON'T implement unlike functionality
+- ❌ We DON'T add caching
+- ❌ We DON'T refactor existing code
+
+# Weak Boundaries (Vague, Ignorable)
+- Maybe later: unlike
+- Could add caching
+- Consider refactoring
+```
+
+---
+
+## 🔄 BOUNDARY ENFORCEMENT
+
+### In Planning
+```markdown
+## Task Planning Checklist
+- [ ] Scope defined (what we do)
+- [ ] Boundaries defined (what we don't)
+- [ ] Rationale for boundaries documented
+- [ ] Stakeholders agree on boundaries
+```
+
+### In Implementation
+```markdown
+## Before Each Prompt
+"Remember: We're NOT doing [X, Y, Z] in this task.
+Focus only on [A, B, C]."
+```
+
+### In Review
+```markdown
+## Review Scope Check
+- Is implementation within boundaries?
+- Were any out-of-scope items added?
+- Are boundaries still appropriate?
+```
+
+---
+
+## ⚠️ ANTI-PATTERNS
+
+### ❌ Don't: No Boundaries
+```markdown
+"Implement user authentication"
+// AI might build entire auth system with OAuth, SSO, 2FA, etc.
+```
+
+### ❌ Don't: Vague Boundaries
+```markdown
+"Don't do too much"
+// Subjective, will be ignored
+```
+
+### ❌ Don't: Hidden Boundaries
+```markdown
+// Only in your head, not written down
+// AI doesn't know, scope creep happens
+```
+
+### ✅ Do: Explicit Boundaries
+```markdown
+"Implement password login only.
+❌ NOT: OAuth, SSO, 2FA, password reset, account lockout.
+These are separate tasks #125-129."
+```
+
+---
+
+## ✅ VERIFICATION CHECKLIST
+
+Before starting work:
+
+```
+□ In-scope items clearly listed
+□ Out-of-scope items explicitly stated
+□ Reasons for exclusions documented
+□ Deferred items tracked (ticket numbers)
+□ Boundaries are specific, not vague
+□ All stakeholders agree on boundaries
+□ Boundaries included in prompts
+```
+
+---
+
+*What you DON'T do is as important as what you DO.*

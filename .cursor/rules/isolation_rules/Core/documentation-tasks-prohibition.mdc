@@ -1,0 +1,100 @@
+---
+description: CRITICAL PROHIBITION - Never create operational task documentation in documentation/tasks/
+globs: "**/*.md"
+alwaysApply: true
+---
+
+# CRITICAL PROHIBITION: documentation/tasks/
+
+## 🚨 ABSOLUTE RULE
+
+**NEVER create the `documentation/tasks/` directory.**
+
+**NEVER create ANY operational task documentation files in `documentation/` directory.**
+
+## ✅ CORRECT Location for Task Documentation
+
+**ALL operational task documentation MUST go to:**
+```
+memory-bank/tasks/
+```
+
+### Examples of Correct Paths:
+- ✅ `memory-bank/tasks/DEV-001-implementation-plan.md`
+- ✅ `memory-bank/tasks/DEV-001-testing-guide.md`
+- ✅ `memory-bank/tasks/DEV-001-QA-FINAL-REPORT.md`
+- ✅ `memory-bank/tasks/DEV-001-QUICK-START.md`
+- ✅ `memory-bank/tasks/DEV-001-LOCAL-TESTING-RESULTS.md`
+
+### Examples of WRONG Paths:
+- ❌ `documentation/tasks/DEV-001-implementation-plan.md`
+- ❌ `documentation/tasks/DEV-001-testing-guide.md`
+- ❌ `documentation/DEV-001-anything.md`
+
+## 📋 File Type Routing
+
+### Operational Documentation → memory-bank/tasks/
+ALL of these go to `memory-bank/tasks/`:
+- Implementation plans: `DEV-XXX-implementation-plan.md`
+- Implementation summaries: `DEV-XXX-implementation-summary.md`
+- Testing guides: `DEV-XXX-testing-guide.md`
+- Testing results: `DEV-XXX-testing-results.md`
+- Local testing status: `DEV-XXX-local-testing-status.md`
+- QA reports: `DEV-XXX-QA-*.md`
+- Quick start guides: `DEV-XXX-QUICK-START.md`
+- Web interface testing: `DEV-XXX-WEB-INTERFACE-TESTING.md`
+- Bug fix reports: `DEV-XXX-bug-fix.md`
+- Completion reports: `DEV-XXX-completion-report.md`
+- Any file starting with task ID (DEV-XXX, TASK-XXX, etc.)
+
+### Final Documentation → documentation/
+ONLY these go to `documentation/`:
+- Archived tasks: `documentation/archive/archive-[task_id].md`
+- Final implementation reports: `documentation/DEV-XXX-IMPLEMENTATION-REPORT.md` (rare, final only)
+- API documentation: `documentation/api/`
+- Infrastructure docs: `documentation/infrastructure/`
+- Project-specific guides: `documentation/asana/`, `documentation/azure-keyvault/`, etc.
+
+## 🔍 Pre-Creation Check
+
+**Before creating ANY .md file with a task ID, ask:**
+
+1. **Is this operational documentation?** → `memory-bank/tasks/`
+2. **Is this a final archived task?** → `documentation/archive/`
+3. **Is this project documentation?** → `documentation/[category]/`
+
+**NEVER default to `documentation/tasks/` - this directory should NOT exist!**
+
+## 🛑 If You See documentation/tasks/
+
+If you encounter or accidentally create `documentation/tasks/`:
+
+1. **STOP immediately**
+2. **Move ALL files** to `memory-bank/tasks/`
+3. **Delete** the `documentation/tasks/` directory
+4. **Report** the issue
+
+```bash
+# Emergency fix:
+mv documentation/tasks/*.md memory-bank/tasks/
+rmdir documentation/tasks/
+```
+
+## 📚 Related Rules
+
+- `memory-bank-paths.mdc` - Correct Memory Bank paths
+- `documentation-storage.mdc` - Documentation storage rules
+- `MEMORY-BANK-FILE-ORGANIZATION.md` - Complete file organization guide
+
+## 🎯 Remember
+
+**Operational → memory-bank/**
+**Final → documentation/**
+
+**There is NO `documentation/tasks/` directory in this project!**
+
+---
+
+**Version:** 2.0.0
+**Date:** 2026-01-06
+**Status:** ✅ ACTIVE - CRITICAL RULE

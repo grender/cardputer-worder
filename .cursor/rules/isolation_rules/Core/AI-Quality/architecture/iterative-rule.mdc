@@ -1,0 +1,369 @@
+---
+description: Rule #8 - Iterative Development Cycle - Implement one method at a time
+globs: architecture/iterative-rule.mdc
+alwaysApply: false
+---
+
+# RULE #8: ITERATIVE DEVELOPMENT CYCLE
+
+> **Goal:** Maximize quality by implementing, testing, and reviewing one method at a time.
+
+## 🎯 CORE PRINCIPLE
+
+**For each stub: Write tests → Implement → Run tests → Review → Next stub.**
+
+Breaking the cycle or batching steps reduces quality. Each step must complete before the next.
+
+---
+
+## 📋 RULE SPECIFICATION
+
+```yaml
+ITERATIVE_CYCLE:
+  per_method_steps:
+    1: "Write tests for this method"
+    2: "Implement method to pass tests"
+    3: "Run tests (must be green)"
+    4: "Review implementation"
+    5: "Move to next method"
+  context_reset: "Each new chat/step starts fresh"
+  batch_prohibition: "Do NOT batch multiple methods"
+  benefit: "Clean context, higher quality, isolated errors"
+```
+
+---
+
+## ✅ THE CYCLE
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                  ITERATIVE DEVELOPMENT CYCLE                │
+├─────────────────────────────────────────────────────────────┤
+│                                                             │
+│   ┌─────────┐    ┌─────────┐    ┌─────────┐               │
+│   │  WRITE  │───▶│IMPLEMENT│───▶│  TEST   │               │
+│   │  TESTS  │    │  CODE   │    │  (RUN)  │               │
+│   └─────────┘    └─────────┘    └────┬────┘               │
+│        ▲                             │                     │
+│        │                             ▼                     │
+│        │                      ┌─────────────┐              │
+│        │                      │   GREEN?    │              │
+│        │                      └──────┬──────┘              │
+│        │                     YES     │    NO               │
+│        │                    ┌────────┴────────┐            │
+│        │                    ▼                 ▼            │
+│        │              ┌─────────┐       ┌─────────┐        │
+│        │              │ REVIEW  │       │   FIX   │        │
+│        │              └────┬────┘       └────┬────┘        │
+│        │                   │                 │             │
+│        │                   ▼                 │             │
+│        │              ┌─────────┐            │             │
+│        └──────────────│  NEXT   │◀───────────┘             │
+│                       │ METHOD  │                          │
+│                       └─────────┘                          │
+│                                                             │
+└─────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## ✅ HOW TO APPLY
+
+### Chat 1: Write Tests for addItem()
+
+```typescript
+// Prompt: "Write tests for addItem() method"
+
+describe('addItem', () => {
+  it('should create item with given id and data', async () => {
+    const result = await storage.addItem('item1', { name: 'Test' });
+    expect(result.success).toBe(true);
+    expect(result.id).toBe('item1');
+  });
+
+  it('should set timestamps correctly', async () => {
+    const before = new Date();
+    const result = await storage.addItem('item1', { name: 'Test' });
+    const after = new Date();
+    
+    expect(result.timestamp.getTime()).toBeGreaterThanOrEqual(before.getTime());
+    expect(result.timestamp.getTime()).toBeLessThanOrEqual(after.getTime());
+  });
+
+  it('should throw on duplicate id', async () => {
+    await storage.addItem('item1', { name: 'Test' });
+    await expect(storage.addItem('item1', { name: 'Other' }))
+      .rejects.toThrow('Item already exists');
+  });
+});
+```
+
+### Chat 2: Implement addItem()
+
+```typescript
+// Prompt: "Implement addItem() to pass these tests"
+// Include tests in prompt for context
+
+async addItem(id: string, data: any): Promise<Result> {
+  // Check for duplicate
+  const existing = await this.db.query(
+    'SELECT id FROM items WHERE id = $1',
+    [id]
+  );
+  
+  if (existing.rows.length > 0) {
+    throw new Error('Item already exists');
+  }
+
+  // Insert new item
+  const now = new Date();
+  await this.db.query(
+    `INSERT INTO items (id, data, created_at, updated_at)
+     VALUES ($1, $2, $3, $3)`,
+    [id, JSON.stringify(data), now]
+  );
+
+  return {
+    success: true,
+    id,
+    timestamp: now
+  };
+}
+```
+
+### Chat 3: Review addItem()
+
+```markdown
+## Review: addItem() Implementation
+
+### Checklist
+- [x] Logic clear at first glance
+- [x] Single responsibility
+- [x] Method < 50 lines (25 lines ✓)
+- [x] ≤7-9 objects in scope (5 objects ✓)
+- [x] All tests pass
+- [x] Edge cases handled (duplicate)
+
+### Potential Issues
+- [ ] None identified
+
+### Verdict: ✅ APPROVED
+```
+
+### Chat 4: Write Tests for getItem()
+
+```typescript
+// Prompt: "Write tests for getItem() method"
+
+describe('getItem', () => {
+  it('should return item by id', async () => {
+    await storage.addItem('item1', { name: 'Test' });
+    const item = await storage.getItem('item1');
+    
+    expect(item).not.toBeNull();
+    expect(item.id).toBe('item1');
+    expect(item.data.name).toBe('Test');
+  });
+
+  it('should return null for non-existent id', async () => {
+    const item = await storage.getItem('nonexistent');
+    expect(item).toBeNull();
+  });
+});
+```
+
+### Continue Cycle...
+
+---
+
+## 📊 CYCLE BENEFITS
+
+| Approach | Context Window | Quality | Debug Time |
+|----------|---------------|---------|------------|
+| All at once | Cluttered | 60% | High |
+| Batch 3-4 methods | Moderate | 75% | Medium |
+| **One at a time** | **Clean** | **95%** | **Low** |
+
+### Why One at a Time?
+
+```
+Clean Context Window:
+├── AI focuses on ONE thing
+├── No confusion between methods
+├── Full attention to edge cases
+└── Better error messages
+
+Isolated Errors:
+├── Bug in addItem? Only affects addItem
+├── Easy to pinpoint issues
+├── Simple to fix and re-test
+└── No cascading failures
+
+Human Checkpoints:
+├── Review after each method
+├── Catch issues early
+├── Course-correct if needed
+└── Maintain control
+```
+
+---
+
+## 📋 ITERATION PROMPT TEMPLATES
+
+### Test Writing Prompt
+```markdown
+## Write Tests for [methodName]
+
+### Method Signature
+```typescript
+async methodName(param1: Type): Promise<ReturnType>
+```
+
+### Expected Behavior
+- [Happy path description]
+- [Edge case 1]
+- [Edge case 2]
+- [Error case]
+
+### Write comprehensive tests covering all cases.
+```
+
+### Implementation Prompt
+```markdown
+## Implement [methodName]
+
+### Tests to Pass
+```typescript
+[paste tests here]
+```
+
+### Requirements
+- Pass ALL tests
+- Method < 50 lines
+- Clear error messages
+
+### Implement the method.
+```
+
+### Review Prompt
+```markdown
+## Review [methodName]
+
+### Implementation
+```typescript
+[paste implementation]
+```
+
+### Tests
+```typescript
+[paste tests]
+```
+
+### Review for:
+1. Logic correctness
+2. Edge case handling
+3. Code quality
+4. Performance issues
+
+### Provide verdict: APPROVED / NEEDS CHANGES
+```
+
+---
+
+## ⚠️ ANTI-PATTERNS
+
+### ❌ Don't: Implement All Methods at Once
+```typescript
+// BAD: One prompt for entire class
+"Implement all methods of Storage class"
+
+// Result: AI loses focus, quality drops
+// Each method gets less attention
+```
+
+### ❌ Don't: Skip Tests
+```typescript
+// BAD: Implement without tests
+"Implement addItem method"
+
+// Result: No verification
+// Bugs discovered later
+```
+
+### ❌ Don't: Skip Review
+```typescript
+// BAD: Move on without reviewing
+// Tests pass → immediately next method
+
+// Result: Subtle issues not caught
+// Technical debt accumulates
+```
+
+### ✅ Do: Complete Cycle
+```markdown
+Chat 1: Tests for addItem
+Chat 2: Implement addItem
+Chat 3: Review addItem
+Chat 4: Tests for getItem
+...
+```
+
+---
+
+## 🔄 PRACTICAL WORKFLOW
+
+### For a 5-Method Class
+
+```
+SKELETON (Chat 0):
+└── Create class with 5 stubs
+
+METHOD 1 - addItem:
+├── Chat 1: Write tests
+├── Chat 2: Implement
+└── Chat 3: Review
+
+METHOD 2 - getItem:
+├── Chat 4: Write tests
+├── Chat 5: Implement
+└── Chat 6: Review
+
+METHOD 3 - updateItem:
+├── Chat 7: Write tests
+├── Chat 8: Implement
+└── Chat 9: Review
+
+METHOD 4 - deleteItem:
+├── Chat 10: Write tests
+├── Chat 11: Implement
+└── Chat 12: Review
+
+METHOD 5 - listItems:
+├── Chat 13: Write tests
+├── Chat 14: Implement
+└── Chat 15: Review
+
+INTEGRATION (Chat 16):
+└── Integration tests & final review
+```
+
+---
+
+## ✅ VERIFICATION CHECKLIST
+
+For each method iteration:
+
+```
+□ Tests written first
+□ Tests run (initially failing)
+□ Implementation written
+□ Tests pass (all green)
+□ Code reviewed
+□ < 50 lines confirmed
+□ Edge cases covered
+□ Ready for next method
+```
+
+---
+
+*One method at a time. Never skip a step. Trust the cycle.*

@@ -1,0 +1,269 @@
+---
+description: Rule #3 - Method Size Limits - Max 50 lines, 7-9 objects
+globs: foundation/method-size-rule.mdc
+alwaysApply: false
+---
+
+# RULE #3: METHOD SIZE LIMITS
+
+> **Goal:** Prevent quality degradation by keeping methods within AI's effective context window.
+
+## 🎯 CORE PRINCIPLE
+
+**Maximum 50 lines per method. Maximum 7-9 objects in working memory.**
+
+AI (like humans) loses focus when tracking too many things. Small methods = high quality.
+
+---
+
+## 📋 RULE SPECIFICATION
+
+```yaml
+METHOD_SIZE_RULE:
+  max_lines: 50
+  max_cognitive_load: 7-9 objects  # Miller's Law
+  max_cyclomatic_complexity: 3
+  max_parameters: 5
+  max_nesting: 3 levels
+  indicators_to_split:
+    - method > 30 lines
+    - more than one task
+    - more than 5 parameters
+    - more than 3 nesting levels
+  benefit: "40% higher code quality"
+```
+
+---
+
+## 📊 THE 7±2 RULE (Miller's Law)
+
+Human (and AI) working memory can hold 7±2 items simultaneously.
+
+### What Counts as an "Object"
+
+| Type | Example | Count |
+|------|---------|-------|
+| Parameters | `function(a, b, c)` | 3 objects |
+| Local variables | `let x, y, z` | 3 objects |
+| Properties accessed | `user.name, user.email` | 2 objects |
+| Return values | `return { data, error }` | 2 objects |
+| Loop variables | `for (let i...)` | 1 object |
+| Conditions | `if (a && b)` | 2 objects |
+
+### Quality vs Object Count
+
+```
+Objects    Quality    Recommendation
+───────────────────────────────────────
+  1-5      100%       ✅ Ideal
+  6-7       95%       ✅ Good
+  8-9       85%       ⚠️ Acceptable limit
+ 10-12      70%       ❌ Refactor needed
+ 13-15      50%       ❌ High bug risk
+  15+       30%       ❌ Certain problems
+```
+
+---
+
+## ✅ HOW TO APPLY
+
+### ❌ BAD: Too Large (100+ lines, 15+ objects)
+
+```typescript
+async function processUserData(
+  user, db, cache, logger, config,
+  metrics, validator, transformer, notifier
+) {
+  let userData, validatedData, transformedData;
+  let cacheResult, dbResult, notifyResult;
+  let errors, warnings, retryCount;
+  // 15+ objects in scope!
+  
+  // 100+ lines of complex logic
+  // AI loses track of state
+  // Bugs guaranteed
+}
+```
+
+### ✅ GOOD: Right-Sized (30 lines, 7 objects)
+
+```typescript
+async function processUserData(userId: string, config: ProcessConfig) {
+  const user = await fetchUser(userId);          // 1-2 objects
+  const validated = await validateUser(user);    // 3-4 objects
+  const transformed = transformUser(validated);   // 5-6 objects
+  return await saveUser(transformed);            // 7 objects max
+}
+
+// Each helper function: <20 lines, <5 objects
+async function fetchUser(userId: string): Promise<User> {
+  const db = getDatabase();
+  const user = await db.users.findById(userId);
+  if (!user) throw new Error('User not found');
+  return user;
+}
+
+async function validateUser(user: User): Promise<ValidatedUser> {
+  const errors = [];
+  if (!user.email) errors.push('Email required');
+  if (!user.name) errors.push('Name required');
+  if (errors.length) throw new ValidationError(errors);
+  return user as ValidatedUser;
+}
+```
+
+---
+
+## 📏 SIZE LIMITS REFERENCE
+
+| Metric | Limit | Why |
+|--------|-------|-----|
+| **Lines per method** | ≤50 | Fits in context window |
+| **Objects in scope** | 7-9 | Miller's Law (working memory) |
+| **Parameters** | ≤5 | Reduces call complexity |
+| **Nesting depth** | ≤3 | Maintains readability |
+| **Cyclomatic complexity** | ≤3 | Simplifies testing |
+| **Return statements** | ≤3 | Clear exit points |
+
+---
+
+## 🔧 REFACTORING PATTERNS
+
+### Pattern 1: Extract Method
+```typescript
+// BEFORE: 80-line method
+function processOrder(order) {
+  // 20 lines: validate
+  // 30 lines: calculate
+  // 30 lines: save
+}
+
+// AFTER: 3 focused methods
+function processOrder(order) {
+  const validated = validateOrder(order);  // 20 lines
+  const calculated = calculateOrder(validated);  // 30 lines
+  return saveOrder(calculated);  // 30 lines
+}
+```
+
+### Pattern 2: Replace Parameters with Object
+```typescript
+// BEFORE: 8 parameters
+function createUser(name, email, age, country, city, zip, phone, role) {}
+
+// AFTER: 1 config object
+function createUser(config: UserConfig) {
+  const { name, email, age, address, phone, role } = config;
+}
+```
+
+### Pattern 3: Extract Complex Conditions
+```typescript
+// BEFORE: Complex inline condition
+if (user.age >= 18 && user.verified && !user.banned && user.subscribed) {}
+
+// AFTER: Named condition
+const canAccess = isAdult(user) && isVerified(user) && isActive(user);
+if (canAccess) {}
+```
+
+### Pattern 4: Replace Loop with Pipeline
+```typescript
+// BEFORE: Nested loops with conditions
+let result = [];
+for (let user of users) {
+  if (user.active) {
+    for (let order of user.orders) {
+      if (order.total > 100) {
+        result.push({ user: user.name, total: order.total });
+      }
+    }
+  }
+}
+
+// AFTER: Functional pipeline
+const result = users
+  .filter(user => user.active)
+  .flatMap(user => user.orders
+    .filter(order => order.total > 100)
+    .map(order => ({ user: user.name, total: order.total }))
+  );
+```
+
+---
+
+## 📋 OBJECT COUNTING EXERCISE
+
+Count objects in this method:
+
+```typescript
+async function updateProfile(userId, updates, options) {  // 3
+  const db = getDatabase();                                // 4
+  const user = await db.users.findById(userId);           // 5
+  const { name, email, avatar } = updates;                // 8
+  const { validate, notify } = options;                   // 10
+  
+  let errors = [];                                        // 11
+  let result;                                             // 12
+  
+  // 12 objects! Too many - refactor needed
+}
+```
+
+### Refactored Version
+
+```typescript
+async function updateProfile(userId: string, updates: ProfileUpdates) {
+  const user = await fetchUser(userId);        // 2 objects
+  const validated = validateUpdates(updates);   // 4 objects
+  return await saveProfile(user, validated);    // 6 objects ✅
+}
+```
+
+---
+
+## ⚠️ WARNING SIGNS
+
+When you see these, refactor immediately:
+
+| Sign | Problem | Solution |
+|------|---------|----------|
+| Method > 50 lines | Too complex | Extract methods |
+| > 5 parameters | Too many inputs | Use config object |
+| > 3 nesting levels | Hard to follow | Extract conditions |
+| Multiple return types | Unclear contract | Split into functions |
+| Comments explaining code | Code too complex | Simplify logic |
+| "and" in method name | Multiple responsibilities | Split method |
+
+---
+
+## ✅ VERIFICATION CHECKLIST
+
+Before considering method complete:
+
+```
+□ Method ≤ 50 lines
+□ ≤ 7-9 objects in scope
+□ ≤ 5 parameters
+□ ≤ 3 nesting levels
+□ Single responsibility
+□ Clear method name
+□ Testable in isolation
+□ No "and" in method name
+```
+
+---
+
+## 🔄 QUICK REFERENCE
+
+```
+IF method > 50 lines → Extract methods
+IF objects > 9 → Simplify or split
+IF params > 5 → Use config object
+IF nesting > 3 → Extract conditions
+IF name has "and" → Split responsibilities
+```
+
+---
+
+*Small methods are the secret to AI-generated quality code.*

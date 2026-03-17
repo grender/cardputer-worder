@@ -1,0 +1,600 @@
+---
+description: Visual process map for BUILD mode (Code Implementation)
+globs: implementation-mode-map.mdc
+alwaysApply: false
+---
+
+# BUILD MODE: CODE EXECUTION PROCESS MAP
+
+> **TL;DR:** This visual map guides the BUILD mode process, focusing on efficient code implementation based on the planning and creative phases, with proper command execution and progress tracking.
+
+🚨 **MANDATORY FIRST STEP:** Before ANY implementation work, agent MUST query MCP servers:
+1. sys8 MCP: get_current_datetime, get_os_version
+2. context7 MCP: resolve-library-id, get-library-docs
+3. Include ALL MCP results in request context
+NO EXCEPTIONS - This applies to ALL complexity levels (Level 1, 2, 3, 4)
+
+🚨 **MANDATORY: DATE/TIME STAMPS MUST USE sys8 MCP** 🚨
+When updating ANY timestamp fields in progress.md, tasks.md, or other Memory Bank documents:
+- MUST call sys8 MCP get_current_datetime BEFORE writing timestamp
+- MUST use the datetime value returned by sys8 MCP
+- MUST NOT use JavaScript Date(), hardcoded dates, or any other method
+- This applies to "Last Updated", build timestamps, and all other date/time fields
+
+## 🧭 BUILD MODE PROCESS FLOW
+
+```mermaid
+graph TD
+    Start["START BUILD MODE"] --> MCPGate["⛔ MCP SERVERS<br>CONTEXT GATE"]
+    
+    %% MCP Server Queries
+    MCPGate --> QuerySys8["Query sys8 MCP<br>get_current_datetime<br>get_os_version"]
+    QuerySys8 --> QueryContext7["Query context7 MCP<br>resolve-library-id<br>get-library-docs"]
+    QueryContext7 --> IncludeContext["Include MCP Results<br>in Request Context"]
+    
+    IncludeContext --> ReadDocs["Read Reference Documents<br>Core/command-execution.md"]
+    
+    %% Initialization
+    ReadDocs --> CheckLevel{"Determine<br>Complexity Level<br>from tasks.md"}
+    
+    %% Level 1 Implementation
+    CheckLevel -->|"Level 1<br>Quick Bug Fix"| L1Process["LEVEL 1 PROCESS<br>Level1/quick-bug-workflow.md"]
+    L1Process --> L1Review["Review Bug<br>Report"]
+    L1Review --> L1Examine["Examine<br>Relevant Code"]
+    L1Examine --> L1Fix["Implement<br>Targeted Fix"]
+    L1Fix --> L1Test["Test<br>Fix"]
+    L1Test --> L1Update["Update<br>tasks.md"]
+    
+    %% Level 2 Implementation
+    CheckLevel -->|"Level 2<br>Simple Enhancement"| L2Process["LEVEL 2 PROCESS<br>Level2/enhancement-workflow.md"]
+    L2Process --> L2Review["Review Build<br>Plan"]
+    L2Review --> L2Examine["Examine Relevant<br>Code Areas"]
+    L2Examine --> L2Implement["Implement Changes<br>Sequentially"]
+    L2Implement --> L2Test["Test<br>Changes"]
+    L2Test --> L2Update["Update<br>tasks.md"]
+    
+    %% Level 3-4 Implementation
+    CheckLevel -->|"Level 3-4<br>Feature/System"| L34Process["LEVEL 3-4 PROCESS<br>Level3/feature-workflow.md<br>Level4/system-workflow.md"]
+    L34Process --> L34Review["Review Plan &<br>Creative Decisions"]
+    L34Review --> L34Phase{"Creative Phase<br>Documents<br>Complete?"}
+    
+    L34Phase -->|"No"| L34Error["ERROR:<br>Return to CREATIVE Mode"]
+    L34Phase -->|"Yes"| L34DirSetup["Create Directory<br>Structure"]
+    L34DirSetup --> L34VerifyDirs["VERIFY Directories<br>Created Successfully"]
+    L34VerifyDirs --> L34Implementation["Build<br>Phase"]
+    
+    %% Implementation Phases
+    L34Implementation --> L34Phase1["Phase 1<br>Build"]
+    L34Phase1 --> L34VerifyFiles["VERIFY Files<br>Created Successfully"]
+    L34VerifyFiles --> L34Test1["Test<br>Phase 1"]
+    L34Test1 --> L34Document1["Document<br>Phase 1"]
+    L34Document1 --> L34Next1{"Next<br>Phase?"}
+    L34Next1 -->|"Yes"| L34Implementation
+    
+    L34Next1 -->|"No"| L34Integration["Integration<br>Testing"]
+    L34Integration --> L34Document["Document<br>Integration Points"]
+    L34Document --> L34Update["Update<br>tasks.md"]
+    
+    %% Command Execution
+    L1Fix & L2Implement & L34Phase1 --> CommandExec["COMMAND EXECUTION<br>Core/command-execution.md"]
+    CommandExec --> DocCommands["Document Commands<br>& Results"]
+    
+    %% Completion & Transition
+    L1Update & L2Update & L34Update --> VerifyComplete["Verify Build<br>Complete"]
+    VerifyComplete --> UpdateProgress["Update progress.md<br>with Status"]
+    UpdateProgress --> Transition["NEXT MODE:<br>REFLECT MODE"]
+```
+
+## 🔌 MANDATORY MCP SERVER CONTEXT INTEGRATION
+
+**CRITICAL REQUIREMENT:** Before any build/implementation work begins, the agent MUST query MCP servers and include their results in the request context.
+
+### Step 1: Query sys8 MCP Server
+**MANDATORY:** Query sys8 MCP server for system information:
+- `get_current_datetime` - Get current date/time for build timestamps and progress tracking
+- `get_os_version` - Get OS/platform information for platform-specific command execution
+
+### Step 2: Query context7 MCP Server
+**MANDATORY:** Query context7 MCP server for library documentation:
+- `resolve-library-id` - Resolve library names mentioned in implementation to Context7 library IDs
+- `get-library-docs` - Get up-to-date documentation for libraries/frameworks used in implementation
+
+### Step 3: Include MCP Results in Context
+**MANDATORY:** Include all MCP query results in the request context:
+- System date/time information from sys8
+- Platform/OS information from sys8
+- Library documentation from context7
+- Library IDs and API references from context7
+
+### MCP Context Integration Checklist
+```
+✓ MCP CONTEXT INTEGRATION CHECKLIST
+- sys8 get_current_datetime queried? [YES/NO]
+- sys8 get_os_version queried? [YES/NO]
+- context7 resolve-library-id called for all libraries? [YES/NO]
+- context7 get-library-docs called for relevant libraries? [YES/NO]
+- All MCP results included in request context? [YES/NO]
+
+→ If all YES: Proceed with implementation
+→ If any NO: Complete MCP queries before proceeding
+```
+
+## 📋 REQUIRED FILE STATE VERIFICATION
+
+Before implementation can begin, verify file state:
+
+```mermaid
+graph TD
+    Start["File State<br>Verification"] --> CheckTasks{"tasks.md has<br>planning complete?"}
+    
+    CheckTasks -->|"No"| ErrorPlan["ERROR:<br>Return to PLAN Mode"]
+    CheckTasks -->|"Yes"| CheckLevel{"Task<br>Complexity?"}
+    
+    CheckLevel -->|"Level 1"| L1Ready["Ready for<br>Implementation"]
+    
+    CheckLevel -->|"Level 2"| L2Ready["Ready for<br>Implementation"]
+    
+    CheckLevel -->|"Level 3-4"| CheckCreative{"Creative phases<br>required?"}
+    
+    CheckCreative -->|"No"| L34Ready["Ready for<br>Implementation"]
+    CheckCreative -->|"Yes"| VerifyCreative{"Creative phases<br>completed?"}
+    
+    VerifyCreative -->|"No"| ErrorCreative["ERROR:<br>Return to CREATIVE Mode"]
+    VerifyCreative -->|"Yes"| L34Ready
+```
+
+## 🔄 FILE SYSTEM VERIFICATION PROCESS
+
+```mermaid
+graph TD
+    Start["Start File<br>Verification"] --> CheckDir["Check Directory<br>Structure"]
+    CheckDir --> DirResult{"Directories<br>Exist?"}
+    
+    DirResult -->|"No"| ErrorDir["❌ ERROR:<br>Missing Directories"]
+    DirResult -->|"Yes"| CheckFiles["Check Each<br>Created File"]
+    
+    ErrorDir --> FixDir["Fix Directory<br>Structure"]
+    FixDir --> CheckDir
+    
+    CheckFiles --> FileResult{"All Files<br>Exist?"}
+    FileResult -->|"No"| ErrorFile["❌ ERROR:<br>Missing/Wrong Path Files"]
+    FileResult -->|"Yes"| Complete["✅ Verification<br>Complete"]
+    
+    ErrorFile --> FixFile["Fix File Paths<br>or Recreate Files"]
+    FixFile --> CheckFiles
+```
+
+## 📋 DIRECTORY VERIFICATION STEPS
+
+Before beginning any file creation:
+
+```
+✓ DIRECTORY VERIFICATION PROCEDURE
+1. Create all directories first before any files
+2. Use ABSOLUTE paths: /full/path/to/directory
+3. Verify each directory after creation:
+   ls -la /full/path/to/directory     # Linux/Mac
+   dir "C:\full\path\to\directory"    # Windows
+4. Document directory structure in progress.md
+5. Only proceed to file creation AFTER verifying ALL directories exist
+```
+
+## 📋 FILE CREATION VERIFICATION
+
+After creating files:
+
+```
+✓ FILE VERIFICATION PROCEDURE
+1. Use ABSOLUTE paths for all file operations: /full/path/to/file.ext
+2. Verify each file creation was successful:
+   ls -la /full/path/to/file.ext     # Linux/Mac
+   dir "C:\full\path\to\file.ext"    # Windows 
+3. If verification fails:
+   a. Check for path resolution issues
+   b. Verify directory exists
+   c. Try creating with corrected path
+   d. Recheck file exists after correction
+4. Document all file paths in progress.md
+```
+
+## 🔄 COMMAND EXECUTION WORKFLOW
+
+```mermaid
+graph TD
+    Start["Command<br>Execution"] --> Analyze["Analyze Command<br>Requirements"]
+    Analyze --> Complexity{"Command<br>Complexity?"}
+    
+    Complexity -->|"Simple"| Simple["Execute<br>Single Command"]
+    Complexity -->|"Moderate"| Chain["Use Efficient<br>Command Chaining"]
+    Complexity -->|"Complex"| Break["Break Into<br>Logical Steps"]
+    
+    Simple & Chain & Break --> Verify["Verify<br>Results"]
+    Verify --> Document["Document<br>Command & Result"]
+    Document --> Next["Next<br>Command"]
+```
+
+## 📋 LEVEL-SPECIFIC BUILD APPROACHES
+
+```mermaid
+graph TD
+    subgraph "Level 1: Quick Bug Fix"
+        L1A["Targeted Code<br>Examination"]
+        L1B["Minimal<br>Change Scope"]
+        L1C["Direct<br>Fix"]
+        L1D["Verify<br>Fix"]
+    end
+    
+    subgraph "Level 2: Enhancement"
+        L2A["Sequential<br>Build"]
+        L2B["Contained<br>Changes"]
+        L2C["Standard<br>Testing"]
+        L2D["Component<br>Documentation"]
+    end
+    
+    subgraph "Level 3-4: Feature/System"
+        L3A["Directory<br>Structure First"]
+        L3B["Verify Dirs<br>Before Files"]
+        L3C["Phased<br>Build"]
+        L3D["Verify Files<br>After Creation"]
+        L3E["Integration<br>Testing"]
+        L3F["Detailed<br>Documentation"]
+    end
+    
+    L1A --> L1B --> L1C --> L1D
+    L2A --> L2B --> L2C --> L2D
+    L3A --> L3B --> L3C --> L3D --> L3E --> L3F
+```
+
+## 📝 BUILD DOCUMENTATION FORMAT
+
+Document builds with:
+
+```
+## Build: [Component/Feature]
+
+### Approach
+[Brief description of build approach]
+
+### Directory Structure
+- [/absolute/path/to/dir1/]: [Purpose]
+- [/absolute/path/to/dir2/]: [Purpose]
+
+### Code Changes
+- [/absolute/path/to/file1.ext]: [Description of changes]
+- [/absolute/path/to/file2.ext]: [Description of changes]
+
+### Verification Steps
+- [✓] Directory structure created and verified
+- [✓] All files created in correct locations
+- [✓] File content verified
+
+### Commands Executed
+```
+[Command 1]
+[Result]
+```
+
+```
+[Command 2]
+[Result]
+```
+
+### Testing
+- [Test 1]: [Result]
+- [Test 2]: [Result]
+
+### Status
+- [x] Build complete
+- [x] Testing performed
+- [x] File verification completed
+- [ ] Documentation updated
+```
+
+## 📊 TASKS.MD UPDATE FORMAT
+
+During the build process, update tasks.md with progress:
+
+```
+## Status
+- [x] Initialization complete
+- [x] Planning complete
+[For Level 3-4:]
+- [x] Creative phases complete
+- [x] Directory structure created and verified
+- [x] [Built component 1]
+- [x] [Built component 2]
+- [ ] [Remaining component]
+
+## Build Progress
+- [Component 1]: Complete
+  - Files: [/absolute/path/to/files]
+  - [Details about implementation]
+- [Component 2]: Complete
+  - Files: [/absolute/path/to/files]
+  - [Details about implementation]
+- [Component 3]: In Progress
+  - [Current status]
+```
+
+## 📋 PROGRESS.MD UPDATE FORMAT
+
+Update progress.md with:
+
+```
+# Build Progress
+
+## Directory Structure
+- [/absolute/path/to/dir1/]: Created and verified
+- [/absolute/path/to/dir2/]: Created and verified
+
+## [Date]: [Component/Feature] Built
+- **Files Created**: 
+  - [/absolute/path/to/file1.ext]: Verified
+  - [/absolute/path/to/file2.ext]: Verified
+- **Key Changes**: 
+  - [Change 1]
+  - [Change 2]
+- **Testing**: [Test results]
+- **Next Steps**: [What comes next]
+```
+
+## 📊 BUILD VERIFICATION CHECKLIST
+
+```
+✓ BUILD VERIFICATION
+- Directory structure created correctly? [YES/NO]
+- All files created in correct locations? [YES/NO]
+- All file paths verified with absolute paths? [YES/NO]
+- All planned changes implemented? [YES/NO]
+- Testing performed for all changes? [YES/NO]
+- Code follows project standards? [YES/NO]
+- Edge cases handled appropriately? [YES/NO]
+- Build documented with absolute paths? [YES/NO]
+- tasks.md updated with progress? [YES/NO]
+- progress.md updated with details? [YES/NO]
+
+→ If all YES: Build complete - ready for REFLECT mode
+→ If any NO: Complete missing build elements
+```
+
+## 🔄 MODE TRANSITION NOTIFICATION
+
+When the build is complete, notify user with:
+
+```
+## BUILD COMPLETE
+
+✅ Directory structure verified
+✅ All files created in correct locations
+✅ All planned changes implemented
+✅ Testing performed successfully
+✅ tasks.md updated with status
+✅ progress.md updated with details
+
+→ NEXT RECOMMENDED MODE: REFLECT MODE
+```
+
+---
+
+## 🎯 AI QUALITY RULES INTEGRATION
+
+> **Apply these quality rules during BUILD mode for higher code quality.**
+
+### Quality Rules for BUILD Mode
+
+| Rule | When to Apply | Quick Reference |
+|------|---------------|-----------------|
+| **#2 TDD** | Implementation start | Write tests BEFORE code |
+| **#3 Method Size** | During coding | Max 50 lines, 7-9 objects |
+| **#8 Iterative Cycle** | Each method | Tests → Code → Review → Next |
+| **#9 Cognitive Load** | Always | Max 7±2 objects in scope |
+| **#15 Prompts** | AI interactions | Structure prompts carefully |
+
+---
+
+### 📋 Rule #2: Test-Driven Development (TDD)
+
+> **Apply at:** Start of Each Implementation
+
+**One-liner:** Write tests BEFORE implementation. Tests are hallucination filters.
+
+<details>
+<summary>📖 Detailed Guidance</summary>
+
+**Sequence:**
+1. Write tests for the method
+2. Run tests (they should fail)
+3. Implement code to pass tests
+4. Run tests (they should pass)
+5. Refactor if needed
+
+**Example:**
+```typescript
+// STEP 1: Write tests FIRST
+describe('addLike', () => {
+  it('adds like from new IP', async () => {
+    const result = await addLike('video1', '192.168.1.1');
+    expect(result.added).toBe(true);
+  });
+  
+  it('rejects duplicate from same IP', async () => {
+    await addLike('video1', '192.168.1.1');
+    const result = await addLike('video1', '192.168.1.1');
+    expect(result.added).toBe(false);
+  });
+});
+
+// STEP 2: Then implement
+async function addLike(videoId, ip) {
+  // Implementation that passes tests
+}
+```
+
+**Why TDD:**
+- Tests define success criteria
+- Catches AI hallucinations immediately
+- Ensures edge cases are covered
+
+**Full Rule:** `Core/AI-Quality/foundation/tdd-rule.mdc`
+</details>
+
+---
+
+### 📋 Rule #3: Method Size Limits
+
+> **Apply at:** During All Coding
+
+**One-liner:** Max 50 lines per method. Max 7-9 objects in working memory.
+
+<details>
+<summary>📖 Detailed Guidance</summary>
+
+**Limits:**
+| Metric | Limit | Why |
+|--------|-------|-----|
+| Lines per method | ≤50 | Fits in context |
+| Objects in scope | 7-9 | Miller's Law |
+| Parameters | ≤5 | Reduces complexity |
+| Nesting depth | ≤3 | Readability |
+
+**Quality vs Objects:**
+```
+Objects   Quality
+7-9    →  100%
+10-15  →   70%
+15+    →   40%
+```
+
+**Refactoring Triggers:**
+- Method > 50 lines → Extract methods
+- Objects > 9 → Simplify or split
+- Params > 5 → Use config object
+
+**Full Rule:** `Core/AI-Quality/foundation/method-size-rule.mdc`
+</details>
+
+---
+
+### 📋 Rule #8: Iterative Development Cycle
+
+> **Apply at:** Each Method Implementation
+
+**One-liner:** For each stub: Tests → Implementation → Review → Next stub.
+
+<details>
+<summary>📖 Detailed Guidance</summary>
+
+**The Cycle:**
+```
+┌─────────────────────────────────────┐
+│ FOR EACH METHOD:                    │
+│ 1️⃣  Write tests for method         │
+│ 2️⃣  Implement to pass tests        │
+│ 3️⃣  Run tests (must pass)          │
+│ 4️⃣  Review implementation          │
+│ 5️⃣  Move to next method            │
+│ REPEAT until all methods complete   │
+└─────────────────────────────────────┘
+```
+
+**Why One at a Time:**
+- Clean context window
+- Higher quality per method
+- Errors isolated to one method
+- Human can intervene after each step
+
+**Full Rule:** `Core/AI-Quality/architecture/iterative-rule.mdc`
+</details>
+
+---
+
+### 📋 Rule #9: Cognitive Load Management
+
+> **Apply at:** Always During Implementation
+
+**One-liner:** Maximum 7±2 objects in method scope. More = quality degradation.
+
+<details>
+<summary>📖 Detailed Guidance</summary>
+
+**What Counts as Object:**
+- Parameters
+- Local variables
+- Destructured properties
+- Loop variables
+- Return values
+
+**Example:**
+```typescript
+// ❌ BAD: 12+ objects
+async function process(a, b, c, d, e, f) {
+  let x, y, z, result, temp;  // 12 objects!
+}
+
+// ✅ GOOD: 7 objects
+async function process(config) {
+  const { userId, data } = config;  // 3
+  let result, error;                // 5
+  // Focused, maintainable
+}
+```
+
+**Full Rule:** `Core/AI-Quality/architecture/cognitive-load-rule.mdc`
+</details>
+
+---
+
+### 📋 Rule #15: Prompt Engineering
+
+> **Apply at:** Every AI Interaction
+
+**One-liner:** Use structured prompts: Context → Task → Expected → DoD → Boundaries.
+
+<details>
+<summary>📖 Detailed Guidance</summary>
+
+**Prompt Structure:**
+```markdown
+## Context
+[Brief background, reference Memory Bank]
+
+## Task
+[Specific, focused action]
+
+## Expected Results
+- Happy path: [example]
+- Edge case: [example]
+
+## Definition of Done
+- [ ] Criterion 1
+- [ ] Criterion 2
+
+## Boundaries
+- NOT doing: [exclusions]
+```
+
+**Keep Prompts:**
+- Specific (not vague)
+- Focused (one thing)
+- Bounded (what's out)
+- Brief (<500 words)
+
+**Full Rule:** `Core/AI-Quality/technical/prompt-engineering-rule.mdc`
+</details>
+
+---
+
+### ✅ BUILD Mode Quality Checkpoint
+
+During BUILD mode, verify:
+
+```
+□ Tests written BEFORE implementation (Rule #2)?
+□ Each method < 50 lines (Rule #3)?
+□ Following iterative cycle: test → code → review (Rule #8)?
+□ Objects in scope ≤ 9 (Rule #9)?
+□ Prompts structured properly (Rule #15)?
+
+→ All checked: Quality implementation
+→ Missing items: Apply rules before continuing
+``` 

@@ -1,0 +1,322 @@
+---
+description: Rule #13 - Transaction Isolation - Explicit isolation levels and race condition handling
+globs: technical/transaction-rule.mdc
+alwaysApply: false
+---
+
+# RULE #13: TRANSACTION ISOLATION
+
+> **Goal:** Prevent data corruption by explicitly specifying transaction isolation levels and testing for race conditions.
+
+## 🎯 CORE PRINCIPLE
+
+**Always explicitly specify transaction isolation level. Never assume defaults. Test for race conditions.**
+
+Implicit defaults cause subtle bugs. Explicit specification ensures correct behavior.
+
+---
+
+## 📋 RULE SPECIFICATION
+
+```yaml
+TRANSACTION_RULE:
+  requirements:
+    - explicit_isolation: "SET TRANSACTION ISOLATION LEVEL"
+    - race_condition_tests: "Concurrent operation tests"
+    - discuss_upfront: "Mention isolation in requirements"
+  levels:
+    - READ_UNCOMMITTED: "Never use"
+    - READ_COMMITTED: "Default, most cases"
+    - REPEATABLE_READ: "Prevent non-repeatable reads"
+    - SERIALIZABLE: "Critical operations only"
+  mandatory_tests: "100 concurrent operations test"
+```
+
+---
+
+## 📊 ISOLATION LEVELS REFERENCE
+
+### Comparison Table
+
+| Level | Dirty Read | Non-Repeatable | Phantom | Performance |
+|-------|------------|----------------|---------|-------------|
+| READ UNCOMMITTED | ✓ | ✓ | ✓ | Fastest |
+| READ COMMITTED | ✗ | ✓ | ✓ | Fast |
+| REPEATABLE READ | ✗ | ✗ | ✓ | Medium |
+| SERIALIZABLE | ✗ | ✗ | ✗ | Slowest |
+
+### When to Use Each
+
+```markdown
+READ COMMITTED (Default)
+├── Most CRUD operations
+├── Read-only queries
+└── When eventual consistency OK
+
+REPEATABLE READ
+├── Reports that read same data twice
+├── Calculations based on multiple reads
+└── When consistency within transaction needed
+
+SERIALIZABLE
+├── Financial transactions
+├── Inventory management
+├── Like/vote deduplication
+└── Any "check-then-insert" pattern
+```
+
+---
+
+## ✅ HOW TO APPLY
+
+### Step 1: Explicit Isolation in Code
+
+```typescript
+// ❌ BAD: Implicit isolation (uses database default)
+async function addLike(videoId: string, ip: string) {
+  return await db.transaction(async (tx) => {
+    // What isolation level? Who knows!
+    const existing = await tx.query(/*...*/);
+    // Race condition possible!
+    if (!existing) {
+      await tx.query('INSERT...');
+    }
+  });
+}
+
+// ✅ GOOD: Explicit isolation
+async function addLike(videoId: string, ip: string) {
+  return await db.transaction(async (tx) => {
+    // Explicit: I know what I'm doing
+    await tx.query('SET TRANSACTION ISOLATION LEVEL SERIALIZABLE');
+    
+    const existing = await tx.query(
+      'SELECT id FROM likes WHERE video_id = $1 AND ip = $2',
+      [videoId, ip]
+    );
+    
+    if (existing.rows.length > 0) {
+      return { added: false };
+    }
+    
+    await tx.query(
+      'INSERT INTO likes (video_id, ip) VALUES ($1, $2)',
+      [videoId, ip]
+    );
+    
+    return { added: true };
+  });
+}
+```
+
+### Step 2: Add Database Constraints
+
+```sql
+-- Additional protection: unique constraint
+ALTER TABLE likes 
+ADD CONSTRAINT unique_like_per_ip 
+UNIQUE (video_id, ip_address);
+```
+
+### Step 3: Concurrent Test
+
+```typescript
+// MANDATORY: Test with 100 concurrent operations
+describe('addLike concurrency', () => {
+  it('should handle 100 simultaneous likes from same IP', async () => {
+    const videoId = 'test-video';
+    const ipAddress = '192.168.1.1';
+    
+    // Fire 100 concurrent requests
+    const promises = Array(100).fill(null)
+      .map(() => storage.addLike(videoId, ipAddress));
+    
+    // Wait for all to complete
+    const results = await Promise.all(promises);
+    
+    // Count how many actually added
+    const addedCount = results.filter(r => r.added).length;
+    
+    // Verify: Only 1 should succeed
+    expect(addedCount).toBe(1);
+    
+    // Verify database state
+    const count = await storage.getLikeCount(videoId);
+    expect(count).toBe(1);
+  });
+
+  it('should handle concurrent likes from different IPs', async () => {
+    const videoId = 'test-video';
+    
+    // 100 different IPs
+    const promises = Array(100).fill(null)
+      .map((_, i) => storage.addLike(videoId, `192.168.1.${i}`));
+    
+    await Promise.all(promises);
+    
+    // All 100 should succeed
+    const count = await storage.getLikeCount(videoId);
+    expect(count).toBe(100);
+  });
+});
+```
+
+---
+
+## 📋 COMMON RACE CONDITION PATTERNS
+
+### Pattern 1: Check-Then-Insert
+
+```typescript
+// ❌ RACE CONDITION: Two requests check simultaneously
+// Request A: Check → Not exists → INSERT
+// Request B: Check → Not exists → INSERT  (both insert!)
+
+// ✅ SAFE: Use SERIALIZABLE or UNIQUE constraint
+await tx.query('SET TRANSACTION ISOLATION LEVEL SERIALIZABLE');
+// Or: INSERT ... ON CONFLICT DO NOTHING
+```
+
+### Pattern 2: Read-Modify-Write
+
+```typescript
+// ❌ RACE CONDITION: Lost update
+// Request A: Read balance=100 → Update to 90
+// Request B: Read balance=100 → Update to 80 (overwrites A!)
+
+// ✅ SAFE: Use SELECT FOR UPDATE
+const result = await tx.query(
+  'SELECT balance FROM accounts WHERE id = $1 FOR UPDATE',
+  [accountId]
+);
+```
+
+### Pattern 3: Counter Increment
+
+```typescript
+// ❌ RACE CONDITION: Lost increments
+// Request A: Read count=5 → Write count=6
+// Request B: Read count=5 → Write count=6 (lost increment!)
+
+// ✅ SAFE: Atomic increment
+await tx.query(
+  'UPDATE counters SET value = value + 1 WHERE id = $1',
+  [counterId]
+);
+```
+
+---
+
+## 📊 ISOLATION DECISION GUIDE
+
+```
+OPERATION TYPE                    → ISOLATION LEVEL
+──────────────────────────────────────────────────────
+Simple read                       → READ COMMITTED
+Multiple reads, same data         → REPEATABLE READ
+Check-then-insert                 → SERIALIZABLE + CONSTRAINT
+Financial transaction             → SERIALIZABLE
+Inventory update                  → SERIALIZABLE + FOR UPDATE
+Read-modify-write                 → SELECT FOR UPDATE
+Counter increment                 → Atomic UPDATE
+```
+
+---
+
+## 📋 TRANSACTION CHECKLIST
+
+### Before Implementation
+
+```markdown
+□ Identified operations that need transactions
+□ Determined appropriate isolation level
+□ Documented isolation choice in requirements
+□ Planned unique constraints if needed
+```
+
+### During Implementation
+
+```markdown
+□ SET TRANSACTION ISOLATION LEVEL explicit
+□ Added unique constraints where needed
+□ Used FOR UPDATE for read-modify-write
+□ Used atomic operations for counters
+```
+
+### Testing
+
+```markdown
+□ Wrote concurrent operation test
+□ Tested 100+ simultaneous requests
+□ Verified final state is correct
+□ Tested timeout/failure scenarios
+```
+
+---
+
+## ⚠️ ANTI-PATTERNS
+
+### ❌ Don't: Trust Defaults
+```typescript
+// BAD: What's the default? Varies by database!
+await db.transaction(async (tx) => {
+  // Mysterious behavior
+});
+```
+
+### ❌ Don't: Skip Concurrent Tests
+```typescript
+// BAD: "Works on my machine" with single request
+it('should add like', async () => {
+  const result = await addLike('video', 'ip');
+  expect(result.added).toBe(true);
+  // Never tested concurrent access!
+});
+```
+
+### ✅ Do: Explicit + Tested
+```typescript
+// GOOD: Clear intent, proven correct
+await tx.query('SET TRANSACTION ISOLATION LEVEL SERIALIZABLE');
+// ... and 100-concurrent test passes
+```
+
+---
+
+## 📋 QUICK REFERENCE
+
+```
+TRANSACTION RULES:
+├── Always SET ISOLATION explicitly
+├── Add UNIQUE constraints for dedup
+├── Use FOR UPDATE for read-modify-write
+├── Use atomic UPDATE for counters
+└── Test with 100+ concurrent requests
+
+ISOLATION SELECTION:
+├── Simple CRUD → READ COMMITTED
+├── Multiple reads → REPEATABLE READ
+├── Critical ops → SERIALIZABLE
+└── When in doubt → SERIALIZABLE
+```
+
+---
+
+## ✅ VERIFICATION CHECKLIST
+
+Before code is complete:
+
+```
+□ Isolation level explicitly set in code
+□ Unique constraints added where needed
+□ Race condition patterns identified
+□ SELECT FOR UPDATE used appropriately
+□ Concurrent test written (100+ requests)
+□ Test verifies final state is correct
+□ Timeout handling implemented
+□ Transaction scope is minimal
+```
+
+---
+
+*Explicit is better than implicit. Test concurrency or pay later.*

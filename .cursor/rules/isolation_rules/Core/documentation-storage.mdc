@@ -1,0 +1,205 @@
+---
+description: Rules for proper storage of documentation and report files. Prevents creation of MD files in application directories.
+globs: "**/*.md"
+alwaysApply: true
+---
+
+# DOCUMENTATION AND REPORT STORAGE RULES
+
+**CRITICAL:** This rule prevents creation of documentation and report files in application directories and enforces proper file organization.
+
+🚨 **MANDATORY: TASK ID IN REPORT FILENAMES** 🚨
+**ALL report files created in ANY Memory Bank mode MUST include the task ID in the filename.**
+- QA reports: `qa-report-[task_id]-[phase].md`
+- Test reports: `test-report-[task_id]-[component].md`
+- Debug reports: `debug-[task_id]-[feature].md`
+- Diagnostic reports: `diagnostic-[task_id]-[issue].md`
+- Creative phase docs: `creative-[task_id]-[feature_name].md`
+- Testing plans: `testing-plan-[task_id]-[component].md`
+- Integration test plans: `integration-test-plan-[task_id]-[feature].md`
+- Manual testing checklists: `manual-testing-checklist-[task_id]-[feature].md`
+
+**Task ID format:** `[PREFIX]-[4-digit-number]` (e.g., `DEV-0053`, `FIN-0001`, `QA-0008`)
+**How to get task ID:** Read `memory-bank/activeContext.md` to get current task ID
+**See:** `Core/task-numbering-system.mdc` for task ID format details
+
+## MANDATORY: File Location Rules
+
+### Prohibited Locations
+
+**NEVER create MD files (except README.md) in:**
+- Application source directories (e.g., `transcription-service/transcription-obsidian-plugin/`)
+- Component directories (e.g., `frontend/src/`, `backend/src/`)
+- Service root directories (except README.md)
+- Any directory containing source code (`.ts`, `.js`, `.py`, etc.)
+
+### Allowed Locations
+
+**Only README.md files are allowed in:**
+- Project root
+- Service root directories (e.g., `transcription-service/README.md`)
+- Component root directories (e.g., `frontend/README.md`, `backend/README.md`)
+
+## Required Storage Locations
+
+### Memory Bank (`memory-bank/`)
+
+**For internal project documentation and reports:**
+
+1. **QA/Test/Validation Reports:**
+   - Location: `memory-bank/reports/`
+   - Format: `qa-report-[task_id]-[phase].md`, `test-report-[task_id]-[component].md`
+   - **MANDATORY:** All QA and test reports MUST include task ID in filename
+   - Examples:
+     - `memory-bank/reports/qa-report-DEV-0053-phase3.9.md`
+     - `memory-bank/reports/test-report-DEV-0053-obsidian-plugin.md`
+
+2. **Debug/Diagnostic Reports:**
+   - Location: `memory-bank/reports/`
+   - Format: `debug-[task_id]-[feature].md`, `diagnostic-[task_id]-[issue].md`
+   - **MANDATORY:** All debug and diagnostic reports MUST include task ID in filename
+   - Examples:
+     - `memory-bank/reports/debug-DEV-0053-autosync.md`
+     - `memory-bank/reports/diagnostic-DEV-0053-sync-manager.md`
+
+3. **Task Archives:**
+   - Location: `memory-bank/archive/`
+   - Format: `archive-[task_id].md`
+
+4. **Creative Phase Docs:**
+   - Location: `memory-bank/creative/`
+   - Format: `creative-[task_id]-[feature_name].md`
+   - **MANDATORY:** All creative phase documents MUST include task ID in filename
+   - Examples:
+     - `memory-bank/creative/creative-DEV-0053-obsidian-plugin-ux.md`
+     - `memory-bank/creative/creative-DEV-005-transcription-service-architecture.md`
+
+5. **Reflection Docs:**
+   - Location: `memory-bank/reflection/`
+   - Format: `reflection-[task_id].md`
+
+### Task-Specific Documentation (`memory-bank/tasks/`)
+
+**For ALL operational task documentation:**
+
+1. **Task Documentation Files:**
+   - Location: `memory-bank/tasks/`
+   - Format: `DEV-[task_id]-[description].md`
+   - **ALL task operational documentation goes here:**
+     - Implementation plans
+     - Testing plans
+     - Testing guides
+     - QA reports (can also go to `memory-bank/qa/`)
+     - Bug fix reports
+     - Completion reports
+   - Examples:
+     - `memory-bank/tasks/DEV-001-implementation-plan.md`
+     - `memory-bank/tasks/DEV-001-QA-FINAL-REPORT.md`
+     - `memory-bank/tasks/DEV-001-testing-guide.md`
+
+### Documentation (`documentation/`)
+
+**For final/public documentation ONLY:**
+
+1. **Archived Tasks:**
+   - Location: `documentation/archive/`
+   - Format: `archive-[task_id].md`
+   - **Priority 1** for task archiving (if `documentation/` exists)
+   - Example: `documentation/archive/archive-DEV-0053.md`
+
+2. **Legacy QA Reports/Reflections:**
+   - Location: `documentation/qa-report/` or `documentation/reflection/`
+   - Historical files may remain here
+   - **New files** should go to `memory-bank/qa/` or `memory-bank/reflection/`
+
+## Pre-Creation Verification
+
+**Before creating ANY MD file, verify:**
+
+1. **Is this a README.md?**
+   - ✅ Allowed in root/service directories
+   - ❌ NOT allowed in source code directories
+
+2. **Is this a report (QA, Test, Debug, Diagnostic)?**
+   - ✅ Must be in `memory-bank/reports/`
+   - ❌ NOT allowed in application directories
+
+3. **Is this a testing plan or deployment checklist?**
+   - ✅ Must be in `documentation/reports/` or `documentation/deployment/`
+   - ❌ NOT allowed in application directories
+
+4. **Is this a task archive?**
+   - ✅ Must be in `memory-bank/archive/`
+   - ❌ NOT allowed in application directories
+
+5. **Is this a creative phase doc?**
+   - ✅ Must be in `memory-bank/creative/`
+   - ❌ NOT allowed in application directories
+
+6. **Is this a reflection?**
+   - ✅ Must be in `memory-bank/reflection/`
+   - ❌ NOT allowed in application directories
+
+7. **Am I in a source code directory?**
+   - ⛔ STOP - Move to appropriate location
+
+## File Naming Patterns to Detect
+
+**If you see these patterns in application directories, they MUST be moved:**
+
+- `*QA*.md` → `memory-bank/qa/qa-report-[task_id]-*.md` or `memory-bank/tasks/DEV-[task_id]-QA-*.md`
+- `*TEST*.md` → `memory-bank/tasks/DEV-[task_id]-testing-*.md` or `memory-bank/reports/test-report-[task_id]-*.md`
+- `*IMPLEMENTATION*.md` → `memory-bank/tasks/DEV-[task_id]-implementation-*.md`
+- `*DEBUG*.md` → `memory-bank/reports/debug-[task_id]-*.md`
+- `*DIAGNOSTIC*.md` → `memory-bank/reports/diagnostic-[task_id]-*.md`
+- `*TESTING*.md` → `memory-bank/tasks/DEV-[task_id]-testing-*.md`
+- `*CHECKLIST*.md` → `memory-bank/tasks/DEV-[task_id]-checklist-*.md`
+- `*CREATIVE*.md` → `memory-bank/creative/creative-[task_id]-*.md`
+- `DEV-*-*.md` → `memory-bank/tasks/DEV-[task_id]-*.md`
+
+## Enforcement Actions
+
+**When detecting MD files in prohibited locations:**
+
+1. **Identify file type** (QA report, test plan, debug report, etc.)
+2. **Determine correct location** per rules above
+3. **Move file** to correct location with proper naming
+4. **Update any references** to the file path
+5. **Document migration** if needed
+
+## Examples
+
+### ✅ CORRECT
+```
+memory-bank/tasks/DEV-001-implementation-plan.md
+memory-bank/tasks/DEV-001-QA-FINAL-REPORT.md
+memory-bank/tasks/DEV-001-testing-guide.md
+memory-bank/qa/qa-report-DEV-0053-phase3.9.md
+memory-bank/reports/test-report-DEV-0053-obsidian-plugin.md
+memory-bank/reports/debug-DEV-0053-autosync.md
+memory-bank/reports/diagnostic-DEV-0053-sync-manager.md
+memory-bank/creative/creative-DEV-0053-obsidian-plugin-ux.md
+memory-bank/reflection/reflection-DEV-0053.md
+memory-bank/archive/archive-DEV-0053.md (fallback)
+documentation/archive/archive-DEV-0053.md (priority 1)
+project-service/README.md  (allowed)
+```
+
+### ❌ INCORRECT
+```
+documentation/tasks/DEV-001-implementation-plan.md  (WRONG - use memory-bank/tasks/)
+project-service/QA_REPORT.md  (WRONG - use memory-bank/qa/)
+project-service/TESTING_PLAN.md  (WRONG - use memory-bank/tasks/)
+project-service/DEBUG_AUTOSYNC.md  (WRONG - use memory-bank/reports/)
+project-service/DEPLOY_CHECK.md  (WRONG - use memory-bank/tasks/)
+project-service/DIAGNOSTIC_CHECKLIST.md  (WRONG - use memory-bank/reports/)
+```
+
+## Reference
+
+For complete documentation storage rules, see:
+- `memory-bank/documentation-storage-rules.md` - Complete rules and examples
+
+---
+
+**Remember:** Clean codebase = organized documentation. Always place reports and documentation in their designated locations!

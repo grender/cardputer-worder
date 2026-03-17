@@ -1,0 +1,39 @@
+---
+description: Compliance Command - Post-QA hardening and PRD revalidation
+command: compliance
+---
+
+# COMPLIANCE Command - Post-QA Hardening & PRD Revalidation
+
+This command runs the 7-step compliance workflow (defined below; self-contained in .cursor). It re-validates changes against PRD/task, simplifies code, checks references/coverage/lint/tests, and produces a compliance report.
+
+## 🎯 COMMAND PURPOSE
+
+After implementation (/do) and QA, run `/compliance` to harden the change: align with PRD, simplify code (Code Simplifier), fix references/unused, check coverage, run linters/formatters and tests, optional hardening. Output: report file + chat summary.
+
+## 📋 WORKFLOW (per canonical spec)
+
+1. **Change set & PRD/task alignment** — Get diff (Git: current vs base branch; else Memory Bank). Check all changes align with PRD or task; report drift.
+2. **Code simplification** — Apply Code Simplifier (load compliance-code-simplifier.mdc) to recently modified code only.
+3. **References and dead code** — Check refs; remove or report unused variables/imports; optional dead code.
+4. **Test coverage** — If project requires tests: verify coverage of changed code; report gaps; suggest/add tests.
+5. **Linters and formatters** — Run linters, fix or document; run formatter (e.g. Prettier), apply.
+6. **Test execution** — Run test suite; report pass/fail; if fail, list failures.
+7. **Optional hardening** — Error handling consistency; dependency audit if lockfile changed; security scan if project has it.
+
+**Best-effort:** Run all steps; collect failures in report; do not abort on first failure.
+
+## 📋 REPORT
+
+- **Path (optional):** If the project has `memory-bank/reports/`, write `memory-bank/reports/compliance-report-[task_id]-[date].md` (task_id from activeContext; date from sys8 MCP, YYYY-MM-DD). Otherwise output the report in chat only.
+- **Sections:** PRD alignment, Simplification applied, References/unused, Coverage, Lint/format, Tests, Optional, Remaining risks/follow-ups.
+
+## 🔧 ERROR HANDLING
+
+- **No Git:** Infer changed files from Memory Bank; proceed.
+- **No PRD:** Use task description from tasks.md; proceed.
+- **Tests fail:** Record in report; continue other steps; list all failures at end.
+
+## 🔗 NEXT STEP
+
+After compliance: **/reflect** for task review.

@@ -1,0 +1,355 @@
+---
+description: Rule #7 - Skeleton-First Development - Create architecture before code
+globs: architecture/skeleton-rule.mdc
+alwaysApply: false
+---
+
+# RULE #7: SKELETON-FIRST DEVELOPMENT
+
+> **Goal:** Avoid architectural dead-ends by approving structure before implementing logic.
+
+## 🎯 CORE PRINCIPLE
+
+**Create a complete skeleton with empty stubs. Review architecture. Then implement one stub at a time.**
+
+Finding architectural problems after implementation = wasted work. Validate structure first.
+
+---
+
+## 📋 RULE SPECIFICATION
+
+```yaml
+SKELETON_RULE:
+  sequence:
+    1: "Create interfaces and type definitions"
+    2: "Create classes with empty method stubs"
+    3: "Review architecture for issues"
+    4: "Implement one stub at a time"
+  stub_format: "throw new Error('Not implemented')"
+  review_before_implementation: true
+  benefit: "Prevents architectural rework (40%+ time savings)"
+```
+
+---
+
+## ✅ HOW TO APPLY
+
+### Step 1: Define Interfaces
+
+```typescript
+// 1. INTERFACES FIRST - Define contracts
+interface Storage {
+  addItem(id: string, data: any): Promise<Result>;
+  getItem(id: string): Promise<Item | null>;
+  deleteItem(id: string): Promise<void>;
+  listItems(filter?: Filter): Promise<Item[]>;
+}
+
+interface Result {
+  success: boolean;
+  id: string;
+  timestamp: Date;
+}
+
+interface Item {
+  id: string;
+  data: any;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+interface Filter {
+  limit?: number;
+  offset?: number;
+  orderBy?: 'createdAt' | 'updatedAt';
+}
+```
+
+### Step 2: Create Class Skeleton
+
+```typescript
+// 2. SKELETON - All methods stubbed
+class PostgresStorage implements Storage {
+  private db: Database;
+
+  constructor(db: Database) {
+    this.db = db;
+  }
+
+  async addItem(id: string, data: any): Promise<Result> {
+    // TODO: Insert item into database
+    // Expected: Create new record, return result with ID and timestamp
+    throw new Error('Not implemented');
+  }
+
+  async getItem(id: string): Promise<Item | null> {
+    // TODO: Fetch item by ID
+    // Expected: Return item or null if not found
+    throw new Error('Not implemented');
+  }
+
+  async deleteItem(id: string): Promise<void> {
+    // TODO: Delete item by ID
+    // Expected: Remove from database, throw if not found
+    throw new Error('Not implemented');
+  }
+
+  async listItems(filter?: Filter): Promise<Item[]> {
+    // TODO: List items with optional filter
+    // Expected: Return array, empty if no matches
+    throw new Error('Not implemented');
+  }
+}
+```
+
+### Step 3: Architecture Review
+
+```markdown
+## Skeleton Review Checklist
+
+### Interface Design
+- [x] All public methods defined
+- [x] Clear input/output types
+- [x] Error cases documented
+- [x] No circular dependencies
+
+### Class Structure
+- [x] Single responsibility
+- [x] Constructor dependencies clear
+- [x] Methods are independent
+- [x] No hidden state
+
+### Potential Issues
+- [ ] None identified
+
+### Approved for Implementation: ✅ YES
+```
+
+### Step 4: Implement One by One
+
+```typescript
+// 3. IMPLEMENT - One method at a time
+// Start with simplest or most critical method
+
+async getItem(id: string): Promise<Item | null> {
+  const result = await this.db.query(
+    'SELECT * FROM items WHERE id = $1',
+    [id]
+  );
+  
+  if (result.rows.length === 0) {
+    return null;
+  }
+  
+  const row = result.rows[0];
+  return {
+    id: row.id,
+    data: row.data,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at
+  };
+}
+```
+
+---
+
+## 📋 SKELETON TEMPLATE
+
+```typescript
+/**
+ * [Class/Module Name]
+ * 
+ * Purpose: [What this module does]
+ * Dependencies: [What it needs]
+ * 
+ * @example
+ * const instance = new ClassName(deps);
+ * await instance.method(params);
+ */
+class ClassName implements Interface {
+  // Dependencies
+  private dep1: Type1;
+  private dep2: Type2;
+
+  constructor(dep1: Type1, dep2: Type2) {
+    this.dep1 = dep1;
+    this.dep2 = dep2;
+  }
+
+  /**
+   * [Method description]
+   * @param param1 - [Description]
+   * @returns [Description]
+   * @throws [When/why]
+   */
+  async method1(param1: Type): Promise<ReturnType> {
+    // TODO: [Implementation notes]
+    // Expected behavior:
+    // - [Step 1]
+    // - [Step 2]
+    // - Returns: [what]
+    throw new Error('Not implemented');
+  }
+
+  /**
+   * [Method description]
+   */
+  async method2(): Promise<void> {
+    // TODO: [Implementation notes]
+    throw new Error('Not implemented');
+  }
+}
+```
+
+---
+
+## 📊 ARCHITECTURE REVIEW CRITERIA
+
+### Structure Review
+| Criterion | Check |
+|-----------|-------|
+| Single responsibility | Each class does one thing |
+| Clear dependencies | Constructor injection |
+| Interface segregation | No fat interfaces |
+| Method independence | Methods don't depend on call order |
+| Testability | Can mock dependencies |
+
+### Dependency Review
+| Criterion | Check |
+|-----------|-------|
+| No circular deps | A→B→C, not A→B→A |
+| Clear direction | High→Low level |
+| Injectable | Dependencies passed in |
+| Mockable | Interfaces, not concretes |
+
+### Risk Assessment
+| Risk | Impact | Mitigation |
+|------|--------|------------|
+| [Identified risk] | [High/Med/Low] | [Strategy] |
+
+---
+
+## 🔄 SKELETON WORKFLOW
+
+```mermaid
+graph TD
+    A["1. Define Interfaces"] --> B["2. Create Class Skeleton"]
+    B --> C["3. Add Method Stubs"]
+    C --> D["4. Review Architecture"]
+    D --> E{"Issues Found?"}
+    E -->|Yes| F["5. Refactor Skeleton"]
+    F --> D
+    E -->|No| G["6. Implement First Method"]
+    G --> H["7. Test Method"]
+    H --> I{"More Methods?"}
+    I -->|Yes| G
+    I -->|No| J["8. Integration Test"]
+```
+
+---
+
+## ⚠️ ANTI-PATTERNS
+
+### ❌ Don't: Code Without Structure
+```typescript
+// BAD: Jump straight to implementation
+async function doEverything() {
+  // 500 lines of unstructured code
+  // Mixing concerns
+  // No clear architecture
+  // Will need refactoring
+}
+```
+
+### ❌ Don't: Implement All at Once
+```typescript
+// BAD: Implement entire class in one go
+class Storage {
+  async addItem() { /* 100 lines */ }
+  async getItem() { /* 80 lines */ }
+  async deleteItem() { /* 60 lines */ }
+  // AI loses focus, quality drops
+}
+```
+
+### ✅ Do: Skeleton Then Iterate
+```typescript
+// GOOD: Skeleton first
+class Storage {
+  async addItem() { throw new Error('Not implemented'); }
+  async getItem() { throw new Error('Not implemented'); }
+  async deleteItem() { throw new Error('Not implemented'); }
+}
+
+// Then implement one at a time
+// Chat 1: Implement addItem
+// Chat 2: Implement getItem
+// Chat 3: Implement deleteItem
+```
+
+---
+
+## 📋 SKELETON REVIEW TEMPLATE
+
+```markdown
+## Architecture Review: [Module Name]
+
+### 1. Interface Design
+- [ ] All public methods defined
+- [ ] Clear input/output types
+- [ ] Error handling strategy defined
+- [ ] No god interfaces (too many methods)
+
+### 2. Class Structure
+- [ ] Single responsibility per class
+- [ ] Dependencies injected via constructor
+- [ ] No hidden/global state
+- [ ] Methods are stateless where possible
+
+### 3. Dependencies
+- [ ] No circular dependencies
+- [ ] Clear dependency direction
+- [ ] All dependencies mockable
+- [ ] Dependency count reasonable (≤5)
+
+### 4. Method Design
+- [ ] Each method < 50 lines expected
+- [ ] Clear input→output transformation
+- [ ] Side effects documented
+- [ ] Error cases handled
+
+### 5. Risks
+| Risk | Impact | Mitigation |
+|------|--------|------------|
+| | | |
+
+### Verdict
+- [ ] ✅ APPROVED - Ready for implementation
+- [ ] ⚠️ MINOR ISSUES - Address before implementation
+- [ ] ❌ MAJOR ISSUES - Redesign required
+
+### Notes
+[Any additional observations or recommendations]
+```
+
+---
+
+## ✅ VERIFICATION CHECKLIST
+
+Before starting implementation:
+
+```
+□ All interfaces defined
+□ All classes stubbed
+□ All methods have signatures
+□ Architecture reviewed
+□ No circular dependencies
+□ Each class has single responsibility
+□ Dependencies are injectable
+□ Error handling strategy defined
+□ Implementation order decided
+```
+
+---
+
+*Structure first, code second. Architecture errors are expensive to fix.*

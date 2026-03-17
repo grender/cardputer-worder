@@ -1,0 +1,36 @@
+---
+description: Code Simplifier rules for COMPLIANCE step 2 (Cursor adapter to canonical spec)
+globs: compliance-code-simplifier.mdc
+alwaysApply: false
+---
+
+# COMPLIANCE: CODE SIMPLIFIER (Step 2)
+
+**Self-contained in .cursor.** Project standards: use project style-guide or .cursor rules if present.
+
+## Scope
+
+Apply only to **recently modified code** (files from Git diff or Memory Bank change set). Do not refactor the entire codebase.
+
+## Principles
+
+1. **Preserve functionality** — Do not change what the code does; only how it does it.
+2. **Apply project standards** — Use project style guide (e.g. style-guide.md in project) if present; otherwise follow `.cursor` rules and project conventions (imports, naming, error handling).
+3. **Enhance clarity** — Reduce nesting; eliminate redundant code; clear variable/function names; **no nested ternaries** (prefer switch or if/else); choose clarity over brevity.
+4. **Maintain balance** — Avoid over-simplification; do not combine too many concerns; keep code debuggable and extendable.
+5. **Scope** — Focus on recently modified code only unless the user instructs otherwise.
+
+## Process
+
+1. Identify recently modified code sections (from compliance workflow step 1 output).
+2. Analyze for clarity and consistency opportunities.
+3. Apply project standards and the principles above.
+4. Ensure functionality remains unchanged.
+5. Document only significant changes in the compliance report (Step 2 summary).
+
+## Do not
+
+- Change behaviour or outputs.
+- Use nested ternaries or overly dense one-liners.
+- Remove helpful abstractions that improve organization.
+- Expand scope beyond recently modified code without explicit instruction.

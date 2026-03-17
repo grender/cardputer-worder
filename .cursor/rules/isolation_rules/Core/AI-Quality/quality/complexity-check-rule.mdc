@@ -1,0 +1,316 @@
+---
+description: Rule #12 - Complexity Check - Verify AI can solve before starting
+globs: quality/complexity-check-rule.mdc
+alwaysApply: false
+---
+
+# RULE #12: COMPLEXITY CHECK
+
+> **Goal:** Verify task is solvable by AI before starting. Don't waste time on impossible tasks.
+
+## 🎯 CORE PRINCIPLE
+
+**Before starting, verify: Can AI actually solve this? Are dependencies clear? Is success measurable?**
+
+Some tasks are beyond AI capability. Identify them early to adjust approach or involve humans.
+
+---
+
+## 📋 RULE SPECIFICATION
+
+```yaml
+COMPLEXITY_CHECK_RULE:
+  when: "Before starting ANY task"
+  questions:
+    - solvable: "Can AI solve this in one session?"
+    - dependencies: "Are all dependencies known?"
+    - success: "Is there clear success criteria (tests)?"
+    - volume: "Is code volume reasonable (<500 lines)?"
+    - novelty: "Not too many new concepts at once?"
+  outcomes:
+    - PROCEED: "All questions answered YES"
+    - DECOMPOSE: "Task too large, break down"
+    - HUMAN_INPUT: "Need human for critical parts"
+    - CREATIVE_PHASE: "Need design decisions first"
+```
+
+---
+
+## ✅ THE SOLVABILITY CHECKLIST
+
+```markdown
+## Complexity Check: [Task Name]
+
+### 1. SOLVABILITY
+Can AI solve this in one focused session?
+- [ ] Task is well-defined
+- [ ] No ambiguous requirements
+- [ ] No research needed during implementation
+- [ ] Similar problems solved before
+
+### 2. DEPENDENCIES
+Are all inputs and dependencies known?
+- [ ] Input data format is specified
+- [ ] Output format is specified
+- [ ] External services documented
+- [ ] No unknown APIs to learn
+
+### 3. SUCCESS CRITERIA
+Can success be objectively measured?
+- [ ] Tests can be written
+- [ ] Expected outputs are concrete
+- [ ] Edge cases are defined
+- [ ] No subjective criteria ("good performance")
+
+### 4. VOLUME
+Is the implementation size reasonable?
+- [ ] Estimated < 500 lines of new code
+- [ ] Fits in one context window
+- [ ] Can be reviewed in one pass
+- [ ] No massive data structures
+
+### 5. NOVELTY
+Are concepts familiar enough?
+- [ ] Using known languages/frameworks
+- [ ] No bleeding-edge technologies
+- [ ] Pattern is well-established
+- [ ] Documentation exists for tools used
+
+### VERDICT
+- [ ] ✅ PROCEED - Task is solvable
+- [ ] ⚠️ DECOMPOSE - Break into smaller tasks
+- [ ] 🧑 HUMAN INPUT - Need human for parts
+- [ ] 🎨 CREATIVE FIRST - Need design decisions
+```
+
+---
+
+## 🚩 RED FLAGS (Too Complex)
+
+### Instant Red Flags
+These phrases indicate task is too complex:
+
+```
+❌ "Implement entire [system]"
+   → Break into components
+
+❌ "Optimize [complex algorithm]"
+   → Need benchmarks and profiling first
+
+❌ "Create [ML model] from scratch"
+   → Need specialized tools/expertise
+
+❌ "Redesign entire architecture"
+   → Need creative phase and planning
+
+❌ "Make it like [complex product]"
+   → Need feature breakdown
+
+❌ "Handle all edge cases"
+   → Need specific edge case list
+
+❌ "Make it production-ready"
+   → Vague, need specific criteria
+```
+
+### Complexity Indicators
+
+| Indicator | Score | Action |
+|-----------|-------|--------|
+| Clear single function | 1 | ✅ Proceed |
+| Multiple related methods | 2 | ✅ Proceed |
+| New class/module | 3 | ⚠️ Consider skeleton first |
+| Integration with external | 4 | ⚠️ Need API docs |
+| Multiple new concepts | 5 | ⚠️ Break down |
+| Architecture change | 6+ | 🎨 Creative phase first |
+
+---
+
+## ✅ APPROPRIATE SCOPE EXAMPLES
+
+### ✅ Good: Solvable Tasks
+
+```markdown
+✅ "Implement addItem() method that inserts to database"
+   - Single method, clear input/output
+   - Database pattern is standard
+   - Tests can verify
+
+✅ "Create Storage interface with CRUD operations"
+   - Known pattern (CRUD)
+   - Interface is documentation
+   - No implementation logic
+
+✅ "Add validation to email field"
+   - Single responsibility
+   - Regex patterns are known
+   - Easy to test
+
+✅ "Fix null pointer in getUserById()"
+   - Specific location
+   - Clear bug
+   - Easy to verify fix
+```
+
+### ❌ Bad: Unsolvable as Single Task
+
+```markdown
+❌ "Build a social media platform"
+   → Needs months of work, many features
+
+❌ "Write a compiler for this language"
+   → Extremely complex, specialized knowledge
+
+❌ "Make the app 10x faster"
+   → Need profiling, benchmarks, analysis first
+
+❌ "Implement authentication"
+   → Vague: OAuth? SAML? JWT? Password?
+```
+
+---
+
+## 📊 DECISION MATRIX
+
+```
+                    DEPENDENCIES
+                    Clear   Unclear
+SCOPE         ─────────────────────────
+Small         │ ✅ GO   │ ⚠️ CLARIFY │
+              │         │            │
+Large         │ ✅ DECOMPOSE │ 🎨 CREATIVE │
+              │              │            │
+─────────────────────────────────────────
+```
+
+### Decision Flow
+
+```
+1. Is scope small and clear?
+   YES → Check dependencies
+   NO  → Decompose first
+
+2. Are dependencies clear?
+   YES → Check success criteria
+   NO  → Clarify before starting
+
+3. Is success measurable?
+   YES → PROCEED
+   NO  → Define tests/DoD first
+```
+
+---
+
+## 🔧 WHEN TO DECOMPOSE
+
+### Signs You Need to Break Down
+
+```markdown
+DECOMPOSE WHEN:
+├── Task has "and" in description
+│   → "Implement auth AND authorization AND logging"
+│   → 3 separate tasks
+│
+├── Multiple files affected
+│   → "Update all services to use new pattern"
+│   → One service at a time
+│
+├── Estimated > 500 lines
+│   → Break into ~100-line chunks
+│
+├── Multiple unknown APIs
+│   → Learn one API first, then use it
+│
+└── Requires research
+    → Research task, then implementation task
+```
+
+### Decomposition Template
+
+```markdown
+## Original Task
+[Large task description]
+
+## Decomposed Tasks
+
+### Task 1: [Foundation]
+- What: [Specific deliverable]
+- Size: ~100 lines
+- Dependencies: None
+
+### Task 2: [Core Logic]
+- What: [Specific deliverable]
+- Size: ~150 lines
+- Dependencies: Task 1
+
+### Task 3: [Integration]
+- What: [Specific deliverable]
+- Size: ~100 lines
+- Dependencies: Tasks 1, 2
+```
+
+---
+
+## ⚠️ ANTI-PATTERNS
+
+### ❌ Don't: Skip the Check
+```markdown
+"Just start coding, we'll figure it out"
+→ Wasted time on impossible tasks
+```
+
+### ❌ Don't: Optimistic Estimation
+```markdown
+"This should be simple..."
+→ Usually isn't. Do the checklist.
+```
+
+### ❌ Don't: Ignore Red Flags
+```markdown
+"I know it's complex, but let's try anyway"
+→ Set up for failure. Decompose first.
+```
+
+### ✅ Do: Honest Assessment
+```markdown
+"Let me check if this is actually solvable..."
+→ Run the checklist, make informed decision
+```
+
+---
+
+## 📋 QUICK REFERENCE
+
+```
+BEFORE STARTING ANY TASK:
+
+1. Can AI solve in one session? [Y/N]
+2. Are dependencies clear? [Y/N]
+3. Is success measurable (tests)? [Y/N]
+4. Is code volume < 500 lines? [Y/N]
+5. Are concepts familiar? [Y/N]
+
+ALL YES → Proceed
+ANY NO  → Address before starting
+```
+
+---
+
+## ✅ VERIFICATION CHECKLIST
+
+Before starting implementation:
+
+```
+□ Solvability checklist completed
+□ No red flags present
+□ Dependencies are documented
+□ Success criteria (tests) exist
+□ Volume estimate is reasonable
+□ Task is appropriately scoped
+□ If too complex: decomposed into subtasks
+□ If unclear: got human input
+```
+
+---
+
+*Know if you can win before you fight. Check complexity first.*

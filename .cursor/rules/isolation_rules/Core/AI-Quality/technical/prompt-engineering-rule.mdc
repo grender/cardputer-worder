@@ -1,0 +1,393 @@
+---
+description: Rule #15 - Prompt Engineering - Structure prompts for maximum AI effectiveness
+globs: technical/prompt-engineering-rule.mdc
+alwaysApply: false
+---
+
+# RULE #15: PROMPT ENGINEERING
+
+> **Goal:** Maximize AI output quality through structured, focused prompts with clear context and expectations.
+
+## 🎯 CORE PRINCIPLE
+
+**Structure prompts with: Context → Task → Expected Results → DoD → Boundaries.**
+
+Good prompts produce good results. Bad prompts produce hallucinations and waste.
+
+---
+
+## 📋 RULE SPECIFICATION
+
+```yaml
+PROMPT_RULE:
+  structure:
+    1: "Context (what AI needs to know)"
+    2: "Task (specific action to perform)"
+    3: "Expected Results (concrete examples)"
+    4: "Definition of Done (success criteria)"
+    5: "Boundaries (what NOT to do)"
+  limits:
+    - max_words: 500
+    - max_context: "Essential only"
+    - specificity: "Concrete, not vague"
+  anti_patterns:
+    - vague_requests: "Make it better"
+    - massive_context: "Here's 10,000 lines"
+    - no_examples: "Handle edge cases"
+```
+
+---
+
+## ✅ PROMPT STRUCTURE
+
+### The 5-Part Prompt
+
+```markdown
+## 1. CONTEXT
+[Brief background - what AI needs to know]
+[Reference Memory Bank if detailed context exists]
+
+## 2. TASK
+[Specific, focused action to perform]
+[One thing at a time]
+
+## 3. EXPECTED RESULTS
+[Concrete examples with inputs/outputs]
+[Happy path and edge cases]
+
+## 4. DEFINITION OF DONE
+[Explicit, testable success criteria]
+[Checklist format]
+
+## 5. BOUNDARIES
+[What NOT to do]
+[Scope limitations]
+```
+
+---
+
+## 📋 PROMPT TEMPLATES
+
+### Implementation Prompt
+
+```markdown
+## Context
+Module: User authentication
+File: /src/auth/validate.ts
+Related: See Memory Bank auth-overview
+
+## Task
+Implement validateToken() method.
+
+## Expected Results
+- Valid token → returns {valid: true, userId: "123"}
+- Expired token → throws TokenExpiredError
+- Invalid token → throws InvalidTokenError
+
+## Definition of Done
+- [ ] All 3 test cases pass
+- [ ] Method < 30 lines
+- [ ] Errors have clear messages
+
+## Boundaries
+- NOT implementing token refresh (separate task)
+- NOT changing JWT library
+- NOT adding new dependencies
+```
+
+### Test Writing Prompt
+
+```markdown
+## Context
+Testing addLike() method in /src/services/likes.ts
+
+## Task
+Write comprehensive tests for addLike(videoId, ipAddress).
+
+## Expected Behavior
+- Returns {added: true, count: N} for new like
+- Returns {added: false, count: N} for duplicate
+- Handles 100 concurrent requests correctly
+
+## Definition of Done
+- [ ] Happy path test
+- [ ] Duplicate detection test
+- [ ] Concurrency test (100 simultaneous)
+- [ ] Error handling tests
+
+## Boundaries
+- Test addLike() ONLY
+- Don't test removeLike() (different task)
+```
+
+### Review Prompt
+
+```markdown
+## Context
+Reviewing newly implemented addLike() method.
+
+## Task
+Review this method for correctness and quality.
+
+## Code
+```typescript
+[paste code here]
+```
+
+## Related Tests
+```typescript
+[paste tests here]
+```
+
+## Review Criteria
+- Logic correctness
+- Edge case handling
+- Code quality (< 50 lines, < 9 objects)
+- Security concerns
+
+## Boundaries
+- Review this method ONLY
+- Don't suggest features
+- Don't refactor surrounding code
+```
+
+### Debug Prompt
+
+```markdown
+## Context
+Bug in addLike() - duplicates appearing despite dedup logic.
+
+## Symptoms
+- Single user, multiple clicks
+- Database shows 3 likes from same IP
+- Expected: 1 like only
+
+## Relevant Code
+```typescript
+[paste addLike implementation]
+```
+
+## Task
+Find the bug and explain the fix.
+
+## Boundaries
+- Focus on dedup issue only
+- Don't refactor unrelated code
+- Don't add features
+```
+
+---
+
+## 📊 GOOD vs BAD PROMPTS
+
+### ❌ BAD: Vague
+
+```markdown
+"Make the authentication better"
+
+Problems:
+- What does "better" mean?
+- Which part of auth?
+- No success criteria
+```
+
+### ✅ GOOD: Specific
+
+```markdown
+"Implement validateToken() that:
+- Returns userId for valid tokens
+- Throws TokenExpiredError for expired
+- Throws InvalidTokenError for malformed
+
+Tests must pass. Method < 30 lines."
+```
+
+### ❌ BAD: Too Much Context
+
+```markdown
+"Here's our entire codebase (50,000 lines).
+Fix the bug somewhere in auth."
+
+Problems:
+- Overwhelms context window
+- No focus
+- AI gets lost
+```
+
+### ✅ GOOD: Focused Context
+
+```markdown
+"Bug in /src/auth/validate.ts line 45.
+Token validation fails for tokens with special chars.
+Here's the relevant 20 lines: [code]
+Fix the regex."
+```
+
+### ❌ BAD: No Examples
+
+```markdown
+"Handle all the edge cases"
+
+Problems:
+- Which edge cases?
+- What's expected behavior?
+- How to verify?
+```
+
+### ✅ GOOD: Concrete Examples
+
+```markdown
+"Handle these edge cases:
+- Null input → throw 'Input required'
+- Empty string → throw 'Input cannot be empty'
+- String > 1000 chars → throw 'Input too long'"
+```
+
+---
+
+## 📋 PROMPT QUALITY CHECKLIST
+
+Before sending a prompt:
+
+```markdown
+PROMPT REVIEW CHECKLIST
+
+□ Is the task specific and focused?
+□ Is context minimal but sufficient?
+□ Are expected results concrete (examples)?
+□ Is DoD testable and explicit?
+□ Are boundaries clear (what NOT to do)?
+□ Is prompt < 500 words?
+□ Would I know if response is correct?
+```
+
+---
+
+## 🔧 PROMPT OPTIMIZATION
+
+### Reduce Context
+
+```markdown
+# Before (too much)
+"Here's our entire user service (500 lines)..."
+
+# After (focused)
+"In UserService.validateEmail() method (lines 45-60):
+```typescript
+[just the relevant code]
+```
+Fix the regex to accept + in emails."
+```
+
+### Add Examples
+
+```markdown
+# Before (vague)
+"Validate user input"
+
+# After (concrete)
+"Validate user input:
+- 'john@example.com' → valid
+- 'not-an-email' → invalid: 'Invalid email format'
+- '' → invalid: 'Email required'"
+```
+
+### Set Boundaries
+
+```markdown
+# Before (open-ended)
+"Implement authentication"
+
+# After (bounded)
+"Implement password login only.
+NOT: OAuth, SSO, 2FA, password reset.
+These are separate tasks."
+```
+
+---
+
+## 📊 PROMPT SIZE GUIDELINES
+
+| Element | Target | Max |
+|---------|--------|-----|
+| Context | 50-100 words | 200 words |
+| Task | 20-50 words | 100 words |
+| Examples | 3-5 cases | 10 cases |
+| DoD | 3-5 items | 10 items |
+| Boundaries | 3-5 items | 10 items |
+| **Total** | **200-400 words** | **500 words** |
+
+---
+
+## ⚠️ ANTI-PATTERNS
+
+### ❌ Vague Requests
+```
+"Make it work"
+"Fix the bugs"
+"Improve performance"
+```
+
+### ❌ Massive Context
+```
+"Here's everything: [10,000 lines]"
+"Read all these files first"
+```
+
+### ❌ No Success Criteria
+```
+"Implement feature X"
+(How do I know when it's done?)
+```
+
+### ❌ No Boundaries
+```
+"Build authentication"
+(What scope? Full OAuth? Just login?)
+```
+
+### ✅ Good Practice
+```
+Specific task + Focused context + Examples + DoD + Boundaries
+```
+
+---
+
+## 📋 QUICK REFERENCE
+
+```
+PROMPT STRUCTURE:
+1. Context (minimal, relevant)
+2. Task (specific, single focus)
+3. Examples (concrete input→output)
+4. DoD (testable checklist)
+5. Boundaries (what NOT to do)
+
+KEEP IT:
+├── Specific (not vague)
+├── Focused (one thing)
+├── Concrete (with examples)
+├── Bounded (what's out)
+└── Brief (< 500 words)
+```
+
+---
+
+## ✅ VERIFICATION CHECKLIST
+
+Before submitting prompt:
+
+```
+□ Task is specific and single-focused
+□ Context is minimal but sufficient
+□ Examples are concrete (input → output)
+□ DoD is testable
+□ Boundaries are explicit
+□ Total length < 500 words
+□ I can verify if response is correct
+□ No vague words ("better", "proper", "good")
+```
+
+---
+
+*The quality of AI output is directly proportional to prompt quality.*

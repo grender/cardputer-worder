@@ -1,0 +1,291 @@
+---
+description: Automatic Task Numbering System for VAN Mode
+globs: task-numbering-system.mdc
+alwaysApply: true
+---
+
+# TASK NUMBERING SYSTEM
+
+## 🚨 CRITICAL REQUIREMENT
+
+**In VAN mode, when initializing a new task, the system MUST automatically assign a unique task number if the user has not provided one in the prompt.**
+
+## 📋 NUMBERING FORMAT
+
+Task numbers follow this format:
+
+```
+[PREFIX]-[NUMBER]
+```
+
+Where:
+- **PREFIX**: Short code representing department/domain (e.g., DEV, FIN, MARKET, CREATIVE, DESIGN, QA, RESEARCH)
+- **NUMBER**: 4-digit sequential number with leading zeros (e.g., 0001, 0053, 0123)
+
+**Examples:**
+- `DEV-0053`
+- `FIN-0001`
+- `MARKET-0042`
+- `CREATIVE-0015`
+- `DESIGN-0023`
+- `QA-0008`
+- `RESEARCH-0012`
+
+## 🔍 PREFIX DETERMINATION
+
+The system determines the task prefix based on:
+
+1. **User-provided prefix** (if explicitly mentioned in prompt)
+2. **Task content analysis** (keywords, domain, context)
+3. **Default prefix** (DEV if no clear match)
+
+### Prefix Categories
+
+| Prefix | Domain | Keywords/Indicators |
+|--------|--------|---------------------|
+| **DEV** | Development | code, implement, feature, bug fix, technical, API, backend, frontend, database, server, client |
+| **FIN** | Finance | payment, billing, invoice, transaction, financial, money, cost, price, revenue |
+| **MARKET** | Marketing | campaign, marketing, promotion, advertisement, SEO, analytics, conversion, user acquisition |
+| **CREATIVE** | Creative | design, creative, content, copywriting, branding, visual, graphics, media |
+| **DESIGN** | Design | UI, UX, interface, layout, mockup, wireframe, prototype, user experience |
+| **QA** | Quality Assurance | test, testing, QA, quality, validation, verification, bug, issue, defect |
+| **RESEARCH** | Research | research, analysis, investigation, study, data analysis, metrics, insights |
+
+### Prefix Detection Logic
+
+```mermaid
+graph TD
+    Start["New Task"] --> UserPrefix{"User Provided<br>Prefix?"}
+    UserPrefix -->|Yes| UseUserPrefix["Use User Prefix"]
+    UserPrefix -->|No| AnalyzeContent["Analyze Task Content"]
+    
+    AnalyzeContent --> CheckKeywords["Check Keywords"]
+    CheckKeywords --> MatchPrefix{"Match Found?"}
+    MatchPrefix -->|Yes| UseMatchedPrefix["Use Matched Prefix"]
+    MatchPrefix -->|No| UseDefault["Use DEV (Default)"]
+    
+    UseUserPrefix --> GenerateNumber["Generate Next Number"]
+    UseMatchedPrefix --> GenerateNumber
+    UseDefault --> GenerateNumber
+    
+    GenerateNumber --> AssignTaskID["Assign Task ID"]
+    
+    style Start fill:#4da6ff,stroke:#0066cc,color:white
+    style GenerateNumber fill:#10b981,stroke:#059669,color:white
+    style AssignTaskID fill:#d94dbb,stroke:#a3378a,color:white
+```
+
+## 🔢 NUMBER GENERATION
+
+### Process
+
+1. **Scan existing tasks** in `memory-bank/tasks.md`
+2. **Scan archived tasks** in `memory-bank/archive/archive-*.md`
+3. **Find all tasks** with the same prefix
+4. **Extract numbers** from task IDs (e.g., `DEV-0053` → `53`)
+5. **Find maximum number** for the prefix
+6. **Generate next number** (max + 1, formatted as 4-digit with leading zeros)
+
+### Number Generation Algorithm
+
+```typescript
+function generateTaskNumber(prefix: string): string {
+  // 1. Read tasks.md
+  const tasksContent = readFile('memory-bank/tasks.md');
+  
+  // 2. Read all archive files
+  const archiveFiles = glob('memory-bank/archive/archive-*.md');
+  
+  // 3. Extract all task IDs with matching prefix
+  const taskIds = extractTaskIds(tasksContent, archiveFiles, prefix);
+  
+  // 4. Extract numbers from task IDs
+  const numbers = taskIds
+    .map(id => {
+      const match = id.match(new RegExp(`^${prefix}-(\\d+)$`));
+      return match ? parseInt(match[1], 10) : null;
+    })
+    .filter(num => num !== null);
+  
+  // 5. Find maximum number
+  const maxNumber = numbers.length > 0 ? Math.max(...numbers) : 0;
+  
+  // 6. Generate next number (4-digit with leading zeros)
+  const nextNumber = (maxNumber + 1).toString().padStart(4, '0');
+  
+  return `${prefix}-${nextNumber}`;
+}
+```
+
+### Example
+
+If existing tasks are:
+- `DEV-0001`
+- `DEV-0005`
+- `DEV-0053`
+- `DEV-0123`
+
+The next task will be assigned: `DEV-0124`
+
+## 🔄 INTEGRATION WITH VAN MODE
+
+### VAN Mode Initialization Flow
+
+```mermaid
+graph TD
+    Start["VAN Mode Start"] --> ParsePrompt["Parse User Prompt"]
+    ParsePrompt --> CheckTaskID{"Task ID<br>in Prompt?"}
+    
+    CheckTaskID -->|Yes| ValidateFormat["Validate Format"]
+    CheckTaskID -->|No| DeterminePrefix["Determine Prefix"]
+    
+    ValidateFormat --> ValidFormat{"Valid<br>Format?"}
+    ValidFormat -->|Yes| UseProvidedID["Use Provided ID"]
+    ValidFormat -->|No| DeterminePrefix
+    
+    DeterminePrefix --> AnalyzeContent["Analyze Task Content"]
+    AnalyzePrefix --> GenerateNumber["Generate Next Number"]
+    GenerateNumber --> AssignTaskID["Assign Task ID"]
+    
+    UseProvidedID --> UpdateTasksMD["Update tasks.md"]
+    AssignTaskID --> UpdateTasksMD
+    
+    UpdateTasksMD --> UpdateActiveContext["Update activeContext.md"]
+    UpdateActiveContext --> ContinueVAN["Continue VAN Process"]
+    
+    style Start fill:#4da6ff,stroke:#0066cc,color:white
+    style GenerateNumber fill:#10b981,stroke:#059669,color:white
+    style AssignTaskID fill:#d94dbb,stroke:#a3378a,color:white
+```
+
+### VAN Mode Implementation Steps
+
+When initializing a new task in VAN mode:
+
+1. **Parse user prompt** for task ID
+   - Look for patterns: `[PREFIX]-[NUMBER]`, `TASK-ID:`, `Task ID:`, etc.
+   - Check if user explicitly provided a task number
+
+2. **If task ID found in prompt:**
+   - Validate format (must match `[PREFIX]-[4-digit-number]`)
+   - If valid, use provided ID
+   - If invalid, proceed to auto-generation
+
+3. **If task ID NOT found:**
+   - Determine prefix from task content
+   - Scan existing tasks for same prefix
+   - Generate next sequential number
+   - Assign task ID
+
+4. **Update Memory Bank:**
+   - Add task to `tasks.md` with assigned ID
+   - Update `activeContext.md` with current task ID
+   - Set status to "in_progress"
+
+## 📝 TASK ID VALIDATION
+
+### Valid Formats
+
+✅ **Valid:**
+- `DEV-0053`
+- `FIN-0001`
+- `MARKET-0042`
+- `QA-0008`
+
+❌ **Invalid:**
+- `DEV-53` (missing leading zeros)
+- `dev-0053` (lowercase prefix)
+- `DEV-0053-EXTRA` (extra suffix)
+- `0053` (missing prefix)
+- `DEV-53-EXTRA` (invalid format)
+
+### Validation Rules
+
+1. Prefix must be uppercase letters (2-10 characters)
+2. Number must be exactly 4 digits with leading zeros
+3. Format: `[PREFIX]-[NUMBER]` (single hyphen separator)
+4. No additional suffixes or prefixes allowed
+
+## 🔍 TASK ID EXTRACTION
+
+### From tasks.md
+
+Extract task IDs from patterns:
+- `## Task ID: [ID]`
+- `## [ID]: [Title]`
+- `**Task ID:** [ID]`
+- `Task ID: [ID]`
+
+### From Archive Files
+
+Extract task IDs from patterns:
+- `# TASK ARCHIVE: [ID]`
+- `- **Task ID**: [ID]`
+- `## Archive: [ID]`
+
+## 🚨 ERROR HANDLING
+
+### Duplicate Task ID
+
+If generated ID already exists:
+```
+⚠️ WARNING: Task ID [PREFIX]-[NUMBER] already exists
+Generating next available number...
+→ Assigned: [PREFIX]-[NEXT_NUMBER]
+```
+
+### Invalid User-Provided ID
+
+If user provides invalid format:
+```
+⚠️ Invalid task ID format: [PROVIDED_ID]
+Expected format: [PREFIX]-[4-digit-number] (e.g., DEV-0053)
+Auto-generating task ID based on task content...
+→ Assigned: [GENERATED_ID]
+```
+
+### Prefix Not Found
+
+If prefix cannot be determined:
+```
+ℹ️ Could not determine task prefix from content
+Using default prefix: DEV
+→ Assigned: DEV-[NUMBER]
+```
+
+## 📋 IMPLEMENTATION CHECKLIST
+
+When implementing task numbering in VAN mode:
+
+- [ ] Parse user prompt for task ID
+- [ ] Validate user-provided task ID format
+- [ ] Implement prefix detection from task content
+- [ ] Scan existing tasks in tasks.md
+- [ ] Scan archived tasks in archive/ directory
+- [ ] Extract all task IDs with matching prefix
+- [ ] Find maximum number for prefix
+- [ ] Generate next sequential number (4-digit)
+- [ ] Assign task ID to new task
+- [ ] Update tasks.md with new task
+- [ ] Update activeContext.md with current task ID
+- [ ] Log task ID assignment for user
+
+## 🎯 BENEFITS
+
+1. **Automatic Numbering**: No manual task ID assignment needed
+2. **Consistency**: Uniform format across all tasks
+3. **Uniqueness**: Guaranteed unique task IDs
+4. **Traceability**: Easy to track task sequence
+5. **Organization**: Clear categorization by prefix
+
+## 📚 RELATED RULES
+
+- `task-context-tracking.mdc` - Task context tracking
+- `van-mode-map.mdc` - VAN mode initialization
+- `memory-bank-paths.mdc` - Memory Bank file locations
+- `main.mdc` - Memory Bank system overview
+
+---
+
+**Last Updated:** 2025-12-14
+**Version:** 2.0.0

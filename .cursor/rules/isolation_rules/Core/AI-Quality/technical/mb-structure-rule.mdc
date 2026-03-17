@@ -1,0 +1,360 @@
+---
+description: Rule #14 - Memory Bank Structure - Organize context hierarchically
+globs: technical/mb-structure-rule.mdc
+alwaysApply: false
+---
+
+# RULE #14: MEMORY BANK STRUCTURE
+
+> **Goal:** Optimize context usage by organizing information hierarchically with appropriate detail levels.
+
+## 🎯 CORE PRINCIPLE
+
+**Organize context hierarchically: less detail for broader scope, more detail for narrower focus.**
+
+Don't dump everything into context. Structure information so AI loads only what it needs.
+
+---
+
+## 📋 RULE SPECIFICATION
+
+```yaml
+MB_STRUCTURE_RULE:
+  hierarchy:
+    - project_level: "High-level overview, technologies, purpose"
+    - module_level: "Module interfaces, key functions, patterns"
+    - file_level: "Detailed implementation, edge cases, algorithms"
+  principle: "Broader scope = less detail"
+  format: "Nested summaries with progressive detail"
+  benefit: "70% token reduction, better context relevance"
+```
+
+---
+
+## 📊 HIERARCHY PRINCIPLE
+
+```
+                    DETAIL LEVEL
+SCOPE               Low ◀─────────────▶ High
+────────────────────────────────────────────
+Full Project        ████░░░░░░░░░░░░░░░░░
+                    Technologies, purpose
+                    
+Module/Folder       ████████░░░░░░░░░░░░░
+                    Interfaces, key functions
+                    
+Specific File       ████████████████░░░░░
+                    Implementation details
+                    
+Single Method       ████████████████████
+                    Full code, edge cases
+```
+
+---
+
+## ✅ MEMORY BANK FILE STRUCTURE
+
+### Standard Structure
+
+```
+memory-bank/
+├── tasks.md              # Active task (highest detail)
+├── activeContext.md      # Current focus
+├── progress.md           # Status tracking
+├── projectbrief.md       # Project overview (high level)
+├── productContext.md     # Product info
+├── systemPatterns.md     # Patterns used
+├── techContext.md        # Tech decisions
+├── style-guide.md        # Code standards
+├── creative/             # Design decisions
+│   └── creative-[name].md
+├── reflection/           # Review learnings
+│   └── reflection-[id].md
+└── archive/              # Completed tasks
+    └── archive-[id].md
+```
+
+### Detail by File Type
+
+| File | Scope | Detail Level | Token Target |
+|------|-------|--------------|--------------|
+| projectbrief.md | Entire project | Low | 500-1000 |
+| productContext.md | Product features | Low-Medium | 500-800 |
+| systemPatterns.md | Architecture | Medium | 800-1200 |
+| techContext.md | Technology | Medium | 800-1200 |
+| activeContext.md | Current focus | Medium-High | 500-1000 |
+| tasks.md | Active task | High | 1000-2000 |
+| creative/*.md | Design decision | High | 1000-1500 |
+
+---
+
+## 📋 FILE TEMPLATES
+
+### projectbrief.md (Low Detail)
+
+```markdown
+# Project Brief
+
+## Overview
+[1-2 sentences: What is this project?]
+
+## Purpose
+[1-2 sentences: Why does it exist?]
+
+## Technology Stack
+- Language: [e.g., TypeScript]
+- Framework: [e.g., Node.js/Express]
+- Database: [e.g., PostgreSQL]
+- Testing: [e.g., Jest]
+
+## Key Modules
+- /src/auth - Authentication
+- /src/api - REST endpoints
+- /src/db - Database access
+
+## Current Phase
+[Planning / Implementation / Testing / Maintenance]
+
+## Key Contacts
+- Tech Lead: [Name]
+- Product: [Name]
+```
+
+### activeContext.md (Medium Detail)
+
+```markdown
+# Active Context
+
+## Current Focus
+[What we're working on RIGHT NOW]
+
+## Working Files
+- /src/services/likes.ts - Like functionality
+- /src/tests/likes.test.ts - Like tests
+
+## Recent Decisions
+- Using PostgreSQL for storage
+- SERIALIZABLE isolation for dedup
+
+## Blockers
+- [None / List blockers]
+
+## Next Steps
+1. [Immediate next action]
+2. [Following action]
+```
+
+### tasks.md (High Detail)
+
+```markdown
+# Active Task
+
+## Task ID: [DEV-XXX]
+
+## Description
+[Detailed task description]
+
+## Requirements
+### Functional
+- [ ] [Specific requirement 1]
+- [ ] [Specific requirement 2]
+
+### Technical
+- [ ] [Technical requirement]
+
+## Implementation Plan
+1. [Step 1]
+2. [Step 2]
+
+## Current Progress
+- [x] Completed item
+- [ ] In progress item
+
+## Notes
+[Implementation details, edge cases, etc.]
+```
+
+---
+
+## 🔄 CONTEXT LOADING STRATEGY
+
+### When Starting New Task
+
+```
+LOAD ORDER:
+1. projectbrief.md      # Understand project
+2. activeContext.md     # Current state
+3. tasks.md             # Task details
+4. [relevant rules]     # If needed
+```
+
+### When Deep in Implementation
+
+```
+LOAD ORDER:
+1. tasks.md             # Task focus
+2. activeContext.md     # Working files
+3. [specific module docs if saved]
+```
+
+### When Reviewing
+
+```
+LOAD ORDER:
+1. tasks.md             # What was built
+2. progress.md          # What's done
+3. [code under review]
+```
+
+---
+
+## 📋 SUMMARY TEMPLATES
+
+### Module Summary
+
+```markdown
+## Module: /src/services/likes
+
+### Purpose
+Handle like/unlike functionality for videos.
+
+### Key Files
+- likes.service.ts - Business logic
+- likes.repository.ts - Database access
+
+### Key Functions
+- addLike(videoId, ip): Add like with dedup
+- getLikeCount(videoId): Get count
+- removeLike(videoId, ip): Remove like
+
+### Dependencies
+- PostgreSQL (likes table)
+- Redis (optional caching)
+
+### Patterns
+- Repository pattern
+- Transaction isolation: SERIALIZABLE
+```
+
+### Feature Summary
+
+```markdown
+## Feature: Like System
+
+### User Story
+As a viewer, I can like videos to show appreciation.
+
+### Capabilities
+- Add like (deduplicated by IP)
+- View like count
+- Remove like
+
+### Constraints
+- One like per IP per video
+- No like spam (rate limited)
+
+### Technical Notes
+- Transaction isolation for concurrency
+- Unique constraint backup
+```
+
+---
+
+## ⚠️ ANTI-PATTERNS
+
+### ❌ Don't: Dump Everything
+```markdown
+# Bad: 50,000 tokens of raw code
+Here's the entire codebase...
+```
+
+### ❌ Don't: No Structure
+```markdown
+# Bad: Random notes
+- talked to John
+- need to fix bug
+- user login thing
+```
+
+### ❌ Don't: Stale Information
+```markdown
+# Bad: Outdated context
+## Active Task: [Completed 3 weeks ago]
+```
+
+### ✅ Do: Structured, Current, Concise
+```markdown
+# Good: Right level of detail
+## Active Task: DEV-123
+### Focus: Implement addLike()
+### Status: Testing phase
+### Files: /src/services/likes.ts
+```
+
+---
+
+## 📊 TOKEN BUDGETING
+
+### Target Allocation
+
+```
+CONTEXT BUDGET: 15,000-30,000 tokens
+
+Project Context:     3,000 tokens
+├── projectbrief.md    500
+├── productContext.md  500
+├── systemPatterns.md  1,000
+└── techContext.md     1,000
+
+Task Context:        5,000 tokens
+├── tasks.md           2,000
+├── activeContext.md   1,000
+└── creative/*.md      2,000
+
+Rules:               5,000 tokens
+├── _principles.mdc    1,000
+├── Category summaries 2,000
+└── Specific rules     2,000
+
+Code:                7,000 tokens
+└── Relevant files
+
+TOTAL:              ~20,000 tokens
+```
+
+---
+
+## 🔄 MAINTENANCE
+
+### Daily
+- Update activeContext.md with current focus
+- Update tasks.md progress
+
+### Per Task
+- Archive completed tasks
+- Create reflection if needed
+
+### Weekly
+- Review and clean old context
+- Update project-level docs if needed
+
+---
+
+## ✅ VERIFICATION CHECKLIST
+
+Memory Bank health check:
+
+```
+□ projectbrief.md is current
+□ activeContext.md reflects NOW
+□ tasks.md has active task only
+□ No stale information
+□ Files are appropriately sized
+□ Hierarchy is maintained
+□ Summaries exist for key modules
+□ Archive is organized
+```
+
+---
+
+*Right information at right detail level = efficient AI assistance.*

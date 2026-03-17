@@ -1,0 +1,289 @@
+---
+description: Rule #5 - Definition of Done - Create explicit completion criteria
+globs: context/dod-rule.mdc
+alwaysApply: false
+---
+
+# RULE #5: DEFINITION OF DONE (DoD)
+
+> **Goal:** Create explicit, testable completion criteria that auto-generate test cases.
+
+## 🎯 CORE PRINCIPLE
+
+**DoD must be so precise that tests can be auto-generated from it.**
+
+If you can't write a test for a DoD criterion, it's too vague.
+
+---
+
+## 📋 RULE SPECIFICATION
+
+```yaml
+DOD_RULE:
+  format: "Checklist with testable criteria"
+  categories:
+    - functional: "What the code must do"
+    - edge_cases: "Boundary conditions to handle"
+    - quality: "Code quality requirements"
+    - documentation: "Documentation requirements"
+  each_item_must_be: "Testable, specific, measurable"
+  auto_generates: "Test cases from DoD items"
+```
+
+---
+
+## ✅ HOW TO APPLY
+
+### Step 1: Write DoD Items
+
+```markdown
+## Definition of Done: Like System
+
+### Functional
+- [ ] addLike(videoId, ip) adds like if not exists from this IP
+- [ ] addLike(videoId, ip) returns {added: true, count: N} on success
+- [ ] addLike(videoId, ip) returns {added: false, count: N} if duplicate
+- [ ] getLikeCount(videoId) returns accurate count
+- [ ] Unlike is not supported (out of scope)
+
+### Edge Cases
+- [ ] Concurrent addLike from same IP results in only 1 like
+- [ ] 100 simultaneous requests from same IP = 1 like total
+- [ ] Empty/null IP returns error
+- [ ] Non-existent videoId creates new record
+
+### Quality
+- [ ] Each method < 50 lines
+- [ ] Test coverage ≥ 80%
+- [ ] Transaction isolation = SERIALIZABLE for addLike
+- [ ] Response time < 100ms (p99)
+
+### Documentation
+- [ ] API documented with examples
+- [ ] Error codes documented
+```
+
+### Step 2: Generate Tests from DoD
+
+```typescript
+// DoD: "addLike(videoId, ip) adds like if not exists from this IP"
+it('should add like if not exists from IP', async () => {
+  const result = await storage.addLike('video1', '192.168.1.1');
+  expect(result.added).toBe(true);
+});
+
+// DoD: "returns {added: true, count: N} on success"
+it('should return added=true and count on success', async () => {
+  const result = await storage.addLike('video1', '192.168.1.1');
+  expect(result).toEqual({ added: true, count: 1 });
+});
+
+// DoD: "returns {added: false, count: N} if duplicate"
+it('should return added=false for duplicate', async () => {
+  await storage.addLike('video1', '192.168.1.1');
+  const result = await storage.addLike('video1', '192.168.1.1');
+  expect(result.added).toBe(false);
+  expect(result.count).toBe(1);
+});
+
+// DoD: "100 simultaneous requests from same IP = 1 like total"
+it('should handle 100 concurrent requests correctly', async () => {
+  const promises = Array(100).fill(null)
+    .map(() => storage.addLike('video1', '192.168.1.1'));
+  await Promise.all(promises);
+  
+  const count = await storage.getLikeCount('video1');
+  expect(count).toBe(1);
+});
+```
+
+---
+
+## 📊 DoD CATEGORIES
+
+### Functional DoD
+What the code must DO.
+
+```markdown
+### Functional
+- [ ] [Action verb] + [specific behavior] + [conditions]
+- [ ] User can [action] when [condition]
+- [ ] System returns [specific output] for [specific input]
+```
+
+### Edge Cases DoD
+Boundary conditions to handle.
+
+```markdown
+### Edge Cases
+- [ ] Handles [boundary value]: [expected behavior]
+- [ ] Concurrent [operation] results in [expected outcome]
+- [ ] Invalid [input type] returns [specific error]
+```
+
+### Quality DoD
+Non-functional requirements.
+
+```markdown
+### Quality
+- [ ] Performance: [metric] < [threshold]
+- [ ] Test coverage: ≥ [percentage]%
+- [ ] Method size: < [N] lines
+- [ ] Security: [specific requirement]
+```
+
+### Documentation DoD
+Documentation requirements.
+
+```markdown
+### Documentation
+- [ ] API endpoints documented
+- [ ] Error codes explained
+- [ ] Examples provided
+- [ ] Changelog updated
+```
+
+---
+
+## 📋 DoD TEMPLATES
+
+### Template: API Endpoint
+
+```markdown
+## DoD: [Endpoint Name]
+
+### Functional
+- [ ] POST /api/[endpoint] accepts [payload structure]
+- [ ] Returns [success response] on valid input
+- [ ] Returns [error response] on invalid input
+- [ ] [Business logic requirement 1]
+- [ ] [Business logic requirement 2]
+
+### Edge Cases
+- [ ] Empty body → 400 Bad Request
+- [ ] Missing required fields → 400 with field list
+- [ ] Duplicate request → [expected behavior]
+- [ ] Unauthorized → 401 Unauthorized
+
+### Quality
+- [ ] Response time < [N]ms
+- [ ] Request validation < [N]ms
+- [ ] Unit test coverage ≥ 80%
+
+### Documentation
+- [ ] OpenAPI spec updated
+- [ ] Example requests/responses
+```
+
+### Template: Data Processing
+
+```markdown
+## DoD: [Process Name]
+
+### Functional
+- [ ] Process [input] produces [output]
+- [ ] [Transformation rule 1]
+- [ ] [Transformation rule 2]
+- [ ] Invalid data is [skipped/logged/rejected]
+
+### Edge Cases
+- [ ] Empty input → [expected output]
+- [ ] Maximum size input → completes in [time]
+- [ ] Partial failure → [recovery behavior]
+
+### Quality
+- [ ] Throughput ≥ [N] items/second
+- [ ] Memory usage < [N]MB
+- [ ] No data corruption
+
+### Documentation
+- [ ] Input format documented
+- [ ] Output format documented
+- [ ] Error handling documented
+```
+
+---
+
+## ⚠️ DoD QUALITY RULES
+
+### ✅ Good DoD Item
+```markdown
+- [ ] addLike(videoId, ip) returns {added: false} if like exists from same IP
+```
+- Specific function name
+- Specific parameters
+- Specific return value
+- Testable condition
+
+### ❌ Bad DoD Item
+```markdown
+- [ ] Like system works correctly
+```
+- Vague
+- No specifics
+- Not testable
+- Subjective
+
+### DoD Item Quality Test
+Ask: "Can I write a test that passes/fails based on this criterion?"
+- YES → Good DoD item
+- NO → Rewrite to be specific
+
+---
+
+## 🔄 DoD → TEST TRANSFORMATION
+
+```
+DoD Item: "Concurrent addLike from same IP results in only 1 like"
+    ↓
+Test Name: "should result in only 1 like for concurrent requests from same IP"
+    ↓
+Test Setup: Create 100 concurrent addLike promises
+    ↓
+Test Action: await Promise.all(promises)
+    ↓
+Test Assert: expect(count).toBe(1)
+```
+
+---
+
+## 📊 DoD VERIFICATION
+
+### Pre-Implementation Verification
+```
+□ Each DoD item is specific
+□ Each DoD item is testable
+□ No vague language ("properly", "correctly", "should work")
+□ All stakeholder requirements covered
+□ Edge cases explicitly listed
+□ Quality requirements measurable
+```
+
+### Post-Implementation Verification
+```
+□ All functional DoD items have passing tests
+□ All edge case DoD items have passing tests
+□ Quality metrics meet requirements
+□ Documentation is complete
+□ DoD checklist is 100% checked
+```
+
+---
+
+## ✅ VERIFICATION CHECKLIST
+
+Before implementation starts:
+
+```
+□ Every DoD item is a testable statement
+□ Every DoD item can generate exactly one test
+□ No subjective criteria (e.g., "good performance")
+□ All boundary conditions are listed
+□ All error conditions are listed
+□ Quality metrics are numeric
+□ Documentation requirements are specific
+```
+
+---
+
+*If you can't test it, you can't done it.*

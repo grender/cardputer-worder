@@ -1,0 +1,427 @@
+---
+description: Mandatory tech stack selection rules based on project type
+globs: tech-stack-selection.mdc
+alwaysApply: false
+---
+
+# TECH STACK SELECTION RULE
+
+> **TL;DR:** When creating a new project, service, or module — select the tech stack STRICTLY based on project type. No guessing, no inventing, no asking. Apply these rules automatically.
+
+## CORE PRINCIPLES
+
+1. Prefer simplicity over complexity.
+2. Prefer performance over convenience.
+3. Prefer widely adopted tools with strong communities.
+4. Do NOT introduce frameworks unless explicitly required.
+5. Do NOT over-engineer.
+6. Always select the stack based on project type.
+7. Always use the latest compatible stable versions.
+8. Always include linting, formatting, and testing.
+9. Always use Docker for backend services.
+
+## STACK SELECTION DECISION TREE
+
+```mermaid
+graph TD
+    Start["NEW PROJECT /<br>SERVICE / MODULE"] --> TypeCheck{"Determine<br>Project Type"}
+    
+    TypeCheck -->|"Static Page"| StaticQ{"Multiple<br>Pages?"}
+    StaticQ -->|"No"| Landing["STATIC LANDING<br>PAGE"]
+    StaticQ -->|"Yes"| MultiPage["STATIC MULTI-PAGE<br>WEBSITE"]
+    
+    TypeCheck -->|"Web Frontend"| WebQ{"SEO<br>Required?"}
+    WebQ -->|"Yes"| WebSEO["WEB FRONTEND<br>(SEO / APP)"]
+    WebQ -->|"No"| SPA["SPA / ADMIN /<br>DASHBOARD"]
+    
+    TypeCheck -->|"API Service"| APILang{"Primary<br>Language?"}
+    APILang -->|"Node.js"| NodeAPI{"Microservice<br>or Simple?"}
+    NodeAPI -->|"Micro"| Micro["MICROSERVICE API"]
+    NodeAPI -->|"Simple"| HighLoad["HIGH-LOAD HTTP API"]
+    APILang -->|"Python"| PyAPI["PYTHON API SERVICE"]
+    
+    TypeCheck -->|"AI / ML"| AIQ{"Pipeline<br>or API?"}
+    AIQ -->|"API"| AIAPI["AI / LLM API SERVICE"]
+    AIQ -->|"Pipeline"| AIPipe["AI PIPELINES /<br>AGENTS / RAG"]
+    
+    TypeCheck -->|"Real-time"| RTQ{"Media or<br>Data?"}
+    RTQ -->|"Chat/Data"| RTChat["REAL-TIME CHAT"]
+    RTQ -->|"Audio/Video"| RTMedia["REAL-TIME<br>AUDIO / VIDEO"]
+    RTQ -->|"WebSocket"| RTWS["WEBSOCKETS-ONLY<br>SERVICE"]
+    
+    TypeCheck -->|"Background"| BGQ{"Language?"}
+    BGQ -->|"Python"| PyWorker["PYTHON WORKERS /<br>JOBS"]
+    BGQ -->|"Any"| BGJob["BACKGROUND JOBS /<br>DATA PROCESSING"]
+    
+    TypeCheck -->|"Event-Driven"| EventDriven["EVENT-DRIVEN<br>ARCHITECTURE"]
+    TypeCheck -->|"Media Processing"| MediaQ{"Streaming<br>or Processing?"}
+    MediaQ -->|"Processing"| FileMedia["FILE / MEDIA<br>PROCESSING"]
+    MediaQ -->|"Streaming"| StreamMedia["STREAMING /<br>MEDIA PLATFORM"]
+    
+    TypeCheck -->|"Monorepo"| Monorepo["MONOREPO /<br>MULTI-APP"]
+    TypeCheck -->|"Auth"| Auth["AUTH / IDENTITY<br>SERVICE"]
+    TypeCheck -->|"Gateway"| Gateway["API GATEWAY / BFF"]
+    TypeCheck -->|"Prototype"| MVP["PROTOTYPING / MVP"]
+    TypeCheck -->|"Search/RAG"| Search["SEARCH / SEMANTIC /<br>RAG API"]
+    
+    style Start fill:#4da6ff,stroke:#0066cc,color:white
+    style TypeCheck fill:#f6546a,stroke:#c30052,color:white
+    style Landing fill:#10b981,stroke:#059669,color:white
+    style MultiPage fill:#10b981,stroke:#059669,color:white
+    style WebSEO fill:#10b981,stroke:#059669,color:white
+    style SPA fill:#10b981,stroke:#059669,color:white
+    style Micro fill:#10b981,stroke:#059669,color:white
+    style HighLoad fill:#10b981,stroke:#059669,color:white
+    style PyAPI fill:#10b981,stroke:#059669,color:white
+    style AIAPI fill:#10b981,stroke:#059669,color:white
+    style AIPipe fill:#10b981,stroke:#059669,color:white
+    style RTChat fill:#10b981,stroke:#059669,color:white
+    style RTMedia fill:#10b981,stroke:#059669,color:white
+    style RTWS fill:#10b981,stroke:#059669,color:white
+    style PyWorker fill:#10b981,stroke:#059669,color:white
+    style BGJob fill:#10b981,stroke:#059669,color:white
+    style EventDriven fill:#10b981,stroke:#059669,color:white
+    style FileMedia fill:#10b981,stroke:#059669,color:white
+    style StreamMedia fill:#10b981,stroke:#059669,color:white
+    style Monorepo fill:#10b981,stroke:#059669,color:white
+    style Auth fill:#10b981,stroke:#059669,color:white
+    style Gateway fill:#10b981,stroke:#059669,color:white
+    style MVP fill:#10b981,stroke:#059669,color:white
+    style Search fill:#10b981,stroke:#059669,color:white
+```
+
+## PROJECT TYPE → REQUIRED STACK
+
+### STATIC LANDING PAGE
+```
+HTML + CSS + Tailwind CSS (preferred) or Bootstrap
+Alpine.js (optional, UI-only)
+NO SPA frameworks | NO build systems unless strictly needed
+Docker: optional
+```
+
+### STATIC MULTI-PAGE WEBSITE (non-landing)
+```
+PHP (template reuse) + HTML + Tailwind CSS
+Server-side rendering with includes/templates
+Light backend data injection allowed
+NO SPA frameworks | Docker: REQUIRED
+```
+
+### WEB FRONTEND (SEO / APP)
+```
+Next.js + React + Tailwind CSS + shadcn/ui
+Vite + pnpm + Vitest + Playwright
+Docker: REQUIRED
+```
+
+### SPA / ADMIN / DASHBOARD
+```
+Vite + React or Vue + Tailwind CSS
+TanStack Query + Vitest
+Docker: REQUIRED
+```
+
+### MICROSERVICE API
+```
+Nest.js + Fastify (MANDATORY, never Express)
+PostgreSQL + Prisma + Redis + NATS
+Docker + Docker Compose: REQUIRED
+```
+
+### HIGH-LOAD HTTP API
+```
+Node.js + Fastify + PostgreSQL + Redis + k6
+Docker: REQUIRED
+```
+
+### EVENT-DRIVEN ARCHITECTURE
+```
+Nest.js or FastAPI + NATS or Kafka
+OpenTelemetry + Docker + Docker Compose: REQUIRED
+```
+
+### BACKGROUND JOBS / DATA PROCESSING
+```
+Python + FastAPI + Celery or Dramatiq
+Redis or Kafka + Docker + Docker Compose: REQUIRED
+```
+
+### PYTHON API SERVICE (MODERN)
+```
+Python + FastAPI + uvicorn + uv + ruff
+pydantic + sqlalchemy + alembic + pytest
+Docker: REQUIRED
+```
+
+### PYTHON WORKERS / JOBS
+```
+Python + Celery or Dramatiq + Redis or RabbitMQ
+uv + ruff + Docker + Docker Compose: REQUIRED
+```
+
+### AI / LLM API SERVICE
+```
+Python + FastAPI + uv + ruff
+OpenAI or OpenRouter SDK + Redis
+Docker: REQUIRED
+```
+
+### AI PIPELINES / AGENTS / RAG
+```
+Python + FastAPI + uv + ruff
+LangChain or LlamaIndex + pgvector or Qdrant
+Redis + Docker + Docker Compose: REQUIRED
+```
+
+### SEARCH / SEMANTIC / RAG API
+```
+Python + FastAPI + uv + ruff
+pgvector / Qdrant / Weaviate
+Docker + Docker Compose: REQUIRED
+```
+
+### REAL-TIME CHAT
+```
+Node.js + Socket.IO or ws + Redis
+Docker + Docker Compose: REQUIRED
+```
+
+### REAL-TIME AUDIO / VIDEO
+```
+Node.js + WebRTC + mediasoup or LiveKit
+Redis + Docker + Docker Compose: REQUIRED
+```
+
+### WEBSOCKETS-ONLY SERVICE
+```
+Node.js + ws or µWebSockets.js + Redis Pub/Sub
+Docker: REQUIRED
+```
+
+### FILE / MEDIA PROCESSING
+```
+Python + FFmpeg + Celery + S3-compatible storage
+Docker + Docker Compose: REQUIRED
+```
+
+### STREAMING / MEDIA PLATFORM
+```
+Node.js + WebRTC + mediasoup + FFmpeg + CDN
+Docker + Docker Compose: REQUIRED
+```
+
+### MONOREPO / MULTI-APP PLATFORM
+```
+Nx + TypeScript + pnpm + Shared libraries
+CI/CD + Docker: REQUIRED
+```
+
+### AUTH / IDENTITY SERVICE
+```
+Nest.js + Passport + JWT + OAuth2
+Redis + Docker: REQUIRED
+```
+
+### API GATEWAY / BFF
+```
+Node.js + Fastify + Zod + OpenAPI
+Docker: REQUIRED
+```
+
+### PROTOTYPING / MVP
+```
+Next.js + API Routes + PostgreSQL + Prisma
+Docker Compose: REQUIRED
+```
+
+## MANDATORY TOOLCHAINS
+
+### Python Projects
+
+```mermaid
+graph LR
+    Py["Python Project"] --> UV["uv<br>(deps & env)"]
+    Py --> Ruff["ruff<br>(lint + format)"]
+    Py --> Pytest["pytest<br>(testing)"]
+    Py --> Mypy["mypy<br>(typing, if used)"]
+    Py --> PreCommit["pre-commit<br>hooks"]
+    
+    style Py fill:#4da6ff,stroke:#0066cc,color:white
+    style UV fill:#10b981,stroke:#059669,color:white
+    style Ruff fill:#10b981,stroke:#059669,color:white
+    style Pytest fill:#10b981,stroke:#059669,color:white
+    style Mypy fill:#10b981,stroke:#059669,color:white
+    style PreCommit fill:#10b981,stroke:#059669,color:white
+```
+
+**ALWAYS REQUIRED:**
+- `uv` — dependency & environment management
+- `ruff` — linting + formatting
+- `pytest` — testing
+- `mypy` — if typing is used
+- `pre-commit hooks`
+
+**FORBIDDEN:**
+- `pip` without `uv`
+- `flake8` / `isort` / `black` when `ruff` is present
+
+### Node / TypeScript Projects
+
+```mermaid
+graph LR
+    Node["Node/TS Project"] --> PNPM["pnpm<br>(package mgr)"]
+    Node --> TS["TypeScript<br>(mandatory)"]
+    Node --> ESLint["eslint<br>(linting)"]
+    Node --> Prettier["prettier<br>(formatting)"]
+    Node --> Vitest["vitest<br>(testing)"]
+    Node --> PW["playwright<br>(E2E, frontend)"]
+    Node --> Build["tsup or swc<br>(build)"]
+    Node --> Hooks["lefthook or husky<br>(git hooks)"]
+    
+    style Node fill:#4da6ff,stroke:#0066cc,color:white
+    style PNPM fill:#10b981,stroke:#059669,color:white
+    style TS fill:#10b981,stroke:#059669,color:white
+    style ESLint fill:#10b981,stroke:#059669,color:white
+    style Prettier fill:#10b981,stroke:#059669,color:white
+    style Vitest fill:#10b981,stroke:#059669,color:white
+    style PW fill:#10b981,stroke:#059669,color:white
+    style Build fill:#10b981,stroke:#059669,color:white
+    style Hooks fill:#10b981,stroke:#059669,color:white
+```
+
+**ALWAYS REQUIRED:**
+- `pnpm` — package manager
+- `TypeScript` — mandatory for all Node.js projects
+- `eslint` + `prettier` — linting and formatting
+- `vitest` — testing
+- `playwright` — E2E testing (for frontend)
+- `tsup` or `swc` — build tools
+- `lefthook` or `husky` — git hooks
+
+## DOCKER RULES
+
+```mermaid
+graph TD
+    DockerCheck["Docker<br>Requirement"] --> Backend{"Backend<br>Service?"}
+    Backend -->|"Yes"| DockerReq["Docker REQUIRED"]
+    Backend -->|"No"| MultiService{"Multiple<br>Services?"}
+    MultiService -->|"Yes"| ComposeReq["Docker Compose<br>REQUIRED"]
+    MultiService -->|"No"| OptionalDocker["Docker optional<br>(frontend only)"]
+    
+    DockerReq --> Rules["Docker Rules:<br>1. No 'latest' tags<br>2. One container = one responsibility<br>3. Local mirrors production"]
+    ComposeReq --> Rules
+    
+    style DockerCheck fill:#4da6ff,stroke:#0066cc,color:white
+    style DockerReq fill:#ff5555,stroke:#dd3333,color:white
+    style ComposeReq fill:#ff5555,stroke:#dd3333,color:white
+    style Rules fill:#f6546a,stroke:#c30052,color:white
+```
+
+1. Any backend service MUST use Docker.
+2. More than one service MUST use Docker Compose.
+3. Local environment MUST mirror production.
+4. No `latest` tags in images.
+5. One container = one responsibility.
+
+## DEPENDENCY VERSION POLICY
+
+**Node.js:**
+- Node.js LTS (even versions only)
+- `engines` field REQUIRED in `package.json`
+- `pnpm-lock.yaml` REQUIRED
+
+**Python:**
+- Latest stable Python minor
+- `pyproject.toml` REQUIRED
+- `uv.lock` REQUIRED
+
+## TESTING POLICY
+
+- Unit tests are **mandatory**.
+- Integration tests required if DB/queues exist.
+- E2E tests required for frontend and APIs.
+- CI MUST fail if tests fail or are missing.
+
+## LINTING & FORMATTING POLICY
+
+**Python:** `ruff check` + `ruff format` + `mypy` (if applicable)
+**Node/TS:** `eslint` + `prettier` + `tsc --noEmit`
+Any PR without passing linters MUST be rejected.
+
+## ARCHITECTURE RULES
+
+1. Do NOT use SPA where HTML is sufficient.
+2. Fastify instead of Express — **ALWAYS**.
+3. Redis is the default cache.
+4. Queues are NOT WebSockets.
+5. WebRTC is ONLY for media.
+6. Event-driven systems use NATS or Kafka.
+7. Monorepos MUST use Nx.
+8. PHP is allowed ONLY for SSR/template reuse.
+9. No exotic libraries without justification.
+
+## FORBIDDEN
+
+```
+❌ SPA for landing pages
+❌ Missing Docker for backend
+❌ Missing linters
+❌ Floating dependency versions
+❌ Missing lock files
+❌ Mixed responsibilities in services
+❌ Express when Fastify should be used
+❌ pip without uv
+❌ flake8/isort/black when ruff is present
+```
+
+## FINAL RULE
+
+If a requirement is not explicitly stated by the user:
+- Choose the **simplest valid stack** from this document.
+- Do NOT invent new stacks.
+- Do NOT ask which stack to use.
+- Apply these rules **automatically**.
+
+## INTEGRATION WITH MEMORY BANK MODES
+
+### When to Apply This Rule
+
+```mermaid
+graph TD
+    Trigger["Stack Selection<br>Trigger"] --> PRD["PRD Mode:<br>New product/feature"]
+    Trigger --> VAN["VAN Mode:<br>New project init"]
+    Trigger --> PLAN["PLAN Mode:<br>Technology validation"]
+    
+    PRD --> Apply["APPLY<br>TECH STACK RULE"]
+    VAN --> Apply
+    PLAN --> Apply
+    
+    Apply --> Identify["1. Identify<br>Project Type"]
+    Identify --> Select["2. Select Stack<br>from Table"]
+    Select --> Validate["3. Validate<br>Toolchain"]
+    Validate --> Document["4. Document in<br>tasks.md"]
+    
+    style Trigger fill:#4da6ff,stroke:#0066cc,color:white
+    style Apply fill:#ff5555,stroke:#dd3333,color:white,stroke-width:3px
+    style PRD fill:#d94dbb,stroke:#a3378a,color:white
+    style VAN fill:#d94dbb,stroke:#a3378a,color:white
+    style PLAN fill:#d94dbb,stroke:#a3378a,color:white
+```
+
+### Checklist
+
+```
+✓ TECH STACK SELECTION CHECKLIST
+- Project type identified? [YES/NO]
+- Stack selected from rule table? [YES/NO]
+- Mandatory toolchain applied? [YES/NO]
+- Docker requirements met? [YES/NO]
+- Dependency version policy followed? [YES/NO]
+- Testing policy applied? [YES/NO]
+- Linting & formatting configured? [YES/NO]
+- No forbidden patterns used? [YES/NO]
+
+→ If all YES: Stack selection complete
+→ If any NO: Fix before proceeding
+```

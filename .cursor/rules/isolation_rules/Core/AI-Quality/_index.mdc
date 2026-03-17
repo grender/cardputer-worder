@@ -1,0 +1,134 @@
+---
+description: AI Quality Rules Index - Navigation and loading guidance
+globs: _index.mdc
+alwaysApply: false
+---
+
+# AI QUALITY RULES INDEX
+
+> **Navigation guide for 15 AI quality rules organized by category.**
+
+## 📂 RULE CATEGORIES
+
+```
+Core/AI-Quality/
+├── _principles.mdc      ← Always loaded (core concepts)
+├── _index.mdc           ← This file (navigation)
+│
+├── foundation/          ← BUILD mode primary
+│   ├── _category.mdc    ← Category summary
+│   ├── stubbing-rule.mdc        (Rule #1)
+│   ├── tdd-rule.mdc             (Rule #2)
+│   └── method-size-rule.mdc     (Rule #3)
+│
+├── context/             ← VAN, PLAN modes primary
+│   ├── _category.mdc    ← Category summary
+│   ├── requirements-rule.mdc    (Rule #4)
+│   ├── dod-rule.mdc             (Rule #5)
+│   └── corner-cases-rule.mdc    (Rule #6)
+│
+├── architecture/        ← PLAN, CREATIVE modes primary
+│   ├── _category.mdc    ← Category summary
+│   ├── skeleton-rule.mdc        (Rule #7)
+│   ├── iterative-rule.mdc       (Rule #8)
+│   └── cognitive-load-rule.mdc  (Rule #9)
+│
+├── quality/             ← REFLECT, PLAN modes primary
+│   ├── _category.mdc    ← Category summary
+│   ├── focused-review-rule.mdc  (Rule #10)
+│   ├── boundaries-rule.mdc      (Rule #11)
+│   └── complexity-check-rule.mdc (Rule #12)
+│
+└── technical/           ← BUILD, CREATIVE, ARCHIVE modes
+    ├── _category.mdc    ← Category summary
+    ├── transaction-rule.mdc     (Rule #13)
+    ├── mb-structure-rule.mdc    (Rule #14)
+    └── prompt-engineering-rule.mdc (Rule #15)
+```
+
+## 🔄 MODE-CATEGORY MAPPING
+
+| Mode | Primary Categories | Load When |
+|------|-------------------|-----------|
+| **VAN** | context/ | Initialization |
+| **PLAN** | context/, architecture/, quality/ | Planning phase |
+| **CREATIVE** | architecture/, technical/ | Design phase |
+| **BUILD** | foundation/, technical/ | Implementation |
+| **REFLECT** | quality/ | Review phase |
+| **ARCHIVE** | technical/ | Documentation |
+
+## 📊 LOADING TIERS
+
+### Tier 1: Always Loaded (~2,000 tokens)
+- `_principles.mdc` - Core concepts
+- `_index.mdc` - This navigation file
+
+### Tier 2: Category Loading (~2,500 tokens each)
+- Load category `_category.mdc` based on current mode
+- Provides summaries and quick guidance
+
+### Tier 3: Full Rules (~1,000 tokens each)
+- Load individual rules on explicit request
+- Contains detailed examples and checklists
+
+## 🎯 RULE QUICK LOOKUP
+
+### Foundation Rules (BUILD mode)
+| Rule | Name | Purpose |
+|------|------|---------|
+| #1 | Stubbing | Decompose into max 50-line stubs |
+| #2 | TDD | Write tests before implementation |
+| #3 | Method Size | Enforce 50-line, 7-9 object limits |
+
+### Context Rules (VAN, PLAN modes)
+| Rule | Name | Purpose |
+|------|------|---------|
+| #4 | Requirements | Gather context before coding |
+| #5 | DoD | Define explicit done criteria |
+| #6 | Corner Cases | Document boundaries upfront |
+
+### Architecture Rules (PLAN, CREATIVE modes)
+| Rule | Name | Purpose |
+|------|------|---------|
+| #7 | Skeleton | Create architecture stubs first |
+| #8 | Iterative | Implement one method at a time |
+| #9 | Cognitive Load | Limit to 7±2 objects |
+
+### Quality Rules (REFLECT, PLAN modes)
+| Rule | Name | Purpose |
+|------|------|---------|
+| #10 | Focused Review | Review one method at a time |
+| #11 | Boundaries | State what's out of scope |
+| #12 | Complexity Check | Verify AI can solve |
+
+### Technical Rules (BUILD, CREATIVE, ARCHIVE modes)
+| Rule | Name | Purpose |
+|------|------|---------|
+| #13 | Transaction | Specify isolation levels |
+| #14 | MB Structure | Organize context hierarchically |
+| #15 | Prompts | Structure prompts carefully |
+
+## 📝 USAGE
+
+### Load Category Summary
+```
+Read: Core/AI-Quality/[category]/_category.mdc
+```
+
+### Load Full Rule
+```
+Read: Core/AI-Quality/[category]/[rule-name]-rule.mdc
+```
+
+### Example
+```
+// For BUILD mode, load foundation category
+Read: Core/AI-Quality/foundation/_category.mdc
+
+// For specific TDD guidance
+Read: Core/AI-Quality/foundation/tdd-rule.mdc
+```
+
+---
+
+*See `_principles.mdc` for always-loaded core concepts.*

@@ -1,0 +1,215 @@
+---
+description: Technical Rules Category - Transaction, MB Structure, Prompts
+globs: technical/_category.mdc
+alwaysApply: false
+---
+
+# TECHNICAL RULES (Rules #13-15)
+
+> **Technical practices for BUILD, CREATIVE, and ARCHIVE modes. Focus: data safety, context organization, prompt quality.**
+
+## 📋 CATEGORY OVERVIEW
+
+| Rule | Name | Key Practice | Apply When |
+|------|------|--------------|------------|
+| #13 | **Transaction** | Explicit isolation levels | Database operations |
+| #14 | **MB Structure** | Hierarchical summaries | Context organization |
+| #15 | **Prompts** | Structured prompt creation | Any AI interaction |
+
+---
+
+## 1️⃣3️⃣ TRANSACTION ISOLATION RULE (#13)
+
+### One-Liner
+> Explicitly specify transaction isolation level. Discuss race conditions upfront.
+
+### Quick Application
+
+```typescript
+// ✅ GOOD: Explicit isolation level
+async function addLike(videoId: string, ipAddress: string) {
+  return await db.transaction(async (tx) => {
+    // Explicitly set isolation
+    await tx.query('SET TRANSACTION ISOLATION LEVEL SERIALIZABLE');
+    
+    // Check existing (protected from race)
+    const existing = await tx.query(
+      'SELECT * FROM likes WHERE video_id = $1 AND ip_address = $2',
+      [videoId, ipAddress]
+    );
+    
+    if (existing.rows.length > 0) {
+      return { added: false };
+    }
+    
+    // Insert with constraint protection
+    await tx.query(
+      'INSERT INTO likes (video_id, ip_address) VALUES ($1, $2)',
+      [videoId, ipAddress]
+    );
+    
+    return { added: true };
+  });
+}
+```
+
+### Isolation Levels Reference
+
+| Level | Dirty Read | Non-Repeatable | Phantom | Use Case |
+|-------|------------|----------------|---------|----------|
+| READ UNCOMMITTED | ✓ | ✓ | ✓ | Never |
+| READ COMMITTED | ✗ | ✓ | ✓ | Default |
+| REPEATABLE READ | ✗ | ✗ | ✓ | Most cases |
+| SERIALIZABLE | ✗ | ✗ | ✗ | Critical ops |
+
+### Concurrency Test Template
+
+```typescript
+it('handles 100 concurrent operations', async () => {
+  const promises = Array(100).fill(null)
+    .map(() => storage.addLike('video1', '192.168.1.1'));
+  await Promise.all(promises);
+  
+  const count = await storage.getLikeCount('video1');
+  expect(count).toBe(1); // NOT 100!
+});
+```
+
+---
+
+## 1️⃣4️⃣ MEMORY BANK STRUCTURE RULE (#14)
+
+### One-Liner
+> Organize context hierarchically. Less detail for bigger scope.
+
+### Quick Application
+
+```
+HIERARCHY PRINCIPLE:
+├── Full Project    → Very high level (technologies, purpose)
+├── Module/Folder   → Medium detail (interfaces, key functions)
+└── Specific File   → High detail (algorithms, edge cases)
+
+SAVE SUMMARIES:
+Chat 1: Summarize /auth → Save to Memory Bank as "auth-overview"
+Chat 2: Summarize /auth/oauth → Save as "oauth-details"
+Chat 3: Reference saved summaries when coding
+```
+
+### Memory Bank Structure
+
+```
+memory-bank/
+├── tasks.md           ← Active task (most detail)
+├── activeContext.md   ← Current focus
+├── progress.md        ← Status tracking
+├── projectbrief.md    ← Project overview (high level)
+├── productContext.md  ← Product info
+├── systemPatterns.md  ← Patterns used
+├── techContext.md     ← Tech decisions
+├── creative/          ← Design decisions
+├── reflection/        ← Review learnings
+└── archive/           ← Completed tasks
+```
+
+### Benefits
+- Clean context in main chat
+- Reusable summaries
+- Easy to update parts
+- Token efficient
+
+---
+
+## 1️⃣5️⃣ PROMPT ENGINEERING RULE (#15)
+
+### One-Liner
+> Use structured prompts with context, expected results, DoD, and boundaries.
+
+### Quick Application
+
+```markdown
+## GOOD PROMPT STRUCTURE
+
+### Context
+[Brief background OR reference to Memory Bank]
+
+### Task
+[Specific, focused task description]
+
+### Expected Results
+- Happy path: [concrete example]
+- Edge cases: [list specific cases]
+
+### Definition of Done
+- [ ] Criterion 1
+- [ ] Criterion 2
+
+### Boundaries
+- We DON'T: [explicit exclusions]
+
+### Approach
+[skeleton-first / TDD / iterative]
+```
+
+### Example Good Prompt
+
+```markdown
+**Context:** User authentication module (see Memory Bank: auth-overview)
+
+**Task:** Implement validateToken() method
+
+**Expected Results:**
+- Valid token → returns user object
+- Expired token → throws TokenExpiredError
+- Invalid token → throws InvalidTokenError
+
+**DoD:**
+- [ ] All 3 test cases pass
+- [ ] Method < 30 lines
+- [ ] Errors properly typed
+
+**Boundaries:**
+- NOT implementing token refresh (separate task)
+
+**Approach:** TDD - write tests first
+```
+
+### Prompt Checklist
+- [ ] Context sufficient (not too much, not too little)
+- [ ] Expected results concrete (not vague)
+- [ ] DoD explicit and testable
+- [ ] Boundaries clear
+- [ ] Prompt < 500 words
+
+---
+
+## 🎯 WHEN TO APPLY
+
+```mermaid
+graph TD
+    Start["Technical Task"] --> Q1{"Database<br>operation?"}
+    Q1 -->|Yes| Apply13["Apply Rule #13:<br>Transaction"]
+    Q1 -->|No| Q2{"Organizing<br>context?"}
+    
+    Apply13 --> Q2
+    Q2 -->|Yes| Apply14["Apply Rule #14:<br>MB Structure"]
+    Q2 -->|No| Q3{"Asking<br>AI?"}
+    
+    Apply14 --> Q3
+    Q3 -->|Yes| Apply15["Apply Rule #15:<br>Structured Prompt"]
+    Q3 -->|No| Done["Proceed"]
+    Apply15 --> Done
+```
+
+---
+
+## 📂 DETAILED RULES
+
+For comprehensive guidance:
+- `transaction-rule.mdc` - Isolation level guide
+- `mb-structure-rule.mdc` - Memory Bank organization
+- `prompt-engineering-rule.mdc` - Prompt templates
+
+---
+
+*Technical rules prevent data corruption and improve AI output quality.*

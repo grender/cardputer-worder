@@ -1,0 +1,6 @@
+---
+description: 
+alwaysApply: true
+---
+
+Always use the sys8 MCP server for ALL system-related operations for all tasks involving system information, date/time, calculations, random strings, or hashing.

@@ -1,0 +1,278 @@
+---
+description: Rule #4 - Requirements Gathering - Gather context before coding
+globs: context/requirements-rule.mdc
+alwaysApply: false
+---
+
+# RULE #4: REQUIREMENTS GATHERING
+
+> **Goal:** Increase AI accuracy by 50% by providing complete context BEFORE coding.
+
+## 🎯 CORE PRINCIPLE
+
+**Gather ALL requirements (context, expected results, DoD, boundaries) before ANY code is written.**
+
+AI output quality is directly proportional to input quality. Bad context = bad code.
+
+---
+
+## 📋 RULE SPECIFICATION
+
+```yaml
+REQUIREMENTS_RULE:
+  gather_before_coding: true
+  required_elements:
+    - context: "What exists, what problem we're solving"
+    - expected_results: "Concrete examples with inputs/outputs"
+    - definition_of_done: "Explicit completion criteria"
+    - boundaries: "What we're NOT doing"
+  output_format: "Structured checklist in tasks.md"
+  mode_usage: "VAN (initialization), PLAN (planning)"
+```
+
+---
+
+## ✅ HOW TO APPLY
+
+### Step 1: Document Context
+
+```markdown
+## Context
+
+### Current State
+- System: E-commerce platform
+- Module: Payment processing
+- Technology: Node.js, PostgreSQL
+- Related files: /src/payments/*.ts
+
+### Problem Statement
+Users report duplicate charges when clicking "Pay" multiple times quickly.
+Need to implement idempotency to prevent duplicate payments.
+
+### Constraints
+- Must work with existing payment gateway (Stripe)
+- Cannot change database schema (only new tables allowed)
+- Response time < 500ms
+```
+
+### Step 2: Define Expected Results
+
+```markdown
+## Expected Results
+
+### Happy Path
+| Input | Expected Output |
+|-------|-----------------|
+| First payment request | Payment processed, return success |
+| Same idempotency key | Return cached result, no new charge |
+
+### Edge Cases
+| Input | Expected Output |
+|-------|-----------------|
+| Expired idempotency key (>24h) | Allow new payment |
+| Different amount, same key | Return error |
+| Database timeout | Retry with backoff |
+
+### Error Cases
+| Input | Expected Output |
+|-------|-----------------|
+| Invalid payment data | 400 Bad Request |
+| Payment declined | Return decline reason |
+| Gateway timeout | 503 Service Unavailable |
+```
+
+### Step 3: Define Done
+
+```markdown
+## Definition of Done
+
+### Functional
+- [ ] Duplicate requests return cached result
+- [ ] Different amounts with same key return error
+- [ ] Keys expire after 24 hours
+
+### Quality
+- [ ] All tests pass (unit + integration)
+- [ ] Response time < 500ms (p99)
+- [ ] Code reviewed
+
+### Documentation
+- [ ] API documented
+- [ ] Error codes documented
+```
+
+### Step 4: Set Boundaries
+
+```markdown
+## Boundaries (Out of Scope)
+
+### ❌ What We DON'T Do
+- Refactoring existing payment code
+- Changing Stripe integration
+- Adding new payment methods
+- Modifying checkout UI
+- Database schema migration
+
+### Rationale
+- Existing code is stable, don't touch
+- Stripe integration is tested and working
+- New methods require business approval
+- UI changes need design review
+- Schema changes need DBA approval
+```
+
+---
+
+## 📋 REQUIREMENTS TEMPLATE
+
+Use this template for every task:
+
+```markdown
+# Task: [Task Name]
+
+## Context
+### Current State
+[Description of existing system/code]
+
+### Problem
+[What problem are we solving]
+
+### Constraints
+- [Constraint 1]
+- [Constraint 2]
+
+## Expected Results
+### Happy Path
+[Successful scenario with example]
+
+### Edge Cases
+| Case | Input | Expected |
+|------|-------|----------|
+| [Case 1] | [Input] | [Output] |
+
+### Error Cases
+| Case | Input | Expected |
+|------|-------|----------|
+| [Error 1] | [Input] | [Output] |
+
+## Definition of Done
+- [ ] [Criterion 1]
+- [ ] [Criterion 2]
+- [ ] [Criterion 3]
+
+## Boundaries
+### ❌ Out of Scope
+- [Excluded item 1]
+- [Excluded item 2]
+
+## Complexity Assessment
+- [ ] AI can solve in one session
+- [ ] All dependencies known
+- [ ] Clear success criteria (tests)
+- [ ] Code volume < 500 lines
+```
+
+---
+
+## 📊 REQUIREMENTS QUALITY CHECKLIST
+
+### Context Quality
+- [ ] Problem is clearly stated
+- [ ] Existing state is documented
+- [ ] Technology stack is specified
+- [ ] Related files/modules identified
+- [ ] Constraints are explicit
+
+### Expected Results Quality
+- [ ] Happy path has concrete example
+- [ ] At least 3 edge cases listed
+- [ ] At least 2 error cases listed
+- [ ] Input/output pairs are specific
+- [ ] No vague descriptions ("should work")
+
+### DoD Quality
+- [ ] Each criterion is testable
+- [ ] No subjective criteria
+- [ ] All stakeholder needs covered
+- [ ] Quality requirements included
+- [ ] Documentation requirements included
+
+### Boundaries Quality
+- [ ] Explicitly states what's excluded
+- [ ] Rationale provided for exclusions
+- [ ] No ambiguous scope
+- [ ] Prevents scope creep
+
+---
+
+## ⚠️ ANTI-PATTERNS
+
+### ❌ Don't: Vague Requirements
+```markdown
+## Bad Requirements
+- Make the payment system better
+- Fix the bugs
+- Improve performance
+```
+
+### ❌ Don't: Missing Examples
+```markdown
+## Bad Expected Results
+- Should handle errors properly
+- Should work with edge cases
+- Should be fast
+```
+
+### ✅ Do: Specific Requirements
+```markdown
+## Good Requirements
+- Implement idempotency for payment endpoint /api/payments
+- Return cached result for duplicate requests within 24h
+- Response time < 500ms for cached lookups
+
+## Good Expected Results
+- Input: POST /api/payments {amount: 100, idempotency_key: "abc"}
+- First call: {status: "success", payment_id: "pay_123"}
+- Second call (same key): {status: "success", payment_id: "pay_123"} (cached)
+```
+
+---
+
+## 🔄 WORKFLOW INTEGRATION
+
+### VAN Mode (Initialization)
+1. Read user request
+2. Create requirements template
+3. Fill in context
+4. Assess complexity
+
+### PLAN Mode (Planning)
+1. Complete expected results
+2. Define DoD
+3. Set boundaries
+4. Plan implementation approach
+
+### BUILD Mode (Implementation)
+1. Reference requirements during coding
+2. Verify against expected results
+3. Check DoD items as completed
+
+---
+
+## ✅ VERIFICATION CHECKLIST
+
+Before starting implementation:
+
+```
+□ Context is complete and specific
+□ Expected results have concrete examples
+□ DoD is testable and explicit
+□ Boundaries clearly exclude scope creep
+□ Complexity is assessed as solvable
+□ All stakeholders' needs are captured
+□ No ambiguous or vague requirements
+```
+
+---
+
+*Good requirements = Good code. Bad requirements = Wasted effort.*

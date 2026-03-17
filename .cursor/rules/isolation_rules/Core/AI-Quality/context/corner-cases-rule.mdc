@@ -1,0 +1,298 @@
+---
+description: Rule #6 - Corner Cases - Document boundary conditions before coding
+globs: context/corner-cases-rule.mdc
+alwaysApply: false
+---
+
+# RULE #6: CORNER CASES DOCUMENTATION
+
+> **Goal:** List all corner cases and boundary conditions BEFORE writing tests or code.
+
+## 🎯 CORE PRINCIPLE
+
+**Document every corner case explicitly before implementation. Undocumented cases = undiscovered bugs.**
+
+AI cannot handle cases it doesn't know about. Explicit documentation prevents surprises.
+
+---
+
+## 📋 RULE SPECIFICATION
+
+```yaml
+CORNER_CASES_RULE:
+  timing: "BEFORE tests, BEFORE implementation"
+  categories:
+    - input_validation: "Invalid, empty, null inputs"
+    - boundary_values: "Min, max, zero, negative"
+    - concurrency: "Race conditions, simultaneous access"
+    - external_dependencies: "Timeouts, failures, unavailable"
+    - state_transitions: "Invalid states, partial updates"
+  format: "Table with input → expected output"
+  integration: "Each corner case becomes a test case"
+```
+
+---
+
+## ✅ HOW TO APPLY
+
+### Step 1: Input Validation Cases
+
+```markdown
+## Input Validation
+
+| Case | Input | Expected | Priority |
+|------|-------|----------|----------|
+| Null value | null | Error: "Value required" | High |
+| Empty string | "" | Error: "Value cannot be empty" | High |
+| Whitespace only | "   " | Error: "Value cannot be empty" | Medium |
+| Too long | "a" × 10001 | Error: "Max 10000 chars" | Medium |
+| Invalid type | 123 (number) | Error: "Must be string" | High |
+| Unicode | "日本語🎉" | Accept (valid UTF-8) | Low |
+| SQL injection | "'; DROP TABLE" | Escaped, safe | Critical |
+| XSS attempt | "<script>alert()" | Sanitized | Critical |
+```
+
+### Step 2: Boundary Values
+
+```markdown
+## Boundary Values
+
+| Case | Value | Expected | Notes |
+|------|-------|----------|-------|
+| Minimum | 0 | Accept or reject based on spec | |
+| Maximum | MAX_INT | Accept or handle overflow | |
+| Negative | -1 | Error or special handling | |
+| Just under min | min - 1 | Reject | |
+| Just over max | max + 1 | Reject | |
+| Exact boundary | exactly min/max | Accept | |
+| Float precision | 0.1 + 0.2 | Handle IEEE 754 | |
+| Large number | 1e308 | Handle or reject | |
+```
+
+### Step 3: Concurrency Cases
+
+```markdown
+## Concurrency
+
+| Case | Scenario | Expected | Mitigation |
+|------|----------|----------|------------|
+| Double submit | User clicks twice fast | Only 1 processed | Idempotency key |
+| Race condition | 100 simultaneous writes | Consistent state | Transaction lock |
+| Deadlock | A waits B, B waits A | Timeout, retry | Lock ordering |
+| Stale read | Read during write | Consistent data | Isolation level |
+| Lost update | A and B update same | Both preserved | Optimistic lock |
+```
+
+### Step 4: External Dependencies
+
+```markdown
+## External Dependencies
+
+| Case | Scenario | Expected | Fallback |
+|------|----------|----------|----------|
+| Timeout | DB takes > 30s | Timeout error | Retry with backoff |
+| Unavailable | Service down | Graceful degrade | Cache / queue |
+| Rate limited | Too many requests | 429 error | Exponential backoff |
+| Invalid response | Malformed JSON | Parse error | Default value |
+| Partial failure | 2/3 services OK | Partial success | Transaction rollback |
+| Network error | Connection reset | Retry | Circuit breaker |
+```
+
+### Step 5: State Transitions
+
+```markdown
+## State Transitions
+
+| Current State | Action | Expected | Invalid? |
+|--------------|--------|----------|----------|
+| PENDING | approve() | APPROVED | No |
+| PENDING | reject() | REJECTED | No |
+| APPROVED | approve() | Error | Yes - already approved |
+| REJECTED | approve() | Error | Yes - can't change |
+| COMPLETED | update() | Error | Yes - immutable |
+| null | any action | Error | Yes - must exist |
+```
+
+---
+
+## 📋 CORNER CASE TEMPLATE
+
+```markdown
+# Corner Cases: [Feature Name]
+
+## 1. Input Validation
+| Case | Input | Expected | Priority |
+|------|-------|----------|----------|
+| | | | |
+
+## 2. Boundary Values
+| Case | Value | Expected | Notes |
+|------|-------|----------|-------|
+| | | | |
+
+## 3. Concurrency
+| Case | Scenario | Expected | Mitigation |
+|------|----------|----------|------------|
+| | | | |
+
+## 4. External Dependencies
+| Case | Scenario | Expected | Fallback |
+|------|----------|----------|----------|
+| | | | |
+
+## 5. State Transitions
+| Current | Action | Expected | Valid? |
+|---------|--------|----------|--------|
+| | | | |
+
+## 6. Security
+| Case | Attack Vector | Expected | Protection |
+|------|--------------|----------|------------|
+| | | | |
+
+## 7. Performance
+| Case | Load | Expected | Limit |
+|------|------|----------|-------|
+| | | | |
+```
+
+---
+
+## 📊 COMMON CORNER CASES CHECKLIST
+
+### Numeric Values
+- [ ] Zero
+- [ ] Negative
+- [ ] Maximum integer
+- [ ] Minimum integer
+- [ ] Float precision issues
+- [ ] Division by zero
+- [ ] Overflow
+- [ ] Underflow
+
+### Strings
+- [ ] Empty string
+- [ ] Null
+- [ ] Whitespace only
+- [ ] Very long string
+- [ ] Unicode characters
+- [ ] Special characters
+- [ ] SQL injection patterns
+- [ ] XSS patterns
+
+### Collections
+- [ ] Empty array/list
+- [ ] Single element
+- [ ] Duplicate elements
+- [ ] Very large collection
+- [ ] Nested structures
+- [ ] Circular references
+
+### Dates/Times
+- [ ] Null date
+- [ ] Past date
+- [ ] Future date
+- [ ] Leap year
+- [ ] Daylight saving
+- [ ] Timezone differences
+- [ ] Midnight edge
+- [ ] Year 2038 problem
+
+### Concurrency
+- [ ] Simultaneous read
+- [ ] Simultaneous write
+- [ ] Read during write
+- [ ] Multiple writers
+- [ ] Deadlock scenarios
+- [ ] Timeout scenarios
+
+---
+
+## 🔄 CORNER CASES → TESTS
+
+```typescript
+// From corner case table:
+// | Null value | null | Error: "Value required" | High |
+
+it('should throw error for null value', () => {
+  expect(() => processValue(null))
+    .toThrow('Value required');
+});
+
+// | Double submit | User clicks twice | Only 1 processed |
+
+it('should process only once for double submit', async () => {
+  const key = 'unique-key';
+  const [result1, result2] = await Promise.all([
+    process(data, key),
+    process(data, key)
+  ]);
+  
+  // One succeeds, one returns cached
+  expect(result1.id).toBe(result2.id);
+});
+
+// | Timeout | DB > 30s | Timeout error |
+
+it('should timeout after 30 seconds', async () => {
+  jest.spyOn(db, 'query').mockImplementation(
+    () => new Promise(resolve => setTimeout(resolve, 35000))
+  );
+  
+  await expect(queryData())
+    .rejects.toThrow('Database timeout');
+}, 35000);
+```
+
+---
+
+## ⚠️ COMMON MISTAKES
+
+### ❌ Missing Corner Cases
+```markdown
+## Bad: Only happy path
+- User submits form
+- Data is saved
+- Success message shown
+```
+
+### ✅ Complete Corner Cases
+```markdown
+## Good: All scenarios
+### Happy Path
+- User submits valid form → Data saved
+
+### Input Errors
+- Empty required field → Validation error
+- Invalid email format → Format error
+- Duplicate entry → Conflict error
+
+### System Errors
+- DB unavailable → Retry with message
+- Network timeout → Graceful fallback
+
+### Concurrency
+- Double submit → Idempotent handling
+```
+
+---
+
+## ✅ VERIFICATION CHECKLIST
+
+Before implementation:
+
+```
+□ All input types have null/empty cases
+□ All numeric fields have boundary cases
+□ All string fields have length/format cases
+□ Concurrency scenarios documented
+□ External dependency failures covered
+□ Invalid state transitions listed
+□ Security attack vectors considered
+□ Each corner case has expected behavior
+□ Priority assigned to each case
+```
+
+---
+
+*Corner cases ignored during design become bugs in production.*

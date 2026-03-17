@@ -1,0 +1,244 @@
+---
+description: Rule #1 - Stubbing/Decomposition - Break complex tasks into manageable stubs
+globs: foundation/stubbing-rule.mdc
+alwaysApply: false
+---
+
+# RULE #1: STUBBING / DECOMPOSITION
+
+> **Goal:** Reduce cognitive load and improve code quality by 35-40% through task decomposition.
+
+## 🎯 CORE PRINCIPLE
+
+**Break complex tasks into small stubs (max 50 lines each) before implementing.**
+
+AI generates higher quality code when focused on one small unit at a time.
+
+---
+
+## 📋 RULE SPECIFICATION
+
+```yaml
+STUBBING_RULE:
+  max_lines_per_stub: 50
+  max_complexity: 7-9 objects  # Rule of 7±2
+  format: "function_name() { /* TODO: implement */ }"
+  benefit: "35-40% quality improvement through narrow focus"
+```
+
+---
+
+## ✅ HOW TO APPLY
+
+### Step 1: Identify the Complex Task
+
+```typescript
+// ❌ PROBLEM: One massive function
+async function migrateDatabase() {
+  // 500+ lines of code doing multiple things:
+  // - Connect to databases
+  // - Create schema
+  // - Migrate data
+  // - Validate results
+  // - Handle errors
+  // - Log progress
+}
+```
+
+### Step 2: Decompose into Stubs
+
+```typescript
+// ✅ SOLUTION: Decomposed into focused stubs
+async function migrateDatabase() {
+  await initSourceConnection();
+  await initTargetConnection();
+  await createTargetSchema();
+  await migrateUsers();
+  await migrateOrders();
+  await migrateProducts();
+  await validateMigration();
+  await generateReport();
+}
+
+// Each stub: single responsibility, max 50 lines
+async function initSourceConnection() { /* TODO */ }
+async function initTargetConnection() { /* TODO */ }
+async function createTargetSchema() { /* TODO */ }
+async function migrateUsers() { /* TODO */ }
+async function migrateOrders() { /* TODO */ }
+async function migrateProducts() { /* TODO */ }
+async function validateMigration() { /* TODO */ }
+async function generateReport() { /* TODO */ }
+```
+
+### Step 3: Implement One Stub at a Time
+
+```typescript
+// Focus AI on ONE stub
+async function migrateUsers() {
+  const batchSize = 1000;
+  let offset = 0;
+  let hasMore = true;
+  
+  while (hasMore) {
+    const users = await source.query(
+      'SELECT * FROM users LIMIT $1 OFFSET $2',
+      [batchSize, offset]
+    );
+    
+    if (users.length === 0) {
+      hasMore = false;
+      continue;
+    }
+    
+    await target.batchInsert('users', users);
+    offset += batchSize;
+    
+    console.log(`Migrated ${offset} users`);
+  }
+}
+// ~25 lines, single responsibility, clear input/output
+```
+
+---
+
+## 📊 DECOMPOSITION GUIDELINES
+
+### When to Decompose
+
+| Indicator | Action |
+|-----------|--------|
+| Task > 50 lines | Split into stubs |
+| Multiple responsibilities | One stub per responsibility |
+| More than 5 parameters | Extract into config object |
+| Nested logic > 3 levels | Extract into functions |
+| "and" in function name | Split into separate functions |
+
+### Stub Quality Checklist
+
+- [ ] **Single Responsibility:** Does one thing only
+- [ ] **Size Limit:** < 50 lines of code
+- [ ] **Clear Name:** Name describes what it does
+- [ ] **Independent:** Can be tested in isolation
+- [ ] **Clear I/O:** Input and output are obvious
+- [ ] **No Side Effects:** Or side effects are explicit
+
+---
+
+## 🔧 STUB TEMPLATE
+
+```typescript
+/**
+ * [Brief description of what this stub does]
+ * 
+ * @param {Type} param1 - [Description]
+ * @param {Type} param2 - [Description]
+ * @returns {ReturnType} [Description]
+ * @throws {ErrorType} [When/why thrown]
+ */
+async function stubName(param1: Type, param2: Type): Promise<ReturnType> {
+  // TODO: Implement
+  // Expected behavior:
+  // - Step 1: [description]
+  // - Step 2: [description]
+  // - Return: [expected output]
+  throw new Error('Not implemented');
+}
+```
+
+---
+
+## 📈 QUALITY IMPACT
+
+```
+Without Decomposition:
+├── 500-line function
+├── Multiple concerns mixed
+├── Hard to test
+├── AI loses focus
+└── Quality: 60%
+
+With Decomposition:
+├── 10 × 50-line stubs
+├── Single concern each
+├── Easy to test
+├── AI maintains focus
+└── Quality: 95% (+35%)
+```
+
+---
+
+## ⚠️ ANTI-PATTERNS
+
+### ❌ Don't: Keep Everything Together
+```typescript
+// BAD: One function doing everything
+function processOrder(order, user, inventory, payment, shipping) {
+  // validate order
+  // check user
+  // verify inventory
+  // process payment
+  // arrange shipping
+  // send notifications
+  // update analytics
+  // 300+ lines...
+}
+```
+
+### ❌ Don't: Over-Decompose
+```typescript
+// BAD: Too granular
+function addOneToCounter() { counter++; }
+function checkIfCounterIsZero() { return counter === 0; }
+function logCounterValue() { console.log(counter); }
+```
+
+### ✅ Do: Right-Sized Stubs
+```typescript
+// GOOD: Logical groupings, testable units
+async function processOrder(order: Order) {
+  await validateOrder(order);        // ~20 lines
+  await reserveInventory(order);     // ~30 lines
+  await processPayment(order);       // ~40 lines
+  await arrangeShipping(order);      // ~25 lines
+  await notifyCustomer(order);       // ~15 lines
+}
+```
+
+---
+
+## 🔄 WORKFLOW INTEGRATION
+
+### In PLAN Mode
+1. Analyze task requirements
+2. Identify logical decomposition points
+3. Create stub list in tasks.md
+4. Review stub architecture
+
+### In BUILD Mode
+1. Create all stubs (skeleton)
+2. Write tests for first stub
+3. Implement first stub
+4. Review and verify
+5. Move to next stub
+6. Repeat until complete
+
+---
+
+## ✅ VERIFICATION CHECKLIST
+
+Before considering decomposition complete:
+
+```
+□ All stubs identified and named
+□ Each stub has single responsibility
+□ Each stub < 50 lines (estimated)
+□ Each stub can be tested independently
+□ Orchestrating function is clear and simple
+□ Dependencies between stubs are minimal
+□ Stub names are self-documenting
+```
+
+---
+
+*Decomposition is the foundation of quality AI-assisted development.*

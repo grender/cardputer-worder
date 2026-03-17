@@ -17,10 +17,12 @@ pub struct ComposedUiLine {
 }
 
 /// Compose the form: calculate line heights, assign rectangles, and return visible lines.
+/// `content_top_y` is the screen y where the content area starts (e.g. below the top bar).
 pub fn compose_form(
     lines: &[UiLineType],
     scroll_offset: u32,
     viewport_height: u32,
+    content_top_y: i32,
     ui: &crate::ui::cardworder_ui::CardworderUi,
 ) -> ComposedForm {
     let mut composed_lines = Vec::new();
@@ -39,9 +41,9 @@ pub fn compose_form(
         let line_bottom = y + height;
         // Only include lines that intersect the viewport
         if line_bottom > viewport_top && line_top < viewport_bottom {
-            // Adjust rect to be relative to viewport (y - scroll_offset)
+            // Adjust rect: viewport-relative y then offset by content area top (e.g. below top bar)
             let adjusted_rect = embedded_graphics::primitives::Rectangle::new(
-                embedded_graphics::prelude::Point::new(0, (y as i32) - (scroll_offset as i32)),
+                embedded_graphics::prelude::Point::new(0, (y as i32) - (scroll_offset as i32) + content_top_y),
                 embedded_graphics::prelude::Size::new(width, height),
             );
             composed_lines.push(ComposedUiLine {
@@ -104,13 +106,17 @@ pub fn scroll_down(current_offset: u32, lines: &[ComposedUiLine], viewport_heigh
 }
 
 /// Draws a line of type Elements using the provided UI context.
+/// Uses the vertical center of the line rect for Center-aligned elements so glyphs
+/// do not extend above the content area (e.g. into the top bar).
 fn draw_elements_line(
     elements: &[crate::logic::views::UiLineElement],
     rect: &embedded_graphics::primitives::Rectangle,
     ui: &mut CardworderUi<'_>,
 ) {
     let mut x = rect.top_left.x;
-    let y = rect.top_left.y;
+    let line_top_y = rect.top_left.y;
+    let line_height = rect.size.height as i32;
+    let y_center = line_top_y + line_height / 2;
     for element in elements.iter() {
         match element {
             UiLineElement::Icon(ch, font, color) => {
@@ -118,20 +124,26 @@ fn draw_elements_line(
                     *ch,
                     *font,
                     *color,
-                    embedded_graphics::prelude::Point::new(x, y),
+                    embedded_graphics::prelude::Point::new(x, y_center),
                     u8g2_fonts::types::VerticalPosition::Center,
                 );
                 x += ui.font_height(*font) as i32;
             }
             UiLineElement::Text(text, font, vpos, color) => {
-                let rect = ui.draw_text_oneline(
+                let draw_y = match vpos {
+                    u8g2_fonts::types::VerticalPosition::Center => y_center,
+                    u8g2_fonts::types::VerticalPosition::Top => line_top_y,
+                    u8g2_fonts::types::VerticalPosition::Bottom => line_top_y + line_height,
+                    u8g2_fonts::types::VerticalPosition::Baseline => y_center,
+                };
+                let text_rect = ui.draw_text_oneline(
                     *text,
                     *font,
                     *color,
-                    embedded_graphics::prelude::Point::new(x, y),
+                    embedded_graphics::prelude::Point::new(x, draw_y),
                     *vpos,
                 );
-                if let Some(r) = rect {
+                if let Some(r) = text_rect {
                     x += r.size.width as i32;
                 }
             }

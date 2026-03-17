@@ -1,0 +1,326 @@
+---
+description: Optimized main rule for improved token efficiency
+globs: main.mdc
+alwaysApply: false
+---
+# 🔍 OPTIMIZED MEMORY BANK SYSTEM
+
+🚨 CRITICAL RULE: MEMORY BANK CREATION IS MANDATORY 🚨
+Memory Bank MUST be created BEFORE any other operation in ANY mode
+NO process can continue without verifying Memory Bank existence
+
+🚨 CRITICAL RULE: NEVER CREATE documentation/tasks/ 🚨
+ALL operational task documentation MUST go to memory-bank/tasks/
+NEVER create documentation/tasks/ directory - it should NOT exist
+See: `Core/documentation-tasks-prohibition.mdc` for full details
+
+🚨 CRITICAL RULE: TASK CONTEXT TRACKING IS MANDATORY 🚨
+activeContext.md MUST always identify the CURRENT task being worked on
+The /archive command archives ONLY the current task (not all completed tasks)
+See: `Core/task-context-tracking.mdc` for full details
+
+🚨 CRITICAL RULE: AUTOMATIC TASK NUMBERING IS MANDATORY 🚨
+In VAN mode, when initializing a new task, the system MUST automatically assign a unique task number if the user has not provided one
+Task number format: [PREFIX]-[4-digit-number] (e.g., DEV-0053)
+See: `Core/task-numbering-system.mdc` for full details
+
+🚨 CRITICAL RULE: MCP SERVER CONTEXT INTEGRATION IS MANDATORY 🚨
+In ALL modes (VAN, PLAN, CREATIVE, BUILD, REFLECT, ARCHIVE), agent MUST:
+1. Query sys8 MCP server FIRST:
+   - Call get_current_datetime to get current date/time
+   - Call get_os_version to get OS/platform information
+2. Query context7 MCP server SECOND (when libraries are involved):
+   - Call resolve-library-id for all libraries mentioned in task
+   - Call get-library-docs for all libraries/frameworks used
+3. Include ALL MCP query results in request context BEFORE starting any work
+NO work can proceed without MCP context integration
+
+🚨 CRITICAL RULE: DATE/TIME STAMPS MUST USE sys8 MCP 🚨
+When updating ANY timestamp fields in Memory Bank documents (Last Updated, Date Completed, Date Archived, etc.):
+- MUST call sys8 MCP get_current_datetime BEFORE writing timestamp
+- MUST use the datetime value returned by sys8 MCP
+- MUST NOT use JavaScript Date(), hardcoded dates, or any other method
+- This applies to ALL modes: VAN, PLAN, CREATIVE, BUILD, REFLECT, ARCHIVE
+- This applies to ALL complexity levels (Level 1, 2, 3, 4)
+
+🚨 CRITICAL RULE: GIT PUSH RESTRICTION 🚨
+NEVER execute `git push` unless explicitly requested by the user in the prompt
+- ✅ ALLOWED: `git commit` (always OK to commit locally)
+- ✅ ALLOWED: `git add`, `git status`, `git diff`, `git log` (informational commands)
+- ❌ FORBIDDEN: `git push` (only if user explicitly says: "push", "commit and push", "deploy")
+- See: `.cursor/rules/git-push-restriction.mdc` for full details
+- See: `memory-bank/git-workflow-rules.md` for workflow documentation
+
+> **TL;DR:** This system uses optimized context management and adaptive rule loading to maximize token efficiency while preserving the structured development approach.
+
+## 🧭 OPTIMIZED MODE ARCHITECTURE
+
+```mermaid
+graph TD
+    subgraph "Memory Bank Core"
+        Context["Context Manager"]
+        Rules["Rule Loader"]
+        FileIO["File Manager"]
+        Transition["Mode Transition"]
+    end
+
+    subgraph "Custom Modes"
+        VAN["VAN<br>Initialization"]
+        PLAN["PLAN<br>Planning"]
+        CREATIVE["CREATIVE<br>Design"]
+        BUILD["BUILD<br>Building"]
+        REFLECT["REFLECT<br>Review"]
+        ARCHIVE["ARCHIVE<br>Documentation"]
+    end
+
+    Context --> VAN & PLAN & CREATIVE & BUILD & REFLECT & ARCHIVE
+    Rules --> VAN & PLAN & CREATIVE & BUILD & REFLECT & ARCHIVE
+    FileIO --> VAN & PLAN & CREATIVE & BUILD & REFLECT & ARCHIVE
+    Transition --> VAN & PLAN & CREATIVE & BUILD & REFLECT & ARCHIVE
+
+    VAN --> PLAN
+    PLAN --> CREATIVE
+    CREATIVE --> BUILD
+    BUILD --> REFLECT
+    REFLECT --> ARCHIVE
+
+    style Context fill:#4da6ff,stroke:#0066cc,color:white
+    style Rules fill:#ffa64d,stroke:#cc7a30,color:white
+    style FileIO fill:#4dbb5f,stroke:#36873f,color:white
+    style Transition fill:#d94dbb,stroke:#a3378a,color:white
+```
+
+## 📈 ADAPTIVE COMPLEXITY MODEL
+
+```mermaid
+graph TD
+    Task["Task Creation"] --> Complexity{"Complexity<br>Level?"}
+
+    Complexity -->|"Level 1<br>Quick Fix"| L1["3-Phase<br>Streamlined Process"]
+    Complexity -->|"Level 2<br>Enhancement"| L2["4-Phase<br>Balanced Process"]
+    Complexity -->|"Level 3<br>Feature"| L3["5-Phase<br>Comprehensive Process"]
+    Complexity -->|"Level 4<br>Enterprise"| L4["6-Phase<br>Governance Process"]
+
+    L1 --> L1_Process["VAN → BUILD → REFLECT"]
+    L2 --> L2_Process["VAN → PLAN → BUILD → REFLECT"]
+    L3 --> L3_Process["VAN → PLAN → CREATIVE → BUILD → REFLECT"]
+    L4 --> L4_Process["VAN → PLAN → CREATIVE → BUILD → REFLECT → ARCHIVE"]
+
+    style Complexity fill:#d94dbb,stroke:#a3378a,color:white
+    style L1 fill:#4dbb5f,stroke:#36873f,color:white
+    style L2 fill:#ffa64d,stroke:#cc7a30,color:white
+    style L3 fill:#4da6ff,stroke:#0066cc,color:white
+    style L4 fill:#ff5555,stroke:#cc0000,color:white
+```
+
+## 🔌 MCP SERVER CONTEXT INTEGRATION (MANDATORY)
+
+**For ALL modes (VAN, PLAN, CREATIVE, BUILD, REFLECT, ARCHIVE):**
+
+Before starting any work in ANY mode, the agent MUST:
+
+1. **Query sys8 MCP Server FIRST:**
+   - `get_current_datetime` - Get current date/time for timelines, timestamps, scheduling, and ALL date/time fields in Memory Bank documents
+   - `get_os_version` - Get OS/platform information for platform-specific decisions and commands
+
+2. **Query context7 MCP Server SECOND (when libraries are involved):**
+   - `resolve-library-id` - Resolve library/package names to Context7-compatible library IDs
+   - `get-library-docs` - Get up-to-date documentation for libraries/frameworks used
+
+3. **Include MCP Results in Context:**
+   - All sys8 query results (date/time, OS info) MUST be included in request context
+   - All context7 query results (library IDs, documentation) MUST be included in request context
+   - MCP results should inform all planning, design, implementation, reflection, and archiving decisions
+
+**This is a MANDATORY requirement - no exceptions.**
+
+## 📅 DATE/TIME STAMP REQUIREMENTS (MANDATORY)
+
+**When updating ANY timestamp fields in Memory Bank documents:**
+
+The agent MUST use sys8 MCP `get_current_datetime` for ALL date/time operations:
+
+- **Last Updated** fields in any Memory Bank document
+- **Date Completed** fields in archive documents
+- **Date Archived** fields in archive documents
+- **Date** fields in reflection documents
+- **Timestamp** fields in progress.md
+- **Any other date/time fields** in Memory Bank documents
+
+**DO NOT:**
+- Use JavaScript `new Date()` or `Date.now()`
+- Hardcode dates or timestamps
+- Use Node.js Date methods directly
+- Use any other method to get current date/time
+
+**DO:**
+- Call sys8 MCP `get_current_datetime` BEFORE writing any timestamp
+- Use the returned datetime value (e.g., `datetime`, `utc`, `human_readable_utc3`)
+- Format timestamps consistently using sys8 MCP response formats
+
+**This applies to ALL modes and ALL complexity levels.**
+
+## 🧠 HIERARCHICAL RULE LOADING
+
+Rules are loaded hierarchically to optimize context usage:
+
+```mermaid
+graph TD
+    Root["Memory Bank<br>Common Rules"] --> Core["Core Rules<br>Shared Across Modes"]
+
+    Core --> L1["Level 1<br>Rules"]
+    Core --> L2["Level 2<br>Rules"]
+    Core --> L3["Level 3<br>Rules"]
+    Core --> L4["Level 4<br>Rules"]
+
+    Core --> VM["Mode<br>Visual Maps"]
+
+    Core --> Phase["Phase-Specific<br>Rules"]
+
+    Phase --> VAN_Rules["VAN Mode<br>Rules"]
+    Phase --> PLAN_Rules["PLAN Mode<br>Rules"]
+    Phase --> CREATIVE_Rules["CREATIVE Mode<br>Rules"]
+    Phase --> BUILD_Rules["BUILD Mode<br>Rules"]
+    Phase --> REFLECT_Rules["REFLECT Mode<br>Rules"]
+    Phase --> ARCHIVE_Rules["ARCHIVE Mode<br>Rules"]
+
+    style Root fill:#4da6ff,stroke:#0066cc,color:white
+    style Core fill:#ffa64d,stroke:#cc7a30,color:white
+    style Phase fill:#4dbb5f,stroke:#36873f,color:white
+```
+
+## 🔄 TOKEN-OPTIMIZED CREATIVE PHASE
+
+Creative phase documentation is progressively generated:
+
+```mermaid
+graph TD
+    Start["Creative Phase<br>Initiation"] --> P1["1️⃣ PROBLEM<br>Define scope"]
+    P1 --> P2["2️⃣ OPTIONS<br>List alternatives"]
+    P2 --> P3["3️⃣ ANALYSIS<br>Compare options"]
+    P3 --> P4["4️⃣ DECISION<br>Select approach"]
+    P4 --> P5["5️⃣ GUIDELINES<br>Document implementation"]
+
+    P3 -.->|"On Demand"| Details["Detailed Option<br>Analysis"]
+
+    style Start fill:#d971ff,stroke:#a33bc2,color:white
+    style P1 fill:#4da6ff,stroke:#0066cc,color:white
+    style P2 fill:#ffa64d,stroke:#cc7a30,color:white
+    style P3 fill:#4dbb5f,stroke:#36873f,color:white
+    style P4 fill:#d94dbb,stroke:#a3378a,color:white
+    style P5 fill:#4dbbbb,stroke:#368787,color:white
+    style Details fill:#e699d9,stroke:#d94dbb,color:white,stroke-dasharray: 5 5
+```
+
+## 🔀 OPTIMIZED MODE TRANSITIONS
+
+Mode transitions use a unified context transfer protocol:
+
+```mermaid
+sequenceDiagram
+    participant Current as Current Mode
+    participant Context as Context Manager
+    participant Next as Next Mode
+
+    Current->>Context: Create transition document
+    Current->>Context: Store critical context
+    Context->>Context: Prepare rule cache
+    Current->>Next: Initiate transition
+    Next->>Context: Verify context availability
+    Context->>Next: Load relevant context
+    Context->>Next: Load cached rules
+    Next->>Next: Continue with preserved context
+```
+
+## 📊 MEMORY BANK EFFICIENT UPDATES
+
+```mermaid
+graph TD
+    subgraph "Memory Bank Files"
+        tasks["tasks.md<br>Source of Truth"]
+        active["activeContext.md<br>Current Focus"]
+        creative["creative-*.md<br>Design Decisions"]
+        progress["progress.md<br>Implementation Status"]
+        transition["transition.md<br>Mode Transitions"]
+    end
+
+    Update["Update Request"] --> Diff{"Changed?"}
+    Diff -->|"No"| Skip["Skip Update"]
+    Diff -->|"Yes"| Section{"Section<br>Change?"}
+    Section -->|"Yes"| Partial["Update Changed<br>Sections Only"]
+    Section -->|"No"| Full["Full File<br>Update"]
+
+    Partial --> tasks
+    Full --> tasks
+
+    style Update fill:#4da6ff,stroke:#0066cc,color:white
+    style Diff fill:#ffa64d,stroke:#cc7a30,color:white
+    style Section fill:#4dbb5f,stroke:#36873f,color:white
+    style Partial fill:#d94dbb,stroke:#a3378a,color:white
+    style Full fill:#4dbbbb,stroke:#368787,color:white
+```
+
+## 💻 COMPLEXITY-BASED DOCUMENTATION
+
+Documentation requirements scale based on complexity level:
+
+| Documentation | Level 1 | Level 2 | Level 3 | Level 4 |
+|---------------|---------|---------|---------|---------|
+| Problem Definition | Brief | Standard | Detailed | Comprehensive |
+| Options Analysis | Optional | Basic | Multiple Options | Extensive |
+| Implementation Plan | Simple | Standard | Detailed | Phased |
+| Testing Requirements | Basic | Standard | Comprehensive | Rigorous |
+| Documentation | Minimal | Standard | Detailed | Extensive |
+
+## 📑 OPTIMIZED TEMPLATES BY LEVEL
+
+### Level 1: Quick Fix Template
+```markdown
+## QUICK FIX: [Issue Name]
+- Problem: [Brief description]
+- Solution: [Implemented approach]
+- Verification: [How fix was tested]
+```
+
+### Level 2: Enhancement Template
+```markdown
+## ENHANCEMENT: [Feature Name]
+- Requirement: [What needs to be done]
+- Approach: [How it was implemented]
+- Testing: [Verification approach]
+- Documentation: [Where documented]
+```
+
+### Level 3-4: Comprehensive Template
+Uses the optimized creative phase template with appropriate documentation depth
+
+## 🔄 REFERENCE MAPS
+
+Each mode's visual process map is optimized for token efficiency:
+
+- @VAN Mode Map (Optimized)
+- @PLAN Mode Map (Optimized)
+- @CREATIVE Mode Map (Optimized)
+- @BUILD Mode Map (Optimized)
+- @REFLECT Mode Map (Optimized)
+- @ARCHIVE Mode Map (Optimized)
+
+## ⚡ TOKEN EFFICIENCY IMPROVEMENTS
+
+Optimizations in this version:
+
+1. Hierarchical rule loading (65% token reduction)
+2. Progressive creative phase documentation (60% token reduction)
+3. Context preservation during mode transitions (40% token reduction)
+4. Differential Memory Bank updates (30% token reduction)
+5. Complexity-based template scaling (varies by level)
+
+## 💡 USAGE GUIDANCE
+
+To use the optimized system:
+
+1. Start with the VAN command to initialize and determine complexity
+2. Follow the complexity-appropriate workflow
+3. Use progressive documentation appropriate to task complexity
+4. Let the system manage rule loading and context preservation
+5. Enjoy the improved token efficiency while maintaining structured development

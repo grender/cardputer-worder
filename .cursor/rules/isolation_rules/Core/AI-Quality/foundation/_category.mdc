@@ -1,0 +1,164 @@
+---
+description: Foundation Rules Category - Decomposition, TDD, Method Size
+globs: foundation/_category.mdc
+alwaysApply: false
+---
+
+# FOUNDATION RULES (Rules #1-3)
+
+> **Core development practices for BUILD mode. Focus: small units, test-first, size limits.**
+
+## 📋 CATEGORY OVERVIEW
+
+| Rule | Name | Key Limit | Apply When |
+|------|------|-----------|------------|
+| #1 | **Stubbing** | Max 50 lines per stub | Breaking down tasks |
+| #2 | **TDD** | Tests before code | Starting implementation |
+| #3 | **Method Size** | 7-9 objects max | Writing any method |
+
+---
+
+## 1️⃣ STUBBING RULE (#1)
+
+### One-Liner
+> Break complex tasks into stubs of max 50 lines each.
+
+### Quick Application
+
+```typescript
+// ❌ BAD: One massive function
+async function processOrder(order) {
+  // 200+ lines doing everything
+}
+
+// ✅ GOOD: Decomposed into stubs
+async function processOrder(order) {
+  await validateOrder(order);
+  await calculatePricing(order);
+  await processPayment(order);
+  await updateInventory(order);
+  await sendConfirmation(order);
+}
+
+// Each stub: max 50 lines, single responsibility
+async function validateOrder(order) { /* TODO */ }
+async function calculatePricing(order) { /* TODO */ }
+```
+
+### Checklist
+- [ ] Each stub < 50 lines
+- [ ] Single responsibility per stub
+- [ ] Clear input/output defined
+- [ ] Stubs are independently testable
+
+---
+
+## 2️⃣ TDD RULE (#2)
+
+### One-Liner
+> Write tests BEFORE implementation. Tests filter AI hallucinations.
+
+### Quick Application
+
+```typescript
+// STEP 1: Write tests first
+describe('calculateTotal', () => {
+  it('sums items correctly', () => {
+    expect(calculateTotal([10, 20])).toBe(30);
+  });
+  
+  it('handles empty array', () => {
+    expect(calculateTotal([])).toBe(0);
+  });
+  
+  it('handles negative values', () => {
+    expect(calculateTotal([10, -5])).toBe(5);
+  });
+});
+
+// STEP 2: Then implement to pass tests
+function calculateTotal(items) {
+  return items.reduce((sum, item) => sum + item, 0);
+}
+```
+
+### Checklist
+- [ ] Tests written BEFORE code
+- [ ] Happy path covered
+- [ ] Edge cases covered
+- [ ] Error cases covered
+- [ ] All tests pass
+
+---
+
+## 3️⃣ METHOD SIZE RULE (#3)
+
+### One-Liner
+> Max 50 lines, max 7-9 objects in working memory.
+
+### Quick Application
+
+```typescript
+// ❌ BAD: Too many objects (12+)
+function process(a, b, c, d, e, f, g, h, i, j, k, l) {
+  let x, y, z, w, v;  // 17 objects total!
+  // AI loses focus, quality drops
+}
+
+// ✅ GOOD: Limited objects (7)
+function process(config, data) {
+  const { userId, items } = data;
+  let total, discount, final;  // 7 objects
+  // AI maintains focus
+}
+```
+
+### Limits Table
+
+| Metric | Limit | Why |
+|--------|-------|-----|
+| Lines per method | ≤50 | Fits in context window |
+| Objects in scope | 7-9 | Miller's Law (7±2) |
+| Parameters | ≤5 | Reduces complexity |
+| Nesting depth | ≤3 | Improves readability |
+| Cyclomatic complexity | ≤3 | Easier to test |
+
+### Checklist
+- [ ] Method < 50 lines
+- [ ] ≤7-9 objects in scope
+- [ ] ≤5 parameters
+- [ ] Nesting ≤3 levels
+- [ ] Single responsibility
+
+---
+
+## 🎯 WHEN TO APPLY
+
+```mermaid
+graph TD
+    Start["Starting Implementation"] --> Q1{"Task > 50 lines?"}
+    Q1 -->|Yes| Apply1["Apply Rule #1: Stubbing"]
+    Q1 -->|No| Q2{"Tests exist?"}
+    
+    Apply1 --> Q2
+    Q2 -->|No| Apply2["Apply Rule #2: TDD"]
+    Q2 -->|Yes| Q3{"Method > 50 lines?"}
+    
+    Apply2 --> Q3
+    Q3 -->|Yes| Apply3["Apply Rule #3: Method Size"]
+    Q3 -->|No| Implement["Implement with quality"]
+    Apply3 --> Implement
+```
+
+---
+
+## 📂 DETAILED RULES
+
+For comprehensive guidance with examples:
+- `stubbing-rule.mdc` - Full decomposition guide
+- `tdd-rule.mdc` - Complete TDD workflow
+- `method-size-rule.mdc` - Size limits and refactoring
+
+---
+
+*Foundation rules improve code quality by 35-40%.*

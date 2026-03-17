@@ -1,0 +1,74 @@
+---
+description: Defines canonical paths for core Memory Bank files.
+globs: memory-bank-paths.mdc
+alwaysApply: true
+---
+
+# CORE MEMORY BANK FILE LOCATIONS
+
+**CRITICAL:** All core Memory Bank files reside within the `memory-bank/` directory at the project root. Do NOT create or modify these files outside this directory unless explicitly instructed for archiving purposes.
+
+* **Tasks File:** `memory-bank/tasks.md` - This file is used for active, in-progress task tracking, detailing steps, checklists, and component lists. Its content, particularly the detailed checklists, is merged into the main archive document for the task upon completion. After archival, `tasks.md` is cleared to be ready for the next task. It is an ephemeral working document during a task's lifecycle, with its persistent record captured in the task's archive file.
+* **Backlog File (Active):** `memory-bank/backlog.md` - Active task queue for future work (v2.0 - performance optimized). Contains only pending and in-progress tasks. Completed/cancelled tasks moved to archive.
+  - Format: BACKLOG-[4-digit-number] items (e.g., `BACKLOG-0001`, `BACKLOG-0042`)
+  - Statuses: `pending` | `in_progress` (only active items)
+  - Template: `.cursor/templates/backlog-template.md`
+  - Performance: ~10x faster reads (only active items, no archived)
+  
+* **Backlog Archive File:** `memory-bank/backlog-archive.md` - Historical record of completed and cancelled Backlog items (v2.0). Rarely read during normal operations, provides historical reference.
+  - Format: BACKLOG-[4-digit-number] items (same as active backlog)
+  - Statuses: `completed` | `cancelled` (only historical items)
+  - Template: `.cursor/templates/backlog-archive-template.md`
+  - Updated by: ARCHIVE command when task completes
+  - Purpose: Keeps active backlog small and fast
+* **Active Context File:** `memory-bank/activeContext.md`
+* **Progress File:** `memory-bank/progress.md`
+* **Project Brief File:** `memory-bank/projectbrief.md`
+* **Product Context File:** `memory-bank/productContext.md`
+* **System Patterns File:** `memory-bank/systemPatterns.md`
+* **Tech Context File:** `memory-bank/techContext.md`
+* **Style Guide File:** `memory-bank/style-guide.md`
+* **PRD Directory:** `memory-bank/prd/` - Product Requirements Documents
+  - Format: `PRD-[TASK-ID]-[brief-description].md`
+  - Example: `memory-bank/prd/PRD-DEV-001-facebook-duplicate-blocked-account.md`
+  - Archive: `memory-bank/prd/archive/` - Completed PRDs
+* **Tasks Directory:** `memory-bank/tasks/` - Task-specific documentation (ALL operational task docs)
+  - Format: `DEV-XXX-{description}.md`
+  - Examples: `memory-bank/tasks/DEV-001-implementation-plan.md`, `memory-bank/tasks/DEV-001-QA-FINAL-REPORT.md`
+* **Creative Phase Docs:** `memory-bank/creative/creative-[task_id]-[feature_name].md`
+* **Reflection Docs:** `memory-bank/reflection/reflection-[task_id].md` - ALL reflections
+* **QA Reports:** `memory-bank/qa/` - ALL QA reports
+* **Archive Directory:** `memory-bank/archive/archive-[task_id].md`
+* **Reports Directory:** `memory-bank/reports/` - Debug reports, diagnostic reports
+* **Docs Directory:** `memory-bank/docs/` - Documentation ABOUT Memory Bank system
+
+🚨 **MANDATORY: TASK ID IN ALL REPORT FILENAMES** 🚨
+**ALL report files created in ANY Memory Bank mode MUST include the task ID in the filename.**
+
+**Documentation Storage Rules:**
+- **Task-Specific Documentation:** `memory-bank/tasks/DEV-[task_id]-*.md` - ALL operational task docs
+  - Examples: `DEV-001-implementation-plan.md`, `DEV-001-QA-FINAL-REPORT.md`, `DEV-001-testing-guide.md`
+- **QA/Test/Validation Reports:** `memory-bank/qa/qa-report-[task_id]-[phase].md` or `memory-bank/reports/test-report-[task_id]-[component].md`
+  - Examples: `qa-report-DEV-0053-phase3.9.md`, `test-report-DEV-0053-obsidian-plugin.md`
+- **Debug/Diagnostic Reports:** `memory-bank/reports/debug-[task_id]-[feature].md`, `memory-bank/reports/diagnostic-[task_id]-[issue].md`
+  - Examples: `debug-DEV-0053-autosync.md`, `diagnostic-DEV-0053-sync-manager.md`
+- **Archive Location Priority:**
+  - Priority 1: `documentation/archive/` (if `documentation/` exists)
+  - Priority 2: `doc/archive/` (if `doc/` exists and `documentation/` doesn't)
+  - Priority 3: `memory-bank/archive/` (fallback)
+
+**Task ID format:** `[PREFIX]-[4-digit-number]` (e.g., `DEV-0053`, `FIN-0001`, `QA-0008`)
+**How to get task ID:** Read `memory-bank/activeContext.md` to get current task ID
+**See:** `Core/task-numbering-system.mdc` for task ID format details
+
+**CRITICAL PROHIBITION:** NEVER create MD files (except README.md) in:
+- Application source directories (e.g., `transcription-service/transcription-obsidian-plugin/`)
+- Component directories (e.g., `frontend/src/`, `backend/src/`)
+- Service root directories (except README.md)
+- Any directory containing source code
+
+**Verification Mandate:**
+1. Before any `create_file` or `edit_file` operation on these core files, verify the path starts with `memory-bank/`.
+2. If attempting to create a new core file (e.g., `tasks.md` at the start of a project), ensure it is created at `memory-bank/tasks.md`.
+3. Before creating any MD file, check if it's a report/documentation and place it in the appropriate directory per rules above.
+4. See `memory-bank/documentation-storage-rules.md` for complete documentation storage rules.

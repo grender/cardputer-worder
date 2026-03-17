@@ -28,6 +28,9 @@ use crate::cardputer_hal::input::keyboard::PressedSymbol;
 use crate::cardputer_hal::input::keyboard_io::KeyEvent;
 use crate::cardputer_hal::screen::cardputer_screen::CardputerScreen;
 
+/// Height of the top bar (status line + separator) in pixels. Content below the top bar must start at this y.
+pub const TOP_BAR_HEIGHT: u32 = 12;
+
 pub struct CardworderClock {}
 pub struct CardworderUi<'a> {
     screen: CardputerScreen<'a>,

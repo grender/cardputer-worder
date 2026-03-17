@@ -1,0 +1,315 @@
+---
+description: Rule #10 - Focused Code Review - Review one method at a time
+globs: quality/focused-review-rule.mdc
+alwaysApply: false
+---
+
+# RULE #10: FOCUSED CODE REVIEW
+
+> **Goal:** Find 40% more bugs by reviewing one method at a time instead of entire features.
+
+## 🎯 CORE PRINCIPLE
+
+**Review ONE method at a time, not entire files or features. Narrow focus = better review.**
+
+Broad reviews miss details. Focused reviews catch subtle bugs.
+
+---
+
+## 📋 RULE SPECIFICATION
+
+```yaml
+FOCUSED_REVIEW_RULE:
+  scope: "Single method per review"
+  prohibition: "Do NOT review entire files at once"
+  format: "Checklist-based review"
+  categories:
+    - correctness: "Logic and behavior"
+    - quality: "Code quality metrics"
+    - safety: "Security and error handling"
+  output: "APPROVED / MINOR_CHANGES / MAJOR_CHANGES"
+  benefit: "40% more bugs found than broad review"
+```
+
+---
+
+## 📊 REVIEW EFFECTIVENESS
+
+| Review Scope | Bugs Found | Time | Fatigue |
+|--------------|------------|------|---------|
+| One method | 40% more | Less | Low |
+| 3-5 methods | Baseline | Medium | Medium |
+| Entire file | 20% fewer | More | High |
+| 500+ lines | 40% fewer | Longest | Very High |
+
+### Why Focused?
+```
+Broad Review:
+├── Attention spread thin
+├── Important details missed
+├── Reviewer fatigue
+└── "Looks good" without deep analysis
+
+Focused Review:
+├── Deep dive into one thing
+├── Every line examined
+├── Edge cases considered
+└── Actionable feedback
+```
+
+---
+
+## ✅ HOW TO APPLY
+
+### Review Prompt Template
+
+```markdown
+## Review: [methodName] ONLY
+
+### Code to Review
+```typescript
+[paste single method here]
+```
+
+### Related Tests
+```typescript
+[paste tests for this method]
+```
+
+### Review using this checklist and provide verdict.
+```
+
+### Review Checklist
+
+```markdown
+## Method Review: [methodName]
+
+### 1. CORRECTNESS
+- [ ] Logic matches requirements
+- [ ] All test cases covered
+- [ ] Edge cases handled
+- [ ] Return values correct
+- [ ] Side effects documented
+
+### 2. QUALITY
+- [ ] Method < 50 lines
+- [ ] ≤7-9 objects in scope
+- [ ] Single responsibility
+- [ ] Clear naming
+- [ ] No code smells
+
+### 3. SAFETY
+- [ ] Input validation present
+- [ ] Errors properly handled
+- [ ] No race conditions
+- [ ] Transaction isolation correct
+- [ ] No security vulnerabilities
+
+### 4. PERFORMANCE
+- [ ] No N+1 queries
+- [ ] No unnecessary loops
+- [ ] Reasonable complexity
+
+### VERDICT
+□ ✅ APPROVED - Ready to merge
+□ ⚠️ MINOR CHANGES - Small fixes needed
+□ ❌ MAJOR CHANGES - Significant rework required
+
+### FINDINGS
+[List specific issues found]
+
+### RECOMMENDATIONS
+[Suggested improvements]
+```
+
+---
+
+## 📋 REVIEW CATEGORIES DETAIL
+
+### Correctness Review
+Focus on: Does it work correctly?
+
+```markdown
+CORRECTNESS CHECKLIST:
+- [ ] Logic implements specification correctly
+- [ ] All branches tested
+- [ ] Loop conditions correct (off-by-one?)
+- [ ] Null/undefined handled
+- [ ] Return value matches expected type
+- [ ] Async/await used correctly
+- [ ] Promises properly chained
+```
+
+### Quality Review
+Focus on: Is it well-written?
+
+```markdown
+QUALITY CHECKLIST:
+- [ ] Method length ≤ 50 lines
+- [ ] Cognitive load ≤ 9 objects
+- [ ] Single responsibility
+- [ ] No duplicate code
+- [ ] Variable names are clear
+- [ ] No magic numbers/strings
+- [ ] Comments explain "why", not "what"
+```
+
+### Safety Review
+Focus on: Is it secure and reliable?
+
+```markdown
+SAFETY CHECKLIST:
+- [ ] SQL injection prevented (parameterized queries)
+- [ ] XSS prevented (output escaped)
+- [ ] Input validated and sanitized
+- [ ] Errors don't leak sensitive info
+- [ ] Authentication/authorization checked
+- [ ] Transaction isolation appropriate
+- [ ] Rate limiting considered
+```
+
+### Performance Review
+Focus on: Is it efficient?
+
+```markdown
+PERFORMANCE CHECKLIST:
+- [ ] No N+1 database queries
+- [ ] Bulk operations used where possible
+- [ ] Expensive operations cached
+- [ ] No unnecessary data fetched
+- [ ] Pagination for large datasets
+- [ ] Indexes utilized properly
+```
+
+---
+
+## 🔍 REVIEW EXAMPLE
+
+### Code Under Review
+
+```typescript
+async function addLike(videoId: string, ipAddress: string): Promise<LikeResult> {
+  return await db.transaction(async (tx) => {
+    const existing = await tx.query(
+      'SELECT id FROM likes WHERE video_id = $1 AND ip_address = $2',
+      [videoId, ipAddress]
+    );
+    
+    if (existing.rows.length > 0) {
+      const count = await getCount(tx, videoId);
+      return { added: false, count };
+    }
+    
+    await tx.query(
+      'INSERT INTO likes (video_id, ip_address) VALUES ($1, $2)',
+      [videoId, ipAddress]
+    );
+    
+    const count = await getCount(tx, videoId);
+    return { added: true, count };
+  });
+}
+```
+
+### Review Output
+
+```markdown
+## Method Review: addLike
+
+### 1. CORRECTNESS ✅
+- [x] Logic matches requirements - dedup by IP
+- [x] Edge cases handled - returns false for duplicate
+- [x] Return values correct
+
+### 2. QUALITY ✅
+- [x] Method ~20 lines
+- [x] 6 objects in scope (tx, existing, count, videoId, ipAddress, result)
+- [x] Single responsibility - add like
+
+### 3. SAFETY ⚠️
+- [x] Parameterized queries - no SQL injection
+- [ ] **ISSUE: No input validation for videoId/ipAddress**
+- [ ] **ISSUE: Transaction isolation not specified**
+
+### 4. PERFORMANCE ✅
+- [x] No N+1 queries
+- [x] Efficient index usage expected
+
+### VERDICT: ⚠️ MINOR CHANGES
+
+### FINDINGS
+1. No input validation - null/empty ipAddress would cause issues
+2. Transaction isolation level not specified - race condition possible
+
+### RECOMMENDATIONS
+1. Add: `if (!ipAddress) throw new Error('IP required')`
+2. Add: `SET TRANSACTION ISOLATION LEVEL SERIALIZABLE`
+```
+
+---
+
+## ⚠️ ANTI-PATTERNS
+
+### ❌ Don't: Review Everything at Once
+```markdown
+"Review this entire 500-line file"
+```
+Result: Shallow review, bugs missed
+
+### ❌ Don't: Rubber-Stamp
+```markdown
+"Looks good to me" (without checking)
+```
+Result: Bugs slip through
+
+### ❌ Don't: Review Without Tests
+```markdown
+"Review this method" (no tests provided)
+```
+Result: Can't verify correctness
+
+### ✅ Do: Focused Review
+```markdown
+"Review ONLY addLike() method against these tests"
+```
+Result: Thorough analysis, actionable feedback
+
+---
+
+## 📋 QUICK REFERENCE
+
+```
+FOCUSED REVIEW RULES:
+├── Scope: One method only
+├── Checklist: Use standard checklist
+├── Tests: Include related tests
+├── Verdict: APPROVED / MINOR / MAJOR
+└── Findings: Specific, actionable
+
+REVIEW ORDER:
+1. Correctness (Does it work?)
+2. Quality (Is it well-written?)
+3. Safety (Is it secure?)
+4. Performance (Is it efficient?)
+```
+
+---
+
+## ✅ VERIFICATION CHECKLIST
+
+Before marking review complete:
+
+```
+□ Reviewed ONE method only
+□ Correctness checked against tests
+□ Quality metrics verified
+□ Safety concerns addressed
+□ Performance considered
+□ Clear verdict provided
+□ Specific findings listed
+□ Actionable recommendations given
+```
+
+---
+
+*Deep focus on one method beats shallow review of many.*

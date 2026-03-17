@@ -1,0 +1,162 @@
+---
+description: Context Rules Category - Requirements, DoD, Corner Cases
+globs: context/_category.mdc
+alwaysApply: false
+---
+
+# CONTEXT RULES (Rules #4-6)
+
+> **Context gathering practices for VAN and PLAN modes. Focus: requirements, done criteria, boundaries.**
+
+## 📋 CATEGORY OVERVIEW
+
+| Rule | Name | Key Practice | Apply When |
+|------|------|--------------|------------|
+| #4 | **Requirements** | Document context first | Task initialization |
+| #5 | **DoD** | Define done criteria | Planning phase |
+| #6 | **Corner Cases** | List boundaries | Before implementation |
+
+---
+
+## 4️⃣ REQUIREMENTS RULE (#4)
+
+### One-Liner
+> Gather context, expected results, DoD, and boundaries BEFORE coding.
+
+### Quick Application
+
+```markdown
+## REQUIREMENTS CHECKLIST
+
+✓ CONTEXT: [What exists now, what problem we're solving]
+✓ EXPECTED RESULTS: [Happy path + corner cases examples]
+✓ DEFINITION OF DONE: [Explicit completion criteria]
+✓ BOUNDARIES: [What we're NOT doing]
+✓ COMPLEXITY CHECK: [Can AI solve this?]
+```
+
+### Template
+
+```markdown
+## Task: [Name]
+
+### Context
+- Current state: [Description]
+- Problem: [What needs solving]
+
+### Expected Results
+- Happy path: Input X → Output Y
+- Edge case 1: [Input] → [Expected]
+- Edge case 2: [Input] → [Expected]
+
+### Definition of Done
+- [ ] Criterion 1
+- [ ] Criterion 2
+
+### Boundaries (What We DON'T Do)
+- ❌ [Excluded item 1]
+- ❌ [Excluded item 2]
+```
+
+---
+
+## 5️⃣ DoD RULE (#5)
+
+### One-Liner
+> Create explicit "Definition of Done" checklist that auto-generates test cases.
+
+### Quick Application
+
+```markdown
+## Definition of Done: [Feature Name]
+
+### Functional
+- [ ] [Specific behavior 1]
+- [ ] [Specific behavior 2]
+
+### Quality
+- [ ] All tests pass
+- [ ] Code reviewed
+- [ ] Methods < 50 lines
+
+### Edge Cases
+- [ ] Null input handled
+- [ ] Empty input handled
+- [ ] Max values handled
+```
+
+### DoD → Tests Transformation
+
+```markdown
+DoD Item: "Like not added twice from same IP"
+    ↓
+Test: it('should not add duplicate like from same IP', ...)
+    ↓
+Code: Check IP uniqueness before insert
+```
+
+---
+
+## 6️⃣ CORNER CASES RULE (#6)
+
+### One-Liner
+> List corner cases and boundary conditions BEFORE writing tests or code.
+
+### Quick Application
+
+```markdown
+## Corner Cases: [Feature Name]
+
+### Input Validation
+| Case | Input | Expected |
+|------|-------|----------|
+| Null | null | Error/Default |
+| Empty | "" | Error/Empty result |
+| Max length | Very long string | Truncate/Error |
+
+### Boundary Values
+| Case | Value | Expected |
+|------|-------|----------|
+| Minimum | 0 | [Behavior] |
+| Maximum | MAX_INT | [Behavior] |
+| Negative | -1 | [Behavior] |
+
+### Concurrency
+| Case | Scenario | Expected |
+|------|----------|----------|
+| Race | 100 simultaneous | Only 1 succeeds |
+| Timeout | DB slow | Retry/Fail gracefully |
+```
+
+---
+
+## 🎯 WHEN TO APPLY
+
+```mermaid
+graph TD
+    Start["New Task"] --> Q1{"Requirements<br>documented?"}
+    Q1 -->|No| Apply4["Apply Rule #4:<br>Requirements"]
+    Q1 -->|Yes| Q2{"DoD<br>defined?"}
+    
+    Apply4 --> Q2
+    Q2 -->|No| Apply5["Apply Rule #5:<br>DoD"]
+    Q2 -->|Yes| Q3{"Corner cases<br>listed?"}
+    
+    Apply5 --> Q3
+    Q3 -->|No| Apply6["Apply Rule #6:<br>Corner Cases"]
+    Q3 -->|Yes| Ready["Ready for<br>implementation"]
+    Apply6 --> Ready
+```
+
+---
+
+## 📂 DETAILED RULES
+
+For comprehensive guidance:
+- `requirements-rule.mdc` - Full requirements gathering
+- `dod-rule.mdc` - DoD templates and examples
+- `corner-cases-rule.mdc` - Boundary identification
+
+---
+
+*Context rules increase AI accuracy by 50%.*

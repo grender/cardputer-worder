@@ -1,0 +1,199 @@
+---
+description: Mandatory context7 MCP server usage rules for Cursor AI
+globs: "**/*"
+alwaysApply: true
+---
+
+# MANDATORY: context7 MCP Server Usage Rules
+
+## CRITICAL REQUIREMENT
+
+**You MUST use the context7 MCP server for ALL library documentation and code examples.** This is a mandatory requirement for all tasks involving external libraries, frameworks, packages, or when you need up-to-date API documentation and code examples.
+
+## When to Use context7 MCP
+
+### 1. Library Documentation and API References
+**MANDATORY**: Use `get-library-docs` from context7 MCP
+
+**DO NOT**:
+- Rely on outdated training data for library APIs
+- Use generic or hallucinated API methods
+- Assume library APIs based on old versions
+- Use code examples from memory without verification
+
+**DO**:
+- Call `resolve-library-id` first to get the correct library identifier
+- Call `get-library-docs` with the resolved library ID
+- Use `mode='code'` for API references and code examples (default)
+- Use `mode='info'` for conceptual guides and architectural questions
+- Specify `topic` parameter to focus on specific areas (e.g., 'hooks', 'routing', 'middleware')
+- Use pagination (`page` parameter) if initial results are insufficient
+
+### 2. Library Identification
+**MANDATORY**: Use `resolve-library-id` from context7 MCP
+
+**DO NOT**:
+- Guess library IDs or use incorrect formats
+- Skip library resolution and use `get-library-docs` directly (unless user provides explicit library ID in format `/org/project` or `/org/project/version`)
+
+**DO**:
+- Call `resolve-library-id` with the library/package name
+- Select the most relevant match based on:
+  - Name similarity (exact matches prioritized)
+  - Description relevance
+  - Documentation coverage (prioritize libraries with higher Code Snippet counts)
+  - Source reputation (High or Medium reputation preferred)
+  - Benchmark Score (quality indicator)
+- Use the returned Context7-compatible library ID for `get-library-docs`
+
+### 3. Version-Specific Documentation
+**MANDATORY**: Use version-specific library IDs when available
+
+**DO NOT**:
+- Use generic documentation when specific version is needed
+- Assume API compatibility across versions
+
+**DO**:
+- Use library ID format `/org/project/version` when user specifies a version
+- Fetch version-specific documentation for accurate API references
+- Verify API methods exist in the specified version
+
+## Usage Pattern
+
+**Before implementing any library-related code:**
+
+1. **Check**: Does this task involve external libraries, frameworks, or packages?
+2. **If YES**:
+   - First call `resolve-library-id` with the library name
+   - Then call `get-library-docs` with the resolved library ID
+   - Use the fetched documentation to write accurate code
+3. **If NO**: Proceed with standard implementation
+
+**For library-specific queries:**
+- User mentions a library/framework/package name → Use context7
+- User asks "How do I use X?" where X is a library → Use context7
+- User needs API documentation → Use context7
+- User needs code examples for a library → Use context7
+
+## Code Examples
+
+### ❌ WRONG - Using Outdated Information
+```typescript
+// WRONG: Using outdated API from memory
+import { useRouter } from 'next/router'; // Old Next.js API
+
+// WRONG: Hallucinated API that doesn't exist
+const result = await someLibrary.nonExistentMethod();
+
+// WRONG: Generic answer without version-specific docs
+// Assuming React 16 API when project uses React 18
+```
+
+### ✅ CORRECT - Using context7 MCP
+```typescript
+// CORRECT: Resolve library ID first
+const libraryId = await mcp.callTool('context7', 'resolve-library-id', {
+  libraryName: 'next.js'
+});
+// Returns: { libraryId: '/vercel/next.js', ... }
+
+// CORRECT: Get up-to-date documentation
+const docs = await mcp.callTool('context7', 'get-library-docs', {
+  context7CompatibleLibraryID: '/vercel/next.js',
+  mode: 'code',
+  topic: 'middleware',
+  page: 1
+});
+// Use docs to write accurate code
+
+// CORRECT: Get version-specific documentation
+const versionDocs = await mcp.callTool('context7', 'get-library-docs', {
+  context7CompatibleLibraryID: '/vercel/next.js/v14.3.0-canary.87',
+  mode: 'code',
+  topic: 'routing'
+});
+
+// CORRECT: Get conceptual information
+const concepts = await mcp.callTool('context7', 'get-library-docs', {
+  context7CompatibleLibraryID: '/vercel/next.js',
+  mode: 'info',
+  topic: 'architecture'
+});
+```
+
+## Workflow Examples
+
+### Example 1: Implementing Next.js Middleware
+```
+User: "Create a Next.js middleware that checks for a valid JWT in cookies and redirects unauthenticated users to /login. use context7"
+
+Agent workflow:
+1. Call resolve-library-id('next.js')
+2. Call get-library-docs with library ID, mode='code', topic='middleware'
+3. Use fetched documentation to implement accurate middleware code
+```
+
+### Example 2: Cloudflare Worker Configuration
+```
+User: "Configure a Cloudflare Worker script to cache JSON API responses for five minutes. use context7"
+
+Agent workflow:
+1. Call resolve-library-id('cloudflare workers')
+2. Call get-library-docs with library ID, mode='code', topic='caching'
+3. Use fetched documentation to write correct Worker script
+```
+
+## Verification Checklist
+
+Before completing any library-related task, verify:
+
+- [ ] Did I identify all libraries/frameworks mentioned in the task?
+- [ ] Did I call `resolve-library-id` for each library (unless user provided explicit library ID)?
+- [ ] Did I call `get-library-docs` with the correct library ID?
+- [ ] Did I use the appropriate `mode` ('code' for APIs, 'info' for concepts)?
+- [ ] Did I specify a `topic` if the library is large/complex?
+- [ ] Did I check multiple pages if initial results were insufficient?
+- [ ] Did I use the fetched documentation to write accurate code?
+- [ ] Did I avoid using outdated or hallucinated APIs?
+
+## Error Handling
+
+If context7 MCP tool call fails:
+
+1. **Report the error** clearly to the user
+2. **Do NOT silently fall back** to outdated training data
+3. **Try alternative approaches**:
+   - Check if library name needs adjustment
+   - Try different topic keywords
+   - Check if library ID format is correct
+4. **Ask for clarification** if library name is ambiguous
+5. **Document** why context7 MCP was not used (if permission granted)
+
+## Benefits of Using context7 MCP
+
+1. **Accuracy**: Up-to-date documentation from official sources
+2. **Version-Specific**: Get exact API for the version being used
+3. **No Hallucinations**: Real APIs and methods, not invented ones
+4. **Code Examples**: Working code examples from official documentation
+5. **Comprehensive**: Access to both API references and conceptual guides
+6. **Efficient**: Focused documentation retrieval with topic filtering
+
+## Configuration Verification
+
+Before starting work, verify context7 MCP is configured:
+
+- Check `.cursor/mcp.json` or global MCP configuration
+- Ensure context7 server is accessible
+- Verify context7 server has access to library documentation sources
+
+## Library ID Format
+
+Context7 uses library IDs in the format:
+- `/org/project` - Latest version (e.g., `/vercel/next.js`)
+- `/org/project/version` - Specific version (e.g., `/vercel/next.js/v14.3.0`)
+
+When user provides explicit library ID in this format, you can skip `resolve-library-id` and use `get-library-docs` directly.
+
+---
+
+**Remember**: This is a MANDATORY requirement. Always use context7 MCP for library documentation and code examples. Do not rely on outdated training data or hallucinated APIs. Do not bypass this rule without explicit user permission.

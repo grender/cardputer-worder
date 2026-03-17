@@ -1,0 +1,184 @@
+---
+description: Architecture Rules Category - Skeleton, Iterative, Cognitive Load
+globs: architecture/_category.mdc
+alwaysApply: false
+---
+
+# ARCHITECTURE RULES (Rules #7-9)
+
+> **Architecture practices for PLAN and CREATIVE modes. Focus: structure first, iterate, manage complexity.**
+
+## 📋 CATEGORY OVERVIEW
+
+| Rule | Name | Key Practice | Apply When |
+|------|------|--------------|------------|
+| #7 | **Skeleton-First** | Stubs before code | Design phase |
+| #8 | **Iterative Cycle** | One method at a time | Implementation |
+| #9 | **Cognitive Load** | Max 7±2 objects | Always |
+
+---
+
+## 7️⃣ SKELETON-FIRST RULE (#7)
+
+### One-Liner
+> Create architecture skeleton with empty stubs. Review structure BEFORE implementing.
+
+### Quick Application
+
+```typescript
+// STEP 1: Create skeleton (stubs only)
+interface Storage {
+  addItem(id: string, data: any): Promise<Result>;
+  getItem(id: string): Promise<Item>;
+  deleteItem(id: string): Promise<void>;
+}
+
+class PostgresStorage implements Storage {
+  async addItem(id: string, data: any): Promise<Result> {
+    // TODO: implement
+    return null;
+  }
+  
+  async getItem(id: string): Promise<Item> {
+    // TODO: implement
+    return null;
+  }
+  
+  async deleteItem(id: string): Promise<void> {
+    // TODO: implement
+  }
+}
+
+// STEP 2: Review architecture
+// ✓ Interface clearly defined?
+// ✓ Methods independent?
+// ✓ No circular dependencies?
+
+// STEP 3: Implement one by one
+```
+
+### Skeleton Checklist
+- [ ] All interfaces defined
+- [ ] All classes stubbed
+- [ ] Method signatures complete
+- [ ] Architecture reviewed
+- [ ] No logic in tупиках
+
+---
+
+## 8️⃣ ITERATIVE CYCLE RULE (#8)
+
+### One-Liner
+> For each stub: Tests → Implementation → Review → Next stub.
+
+### Quick Application
+
+```
+┌────────────────────────────────────────┐
+│ ITERATIVE CYCLE FOR EACH METHOD:       │
+│                                        │
+│ 1️⃣  Write tests for method            │
+│ 2️⃣  Implement method to pass tests    │
+│ 3️⃣  Run tests (must be green)         │
+│ 4️⃣  Code review (one method only)     │
+│ 5️⃣  Move to next method               │
+│                                        │
+│ REPEAT until all methods complete      │
+└────────────────────────────────────────┘
+```
+
+### Example Workflow
+
+```markdown
+Chat 1: "Write tests for addItem()"
+Chat 2: "Implement addItem() to pass tests"
+Chat 3: "Review addItem() implementation"
+Chat 4: "Write tests for getItem()"
+Chat 5: "Implement getItem() to pass tests"
+Chat 6: "Review getItem() implementation"
+...
+```
+
+### Benefits
+- Clean context window (one method focus)
+- Higher quality per method
+- Human can intervene after each step
+- Errors isolated to one method
+
+---
+
+## 9️⃣ COGNITIVE LOAD RULE (#9)
+
+### One-Liner
+> Maximum 7±2 objects in method scope. More objects = quality degradation.
+
+### Quick Application
+
+```typescript
+// ❌ BAD: 15+ objects
+async function process(a, b, c, d, e, f, g, h) {
+  let x, y, z, result, temp, cache, counter;
+  // AI loses track, makes mistakes
+}
+
+// ✅ GOOD: 7 objects
+async function process(userId, config) {
+  const { settings, limits } = config;
+  let data, result, error;  // Total: 7
+  // AI maintains focus
+}
+```
+
+### Quality vs Objects Chart
+
+```
+Objects   Quality
+7-9    →  100% ████████████████████
+10-15  →   70% ██████████████
+15+    →   40% ████████
+```
+
+### Object Counting Guide
+
+Count ALL objects in method scope:
+- Parameters
+- Local variables
+- Destructured properties
+- Return values
+- Exception handlers
+- Loop variables
+
+---
+
+## 🎯 WHEN TO APPLY
+
+```mermaid
+graph TD
+    Start["Design Phase"] --> Q1{"Skeleton<br>created?"}
+    Q1 -->|No| Apply7["Apply Rule #7:<br>Skeleton-First"]
+    Q1 -->|Yes| Q2{"Iterating<br>properly?"}
+    
+    Apply7 --> Review["Review<br>Architecture"]
+    Review --> Q2
+    
+    Q2 -->|No| Apply8["Apply Rule #8:<br>Iterative Cycle"]
+    Q2 -->|Yes| Q3{"Objects<br>≤ 9?"}
+    
+    Apply8 --> Q3
+    Q3 -->|No| Apply9["Apply Rule #9:<br>Simplify"]
+    Q3 -->|Yes| Implement["Implement<br>with quality"]
+    Apply9 --> Implement
+```
+
+---
+
+## 📂 DETAILED RULES
+
+For comprehensive guidance:
+- `skeleton-rule.mdc` - Skeleton templates
+- `iterative-rule.mdc` - Cycle workflow
+- `cognitive-load-rule.mdc` - Complexity management
+
+---
+
+*Architecture rules prevent logical dead-ends and rework.*

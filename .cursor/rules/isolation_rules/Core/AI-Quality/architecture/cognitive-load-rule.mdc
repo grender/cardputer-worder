@@ -1,0 +1,302 @@
+---
+description: Rule #9 - Cognitive Load Management - Max 7±2 objects in working memory
+globs: architecture/cognitive-load-rule.mdc
+alwaysApply: false
+---
+
+# RULE #9: COGNITIVE LOAD MANAGEMENT
+
+> **Goal:** Keep AI (and human) working memory within optimal range for maximum quality.
+
+## 🎯 CORE PRINCIPLE
+
+**Maximum 7±2 objects in method scope. Exceeding this limit causes quality degradation.**
+
+This is Miller's Law applied to programming. Both humans and AI perform best within this limit.
+
+---
+
+## 📋 RULE SPECIFICATION
+
+```yaml
+COGNITIVE_LOAD_RULE:
+  max_objects: 9  # Upper limit of 7±2
+  ideal_objects: 5-7
+  warning_threshold: 8
+  critical_threshold: 10+
+  object_types:
+    - parameters
+    - local_variables
+    - destructured_properties
+    - loop_variables
+    - exception_handlers
+    - return_values
+  benefit: "40% quality improvement within limits"
+```
+
+---
+
+## 📊 WHAT COUNTS AS AN OBJECT
+
+### Object Counting Rules
+
+| Element | Count | Example |
+|---------|-------|---------|
+| Parameter | 1 each | `function(a, b, c)` = 3 |
+| Local variable | 1 each | `let x, y, z` = 3 |
+| Destructured prop | 1 each | `const {a, b} = obj` = 2 |
+| Loop variable | 1 | `for (let i...)` = 1 |
+| Catch variable | 1 | `catch (error)` = 1 |
+| Return object | 1 per property | `return {a, b}` = 2 |
+| This reference | 1 | `this.property` = 1 |
+| Imported function | 0 | Well-known, cached |
+
+### Counting Example
+
+```typescript
+async function processOrder(  // Start counting
+  orderId,                    // 1
+  userId,                     // 2
+  options                     // 3
+) {
+  const { discount, priority } = options;  // 4, 5
+  const order = await getOrder(orderId);   // 6
+  const user = await getUser(userId);      // 7
+  let total = 0;                           // 8
+  let result;                              // 9
+  
+  // 9 objects - AT THE LIMIT!
+  // Any more would degrade quality
+}
+```
+
+---
+
+## 📈 QUALITY vs OBJECT COUNT
+
+```
+Objects   Quality   Status        Action
+──────────────────────────────────────────────────
+  1-5      100%     ✅ Ideal      Perfect scope
+  6-7       95%     ✅ Good       Optimal range
+  8-9       85%     ⚠️ Warning    Consider simplifying
+ 10-12      70%     ❌ Problem    Refactor needed
+ 13-15      50%     ❌ Critical   Immediate refactor
+  15+       30%     ❌ Broken     Split function
+```
+
+### Visual Quality Degradation
+
+```
+Quality %
+100 │ ████████████
+ 90 │ █████████████████
+ 80 │ ██████████████████████
+ 70 │ ███████████████████████████
+ 60 │ ██████████████████████████████████
+ 50 │ █████████████████████████████████████████
+    └──────────────────────────────────────────
+      5    7    9   11   13   15   Objects
+```
+
+---
+
+## ✅ HOW TO STAY WITHIN LIMITS
+
+### Strategy 1: Extract to Helper Functions
+
+```typescript
+// ❌ BAD: 12 objects
+async function createUser(name, email, age, country, city, street, zip, phone) {
+  let validation, user, address, result;  // 12 total!
+}
+
+// ✅ GOOD: 6 objects each
+async function createUser(userData: UserData) {
+  const validation = validateUser(userData);  // 1, 2
+  const address = createAddress(userData);    // 3
+  const user = await saveUser(userData, address);  // 4, 5
+  return formatResult(user);  // 6
+}
+
+function validateUser(data: UserData) {
+  const { name, email, age } = data;  // 1, 2, 3, 4
+  // Focused validation logic
+}
+```
+
+### Strategy 2: Use Config Objects
+
+```typescript
+// ❌ BAD: 8 parameters
+function sendEmail(to, from, subject, body, cc, bcc, attachments, priority) {}
+
+// ✅ GOOD: 1 config object, destructure only needed
+function sendEmail(config: EmailConfig) {
+  const { to, subject, body } = config;  // 4 objects
+  // Use config.cc only if needed, don't destructure all
+}
+```
+
+### Strategy 3: Early Returns
+
+```typescript
+// ❌ BAD: Nested conditions add mental load
+function process(data) {
+  if (data) {
+    if (data.valid) {
+      if (data.items) {
+        // Deep nesting = more to track
+      }
+    }
+  }
+}
+
+// ✅ GOOD: Early returns reduce active objects
+function process(data) {
+  if (!data) return null;
+  if (!data.valid) throw new Error('Invalid');
+  if (!data.items) return [];
+  
+  // Now only valid case, fewer objects to track
+}
+```
+
+### Strategy 4: Focused Scope
+
+```typescript
+// ❌ BAD: Variables live too long
+function processItems(items) {
+  let total = 0;
+  let count = 0;
+  let average = 0;
+  let max = 0;
+  let min = Infinity;
+  
+  // All 5 variables active for entire function
+  for (const item of items) {
+    // Process
+  }
+}
+
+// ✅ GOOD: Scoped calculations
+function processItems(items) {
+  const total = calculateTotal(items);      // 2 objects here
+  const stats = calculateStats(items);      // 2 objects here
+  return { total, ...stats };               // 2 objects here
+}
+```
+
+---
+
+## 📋 OBJECT COUNTING EXERCISE
+
+### Exercise 1: Count Objects
+
+```typescript
+async function handleRequest(req, res, next) {
+  const { userId, action, data } = req.body;
+  const user = await getUser(userId);
+  const permissions = await getPermissions(userId);
+  let result, error;
+  
+  try {
+    result = await performAction(action, data, user);
+  } catch (e) {
+    error = e;
+  }
+  
+  // How many objects?
+}
+```
+
+**Answer: 11 objects** (req, res, next, userId, action, data, user, permissions, result, error, e) - Needs refactoring!
+
+### Exercise 2: Refactor
+
+```typescript
+// Refactored: 6 objects
+async function handleRequest(req, res, next) {
+  try {
+    const context = await buildContext(req);  // 1: req, 2: context
+    const result = await executeAction(context);  // 3: result
+    return sendSuccess(res, result);  // 4: res
+  } catch (error) {  // 5: error
+    return sendError(res, error);
+  }
+}
+
+// Each helper has its own 6-7 object scope
+async function buildContext(req) {
+  const { userId, action, data } = req.body;  // 4 objects
+  const user = await getUser(userId);  // 5
+  return { userId, action, data, user };  // ~6
+}
+```
+
+---
+
+## ⚠️ WARNING SIGNS
+
+| Sign | Meaning | Action |
+|------|---------|--------|
+| > 5 parameters | Too many inputs | Use config object |
+| > 5 local vars | Too much state | Extract functions |
+| Deep nesting | Complex flow | Flatten with early returns |
+| Long methods | Too much logic | Split into helpers |
+| "and" in name | Multiple responsibilities | Split function |
+
+---
+
+## 🔧 REFACTORING CHECKLIST
+
+When object count exceeds 9:
+
+```
+1. □ Can parameters be grouped into config?
+2. □ Can logic be extracted to helpers?
+3. □ Can early returns reduce nesting?
+4. □ Are all variables necessary?
+5. □ Can scope be narrowed?
+6. □ Should function be split?
+```
+
+---
+
+## 📋 QUICK REFERENCE
+
+```
+COGNITIVE LOAD LIMITS:
+├── Parameters: ≤5
+├── Local variables: ≤4
+├── Nesting depth: ≤3
+├── Total objects: ≤9
+└── Method lines: ≤50
+
+REFACTORING TRIGGERS:
+├── Objects > 9: Split function
+├── Params > 5: Use config
+├── Nesting > 3: Early returns
+└── Lines > 50: Extract methods
+```
+
+---
+
+## ✅ VERIFICATION CHECKLIST
+
+Before considering code complete:
+
+```
+□ Total objects counted
+□ Count ≤ 9 objects
+□ Parameters ≤ 5
+□ Nesting ≤ 3 levels
+□ No unnecessary variables
+□ Scope is as narrow as possible
+□ Complex logic extracted
+□ Method is focused and clear
+```
+
+---
+
+*Simple code is maintainable code. Keep cognitive load low.*

@@ -1,0 +1,311 @@
+---
+description: Rules for Backlog management in Memory Bank system
+globs: backlog-management.mdc
+alwaysApply: false
+---
+
+# BACKLOG MANAGEMENT RULES
+
+## 🚨 CRITICAL REQUIREMENT
+
+**The Memory Bank system MUST support a Backlog for storing pending tasks that are not yet active.**
+
+The Backlog provides a queue of future work items that can be:
+- Added by PRD and VAN commands
+- Selected and activated by VAN command
+- Tracked alongside active tasks
+
+---
+
+## 📁 BACKLOG FILE LOCATIONS (v2.0 - Two-File Architecture)
+
+### Active Backlog
+
+**File Path:** `memory-bank/backlog.md`
+**Template:** `.cursor/templates/backlog-template.md`
+**Contains:** Pending and in-progress tasks only
+**Read by:** PRD, VAN, STATUS commands
+**Purpose:** Fast reads for task selection (~10x performance improvement)
+
+### Archive Backlog
+
+**File Path:** `memory-bank/backlog-archive.md`
+**Template:** `.cursor/templates/backlog-archive-template.md`
+**Contains:** Completed and cancelled tasks only
+**Read by:** STATUS command (optional), manual review
+**Updated by:** ARCHIVE command automatically
+**Purpose:** Historical reference without impacting performance
+
+---
+
+## 🏗️ TWO-FILE ARCHITECTURE BENEFITS
+
+1. **Performance:** VAN/PRD read only active items (10x faster)
+2. **Scalability:** Archive grows independently without slowing operations
+3. **Organization:** Clear separation between todo and done
+4. **Maintainability:** Active backlog stays small and manageable
+
+---
+
+## 📋 BACKLOG ITEM FORMAT
+
+Each Backlog item MUST follow this format:
+
+```markdown
+### BACKLOG-XXXX: {Task Title}
+
+| Field | Value |
+|-------|-------|
+| **Status** | pending |
+| **Priority** | high |
+| **Complexity** | Level 2 |
+| **Created** | 2026-02-03 |
+| **Source** | PRD-DEV-0001 |
+| **Tags** | feature, enhancement |
+
+**Description:**
+Brief but comprehensive description of what needs to be done.
+
+**Acceptance Criteria:**
+- [ ] Criterion 1
+- [ ] Criterion 2
+
+**Notes:**
+Additional context, references.
+
+---
+```
+
+---
+
+## 🔢 BACKLOG ID FORMAT
+
+**Format:** `BACKLOG-[4-digit-number]`
+
+**Examples:**
+- `BACKLOG-0001`
+- `BACKLOG-0042`
+- `BACKLOG-0123`
+
+**Generation Rules:**
+1. Scan `memory-bank/backlog.md` for existing BACKLOG-XXXX IDs
+2. Extract all numbers from existing IDs
+3. Find maximum number
+4. Generate next number (max + 1, formatted as 4-digit with leading zeros)
+
+**First item:** `BACKLOG-0001`
+
+---
+
+## 📊 BACKLOG STATUSES (v2.0 - Two-File Architecture)
+
+| Status | Description | File Location | Allowed Transitions |
+|--------|-------------|---------------|---------------------|
+| `pending` | Waiting to be worked on | backlog.md | → in_progress, cancelled |
+| `in_progress` | Currently active (linked to DEV-XXX) | backlog.md | → completed, cancelled |
+| `completed` | Work finished | backlog-archive.md | (terminal) |
+| `cancelled` | No longer needed | backlog-archive.md | (terminal) |
+
+**Status Lifecycle with File Movement:**
+```
+backlog.md:
+pending → in_progress → (moved by ARCHIVE command)
+    ↓           ↓
+    v           v
+backlog-archive.md:
+cancelled   completed
+```
+
+**File Movement Rules:**
+- `pending` → `in_progress`: Stay in backlog.md, move between sections
+- `in_progress` → `completed`: Move to backlog-archive.md via ARCHIVE command
+- `pending/in_progress` → `cancelled`: Move to backlog-archive.md immediately
+
+---
+
+## 🎯 PRIORITY LEVELS
+
+| Priority | Description | Recommended Action |
+|----------|-------------|-------------------|
+| `critical` | Blocking other work | Address immediately |
+| `high` | Important feature/fix | Address soon |
+| `medium` | Standard priority | Address when available |
+| `low` | Nice to have | Address when convenient |
+
+---
+
+## 🔄 COMMAND INTEGRATION
+
+### PRD Command (`/prd`, `/mb-prd`)
+
+**When to add to Backlog:**
+- After generating PRD, if follow-up tasks are identified
+- User explicitly requests to add tasks to Backlog
+
+**Actions:**
+1. Prompt: "Add related tasks to Backlog?"
+2. Collect task descriptions (can be multiple)
+3. Generate BACKLOG-XXXX IDs
+4. Set default priority (medium) and estimated complexity
+5. Add items to `memory-bank/backlog.md`
+6. Update Summary counts
+7. Confirm additions to user
+
+**Example prompt:**
+```
+Based on PRD-DEV-0001, I identified these potential follow-up tasks:
+1. Implement error handling for edge cases
+2. Add unit tests for new functionality
+3. Update API documentation
+
+Would you like to add these to the Backlog? (Yes/No/Modify)
+```
+
+### VAN Command (`/van`, `/mb-init`)
+
+**Backlog Check Flow:**
+1. Check if `memory-bank/backlog.md` exists
+2. If exists, parse for pending items
+3. If pending items found:
+   - Display: "📋 You have N pending items in Backlog"
+   - List items: ID, Title, Priority, Complexity
+   - Prompt: "Select from Backlog (enter ID) or start new task?"
+
+**When selecting from Backlog:**
+1. Find item by BACKLOG-XXXX ID
+2. Update item status to `in_progress`
+3. Move item to "In Progress Items" section
+4. Create entry in `memory-bank/tasks.md`
+5. Update `memory-bank/activeContext.md`
+6. Continue with complexity determination
+
+**When starting new task:**
+- Continue normal VAN workflow
+- Optionally: "Add to Backlog for later?" prompt
+
+**Example display:**
+```
+📋 Backlog Status: 3 pending items
+
+| ID | Title | Priority | Complexity |
+|----|-------|----------|------------|
+| BACKLOG-0001 | Add error handling | high | Level 2 |
+| BACKLOG-0002 | Unit tests | medium | Level 2 |
+| BACKLOG-0003 | API documentation | low | Level 1 |
+
+Options:
+1. Select from Backlog: Enter ID (e.g., BACKLOG-0001)
+2. Start new task: Describe your task
+3. View Backlog details: /status
+
+Your choice:
+```
+
+### STATUS Command (`/status`, `/mb-status`)
+
+**Backlog Display:**
+- Show Backlog summary (counts by status)
+- Show current active task
+- List pending items (brief)
+
+**Example output:**
+```
+📊 Memory Bank Status
+
+Current Task: DEV-0053 - OAuth2 Implementation
+└── Status: in_progress
+└── Phase: /do (Implementation)
+
+📋 Backlog Summary:
+├── Pending: 3
+├── In Progress: 1
+└── Completed: 5
+
+Pending Items:
+├── BACKLOG-0004: Database migration [high]
+├── BACKLOG-0005: Caching layer [medium]
+└── BACKLOG-0006: Logging improvements [low]
+```
+
+### ARCHIVE Command (`/archive`, `/mb-archive`)
+
+**When archiving active task:**
+1. Check if task originated from Backlog
+2. If yes, update Backlog item status to `completed`
+3. Move item to "Archived Items" section
+4. Add reference to completed task ID
+
+---
+
+## ✅ BACKLOG OPERATIONS CHECKLIST
+
+### Adding Item to Backlog
+
+- [ ] Check `memory-bank/backlog.md` exists, create if not
+- [ ] Generate next BACKLOG-XXXX ID
+- [ ] Use sys8 MCP for creation date
+- [ ] Set status to `pending`
+- [ ] Set default priority if not specified
+- [ ] Estimate complexity if not specified
+- [ ] Add item to "Pending Items" section
+- [ ] Update Summary counts
+- [ ] Confirm to user
+
+### Selecting Item from Backlog
+
+- [ ] Parse Backlog file
+- [ ] Find item by ID
+- [ ] Verify status is `pending`
+- [ ] Update status to `in_progress`
+- [ ] Move to "In Progress Items" section
+- [ ] Create task in `tasks.md`
+- [ ] Update `activeContext.md`
+- [ ] Update Summary counts
+
+### Completing Backlog Item
+
+- [ ] Find item in Backlog by related task ID
+- [ ] Update status to `completed`
+- [ ] Add completion date
+- [ ] Add reference to archive file
+- [ ] Move to "Archived Items" section
+- [ ] Update Summary counts
+
+---
+
+## 🛑 ERROR HANDLING
+
+**Backlog file missing:**
+```
+ℹ️ No Backlog file found. Creating new Backlog...
+✅ Created: memory-bank/backlog.md
+```
+
+**Invalid Backlog ID:**
+```
+⚠️ Invalid Backlog ID: BACKLOG-9999
+Available pending items:
+- BACKLOG-0001: Task title
+- BACKLOG-0002: Another task
+```
+
+**Item already in progress:**
+```
+⚠️ BACKLOG-0001 is already in progress.
+Currently active task: DEV-0053
+```
+
+---
+
+## 📚 RELATED RULES
+
+- `memory-bank-paths.mdc` - File path definitions
+- `task-numbering-system.mdc` - Task ID generation
+- `task-context-tracking.mdc` - Active task tracking
+- `van-mode-map.mdc` - VAN command workflow
+
+---
+
+**Version:** 1.0.0
+**Created:** 2026-02-03
+**Status:** ✅ ACTIVE

@@ -1,0 +1,172 @@
+---
+description: Quality Rules Category - Focused Review, Boundaries, Complexity Check
+globs: quality/_category.mdc
+alwaysApply: false
+---
+
+# QUALITY RULES (Rules #10-12)
+
+> **Quality practices for REFLECT and PLAN modes. Focus: focused review, clear scope, verification.**
+
+## 📋 CATEGORY OVERVIEW
+
+| Rule | Name | Key Practice | Apply When |
+|------|------|--------------|------------|
+| #10 | **Focused Review** | One method at a time | Code review |
+| #11 | **Boundaries** | State what's excluded | Planning |
+| #12 | **Complexity Check** | Verify solvability | Before starting |
+
+---
+
+## 🔟 FOCUSED REVIEW RULE (#10)
+
+### One-Liner
+> Review ONE method at a time, not entire feature. Narrow focus = better review.
+
+### Quick Application
+
+```markdown
+## REVIEW: [Method Name] Only
+
+### Code Quality
+- [ ] Logic clear at first glance?
+- [ ] Single responsibility?
+- [ ] Method < 50 lines?
+- [ ] ≤7-9 objects in scope?
+
+### Correctness
+- [ ] All DoD tests pass?
+- [ ] Edge cases handled?
+- [ ] Errors handled?
+
+### Safety
+- [ ] No race conditions?
+- [ ] Transaction isolation correct?
+- [ ] No memory leaks?
+
+### Verdict
+□ ✅ APPROVED
+□ ⚠️ MINOR CHANGES
+□ ❌ REQUIRES CHANGES
+```
+
+### Why Focused?
+
+```
+Review Scope     | Bugs Found | Time
+─────────────────┼────────────┼──────
+One method       | 40% more   | Less
+Entire feature   | Baseline   | More
+500+ line PR     | 40% fewer  | Much more
+```
+
+---
+
+## 1️⃣1️⃣ BOUNDARIES RULE (#11)
+
+### One-Liner
+> Explicitly state what is OUT OF SCOPE to prevent scope creep and wasted effort.
+
+### Quick Application
+
+```markdown
+## Task Scope
+
+### ✅ What We DO
+- Feature A
+- Feature B
+- Feature C
+
+### ❌ What We DON'T Do (Out of Scope)
+- Optimization (separate task)
+- Caching (future enhancement)
+- Analytics (different service)
+- Migration of old data (manual)
+```
+
+### Benefits
+
+```
+With Boundaries     | Without Boundaries
+────────────────────┼────────────────────
+Focused work        | Scope creep
+Clear completion    | Unclear when done
+No wasted tokens    | AI explores wrong paths
+Predictable time    | Unpredictable delays
+```
+
+---
+
+## 1️⃣2️⃣ COMPLEXITY CHECK RULE (#12)
+
+### One-Liner
+> Before starting, verify AI can solve this task. Check dependencies and success criteria.
+
+### Quick Application
+
+```markdown
+## COMPLEXITY CHECK
+
+### Solvability Questions
+- [ ] Can AI solve this in one session?
+- [ ] Are all dependencies known?
+- [ ] Is there clear success criteria (tests)?
+- [ ] Is code volume < 500 lines total?
+- [ ] No too many new concepts at once?
+
+### 🚩 Red Flags (Too Complex)
+- "Implement entire microservice"
+- "Optimize compiler"
+- "Create ML model from scratch"
+- "Redesign entire architecture"
+
+### ✅ Appropriate Scope
+- "Implement addItem() method"
+- "Create Storage interface"
+- "Add validation to form"
+- "Fix null pointer in X function"
+```
+
+### Complexity Decision
+
+```
+If too complex:
+├── Break into smaller tasks
+├── Add more context/examples
+├── Ask human for critical parts
+└── Use creative phase for design
+```
+
+---
+
+## 🎯 WHEN TO APPLY
+
+```mermaid
+graph TD
+    Start["Quality Check"] --> Q1{"Reviewing<br>code?"}
+    Q1 -->|Yes| Apply10["Apply Rule #10:<br>One Method Review"]
+    Q1 -->|No| Q2{"Scope<br>defined?"}
+    
+    Apply10 --> Done["Review Complete"]
+    
+    Q2 -->|No| Apply11["Apply Rule #11:<br>Define Boundaries"]
+    Q2 -->|Yes| Q3{"Complexity<br>checked?"}
+    
+    Apply11 --> Q3
+    Q3 -->|No| Apply12["Apply Rule #12:<br>Verify Solvability"]
+    Q3 -->|Yes| Ready["Ready to proceed"]
+    Apply12 --> Ready
+```
+
+---
+
+## 📂 DETAILED RULES
+
+For comprehensive guidance:
+- `focused-review-rule.mdc` - Review checklists
+- `boundaries-rule.mdc` - Scope definition templates
+- `complexity-check-rule.mdc` - Solvability assessment
+
+---
+
+*Quality rules catch issues early and prevent wasted effort.*

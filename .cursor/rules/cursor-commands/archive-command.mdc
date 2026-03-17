@@ -1,0 +1,394 @@
+---
+description: Archive Command - Task-Specific Archiving with Context Awareness
+command: archive
+---
+
+# ARCHIVE Command - Task Documentation
+
+This command archives the CURRENT task being discussed in the chat, not all completed tasks.
+
+## 🎯 COMMAND PURPOSE
+
+Archive the specific task that is active in the current chat context, creating comprehensive documentation and updating the Memory Bank.
+
+## 🚨 CRITICAL REQUIREMENT
+
+**The `/archive` command MUST:**
+1. Read `activeContext.md` to identify the CURRENT task
+2. Archive ONLY that specific task (not all completed tasks)
+3. Confirm with user before archiving
+4. Update Memory Bank after successful archiving
+
+## 📋 COMMAND SYNTAX
+
+```
+/archive                    # Archive current task from activeContext.md
+/archive TASK-ID            # Archive specific task by ID
+/archive --list             # List all completed tasks ready for archiving
+/archive --all              # Archive all completed tasks (requires confirmation)
+```
+
+## 🔧 COMMAND WORKFLOW
+
+### Step 1: Identify Target Task
+
+```mermaid
+graph TD
+    Start["User types /archive"] --> CheckArgs{"Arguments<br>provided?"}
+    CheckArgs -->|"No"| ReadActive["Read activeContext.md<br>Get Current Task ID"]
+    CheckArgs -->|"TASK-ID"| UseProvided["Use provided Task ID"]
+    CheckArgs -->|"--list"| ListTasks["List all completed tasks"]
+    CheckArgs -->|"--all"| ConfirmAll["Confirm archive all"]
+    
+    ReadActive --> ValidateCurrent{"Current Task<br>found?"}
+    ValidateCurrent -->|"Yes"| TaskID["Target Task: [TASK-ID]"]
+    ValidateCurrent -->|"No"| Error1["ERROR: No active task<br>Use /archive --list"]
+    
+    UseProvided --> TaskID
+    ListTasks --> End["Show list and exit"]
+    ConfirmAll --> ArchiveAll["Archive all completed"]
+    
+    TaskID --> Step2["Proceed to Step 2"]
+    
+    style Start fill:#4da6ff,stroke:#0066cc,color:white
+    style TaskID fill:#10b981,stroke:#059669,color:white
+    style Error1 fill:#ff5555,stroke:#dd3333,color:white
+```
+
+### Step 2: Verify Task Status
+
+```mermaid
+graph TD
+    TaskID["Task ID identified"] --> ReadTasks["Read tasks.md"]
+    ReadTasks --> TaskExists{"Task exists<br>in tasks.md?"}
+    
+    TaskExists -->|"Yes"| CheckStatus{"Task Status?"}
+    TaskExists -->|"No"| Error2["ERROR: Task not found<br>Check Task ID"]
+    
+    CheckStatus -->|"completed"| ReadyArchive["Task ready for archiving"]
+    CheckStatus -->|"archived"| Error3["ERROR: Task already archived"]
+    CheckStatus -->|"in_progress"| Error4["ERROR: Task not completed<br>Complete task first"]
+    CheckStatus -->|"paused"| Error4
+    
+    ReadyArchive --> Step3["Proceed to Step 3"]
+    
+    style TaskID fill:#4da6ff,stroke:#0066cc,color:white
+    style ReadyArchive fill:#10b981,stroke:#059669,color:white
+    style Error2 fill:#ff5555,stroke:#dd3333,color:white
+    style Error3 fill:#ff5555,stroke:#dd3333,color:white
+    style Error4 fill:#ff5555,stroke:#dd3333,color:white
+```
+
+### Step 3: Confirm with User
+
+```mermaid
+graph TD
+    Ready["Task ready"] --> ShowInfo["Display task info:<br>- Task ID<br>- Title<br>- Complexity<br>- Started date"]
+    ShowInfo --> Confirm{"User confirms<br>archiving?"}
+    
+    Confirm -->|"Yes"| Proceed["Proceed to archiving"]
+    Confirm -->|"No"| Cancel["Cancel archiving"]
+    
+    Proceed --> Step4["Proceed to Step 4"]
+    
+    style Ready fill:#4da6ff,stroke:#0066cc,color:white
+    style Proceed fill:#10b981,stroke:#059669,color:white
+    style Cancel fill:#ffa64d,stroke:#cc7a30,color:white
+```
+
+### Step 4: Create Archive Document
+
+```mermaid
+graph TD
+    Proceed["Confirmed"] --> GetDateTime["Call sys8 MCP<br>get_current_datetime"]
+    GetDateTime --> ReadReflection["Read reflection document<br>for task"]
+    ReadReflection --> ReadProgress["Read progress.md<br>for implementation details"]
+    ReadProgress --> ReadCreative["Read creative docs<br>(if Level 3-4)"]
+    
+    ReadCreative --> CreateDoc["Create archive document<br>memory-bank/archive/archive-[TASK-ID].md"]
+    CreateDoc --> WriteDoc["Write comprehensive<br>archive content"]
+    WriteDoc --> ValidateDoc{"Archive doc<br>created?"}
+    
+    ValidateDoc -->|"Yes"| Step5["Proceed to Step 5"]
+    ValidateDoc -->|"No"| Error5["ERROR: Failed to create<br>archive document"]
+    
+    style Proceed fill:#4da6ff,stroke:#0066cc,color:white
+    style ValidateDoc fill:#10b981,stroke:#059669,color:white
+    style Error5 fill:#ff5555,stroke:#dd3333,color:white
+```
+
+### Step 5: Update Memory Bank
+
+```mermaid
+graph TD
+    DocCreated["Archive doc created"] --> UpdateTasks["Update tasks.md<br>Set status: archived<br>Add archive link"]
+    UpdateTasks --> UpdateActive["Update activeContext.md<br>Clear current task<br>or set to next task"]
+    UpdateActive --> UpdateProgress["Update progress.md<br>Add archive reference"]
+    
+    UpdateProgress --> Success["✅ ARCHIVING COMPLETE"]
+    Success --> Notify["Notify user with<br>archive document link"]
+    
+    style DocCreated fill:#4da6ff,stroke:#0066cc,color:white
+    style Success fill:#10b981,stroke:#059669,color:white
+    style Notify fill:#10b981,stroke:#059669,color:white
+```
+
+## 📝 ARCHIVE DOCUMENT TEMPLATE
+
+The archive document MUST follow this structure based on task complexity:
+
+### Level 1-2 Tasks (Basic Archive)
+
+```markdown
+# Archive: [TASK-ID] - [Task Title]
+
+**Archived:** [DATE from sys8 MCP]
+**Complexity:** Level [1-2]
+**Type:** [Type]
+**Repository:** [Repository]
+**Branch:** [Branch]
+
+## Summary
+
+[2-3 sentences describing what was accomplished]
+
+## Problem
+
+[Brief description of the problem solved]
+
+## Solution
+
+[Brief description of the solution implemented]
+
+## Files Modified
+
+- [File 1]: [Description]
+- [File 2]: [Description]
+
+## Commits
+
+- [Commit hash]: [Commit message]
+
+## Status
+
+✅ COMPLETED AND ARCHIVED
+
+## Links
+
+- Reflection: [Link to reflection doc]
+- Tasks: [Link to tasks.md section]
+```
+
+### Level 3-4 Tasks (Comprehensive Archive)
+
+```markdown
+# Archive: [TASK-ID] - [Task Title]
+
+**Archived:** [DATE from sys8 MCP]
+**Complexity:** Level [3-4]
+**Type:** [Type]
+**Repository:** [Repository]
+**Branch:** [Branch]
+**Coordination:** [If applicable]
+
+## Metadata
+
+- **Started:** [Date]
+- **Completed:** [Date]
+- **Duration:** [Duration]
+- **Priority:** [Priority]
+
+## Summary
+
+[Comprehensive summary of the task and its impact]
+
+## Problem Statement
+
+[Detailed description of the problem being solved]
+
+## Requirements
+
+- Requirement 1
+- Requirement 2
+- ...
+
+## Architecture & Design
+
+[Summary of key design decisions from creative phase]
+
+## Implementation
+
+### Approach
+
+[Description of implementation approach]
+
+### Key Components
+
+- Component 1: [Description]
+- Component 2: [Description]
+
+### Files Created/Modified
+
+- [File 1]: [Detailed description of changes]
+- [File 2]: [Detailed description of changes]
+
+## Testing
+
+- Test 1: [Result]
+- Test 2: [Result]
+
+## Commits
+
+- [Commit hash]: [Commit message]
+- [Commit hash]: [Commit message]
+
+## Challenges & Solutions
+
+- Challenge 1: [Description and solution]
+- Challenge 2: [Description and solution]
+
+## Lessons Learned
+
+- Lesson 1
+- Lesson 2
+
+## Future Improvements
+
+- Improvement 1
+- Improvement 2
+
+## Status
+
+✅ COMPLETED AND ARCHIVED
+
+## Links
+
+- Reflection: [Link to reflection doc]
+- Creative Phase: [Link to creative docs]
+- QA Validation: [Link to QA report]
+- Tasks: [Link to tasks.md section]
+```
+
+## 🔒 SAFETY CHECKS
+
+Before archiving, verify:
+
+1. ✅ Task ID identified correctly
+2. ✅ Task exists in tasks.md
+3. ✅ Task status is "completed"
+4. ✅ Reflection document exists
+5. ✅ User confirmed archiving
+6. ✅ sys8 MCP called for timestamp
+7. ✅ Archive document created successfully
+8. ✅ Memory Bank updated successfully
+
+## ❌ ERROR MESSAGES
+
+### No Active Task
+
+```
+⚠️ NO ACTIVE TASK FOUND
+
+No task is currently active in this chat context.
+
+Available options:
+1. List all completed tasks: /archive --list
+2. Archive specific task: /archive TASK-ID
+3. Start a new task: /van TASK-ID
+
+Use /archive --list to see all tasks ready for archiving.
+```
+
+### Task Not Completed
+
+```
+⚠️ TASK NOT COMPLETED
+
+Task [TASK-ID] has status "[STATUS]" (not completed).
+
+You must complete the task before archiving.
+
+Next steps:
+1. Complete implementation
+2. Run /reflect to review the task
+3. Run /archive to create archive document
+
+Current task status: [STATUS]
+```
+
+### Task Already Archived
+
+```
+⚠️ TASK ALREADY ARCHIVED
+
+Task [TASK-ID] has already been archived.
+
+Archive document: [Link to archive doc]
+Archived on: [Date]
+
+This task cannot be archived again.
+```
+
+### Missing Reflection
+
+```
+⚠️ REFLECTION REQUIRED
+
+Task [TASK-ID] does not have a reflection document.
+
+You must complete reflection before archiving.
+
+Next step: Run /reflect to create reflection document
+```
+
+## 🎯 SUCCESS MESSAGE
+
+After successful archiving:
+
+```
+✅ TASK ARCHIVED SUCCESSFULLY
+
+Task: [TASK-ID] - [Task Title]
+Archive document: memory-bank/archive/archive-[TASK-ID].md
+Archived on: [DATE]
+
+Memory Bank updated:
+- ✅ tasks.md (status: archived)
+- ✅ activeContext.md (cleared current task)
+- ✅ progress.md (added archive reference)
+
+The task is now archived and Memory Bank is ready for the next task.
+
+Next steps:
+- Start a new task: /van
+- View all tasks: Read tasks.md
+```
+
+## 🔄 INTEGRATION WITH OTHER COMMANDS
+
+### After /reflect
+```
+/reflect completes → Task status: completed → Ready for /archive
+```
+
+### After /archive
+```
+/archive completes → activeContext cleared → Ready for /van (new task)
+```
+
+### Task Lifecycle
+```
+/van → /plan → /creative → /build → /reflect → /archive
+```
+
+## 📚 RELATED RULES
+
+- `task-context-tracking.mdc` - Task context tracking system
+- `archive-mode-map.mdc` - Archive mode process map
+- `memory-bank-paths.mdc` - Memory Bank file locations
+- `main.mdc` - Memory Bank system overview
+
+---
+
+**Last Updated:** 2025-12-14
+**Version:** 2.0.0 (Context-Aware Archiving)

@@ -1,0 +1,134 @@
+# GIT PUSH RESTRICTION RULE
+
+## 🚨 CRITICAL: NEVER PUSH WITHOUT EXPLICIT USER REQUEST 🚨
+
+**Version**: 2.0.0
+**Last Updated**: 2025-01-19
+
+**This is a mandatory safety rule that MUST be followed at all times.**
+
+## Rule Statement
+
+**NEVER execute `git push` unless the user explicitly requests it in their prompt.**
+
+## Rationale
+
+This rule exists to:
+1. Give user full control over when code is pushed to remote repository
+2. Allow user to review commits before they become public
+3. Prevent accidental pushes that might break CI/CD pipelines
+4. Allow user to amend, rebase, or squash commits before pushing
+5. Prevent pushing sensitive information accidentally
+
+## What IS Allowed
+
+✅ **You MAY execute these git commands without explicit permission:**
+- `git status` - Check repository status
+- `git diff` - View changes
+- `git log` - View commit history
+- `git add` - Stage files
+- `git commit` - Commit changes locally
+- `git branch` - Manage branches
+- `git checkout` / `git switch` - Switch branches
+- `git reset` - Unstage or undo commits locally
+- `git stash` - Temporarily save changes
+
+## What IS NOT Allowed
+
+❌ **You MUST NOT execute these commands without explicit user request:**
+- `git push` - Push to remote
+- `git push origin <branch>` - Push specific branch
+- `git push -f` / `git push --force` - Force push
+- `git push --all` - Push all branches
+- Any command that transfers commits to remote repository
+
+## Valid User Requests for Push
+
+User MUST explicitly say one of these (or similar):
+- "push the changes"
+- "git push"
+- "push to remote"
+- "commit and push"
+- "deploy the changes" (in context of git push)
+
+## Invalid Implicit Requests
+
+These do NOT count as explicit push requests:
+- "commit the changes" → Only commit, don't push
+- "save the changes" → Only commit, don't push
+- "finish the task" → Only commit, don't push
+- "done" → Only commit, don't push
+
+## Implementation in Commands
+
+### ✅ CORRECT Example 1: User asks only to commit
+```
+User: "commit the changes"
+
+Agent:
+1. git add -A
+2. git commit -m "..."
+3. STOP HERE - do not push
+```
+
+### ✅ CORRECT Example 2: User explicitly asks to push
+```
+User: "commit and push"
+
+Agent:
+1. git add -A
+2. git commit -m "..."
+3. git push origin <branch>  ← OK, user explicitly requested
+```
+
+### ❌ WRONG Example: Auto-pushing without permission
+```
+User: "commit the changes"
+
+Agent:
+1. git add -A
+2. git commit -m "..."
+3. git push origin <branch>  ← WRONG! User didn't ask for push
+```
+
+## Exception: Asking for Permission
+
+If you're unsure whether to push, you MAY ask the user:
+
+```
+Agent: "Changes committed locally. Would you like me to push them to the remote repository?"
+```
+
+Then wait for user response.
+
+## Integration with Other Commands
+
+This rule applies to ALL modes and commands:
+- `/do` - Build mode
+- `/van` - Initialization mode
+- `/reflect` - Reflection mode
+- `/archive` - Archive mode
+- Manual git operations
+
+## Enforcement
+
+This rule is **MANDATORY** and **NON-NEGOTIABLE**.
+
+Violation of this rule could result in:
+- Unwanted code in remote repository
+- Broken CI/CD pipelines
+- Conflicts with team members' work
+- Loss of ability to rewrite commit history
+
+## Memory Bank Integration
+
+When documenting commits in Memory Bank (`activeContext.md`, `tasks.md`):
+- Record commit hashes
+- Record that changes are "committed locally"
+- Do NOT record push status unless user explicitly requested push
+
+---
+
+**Last Updated:** 2025-01-19
+**Version:** 2.0.0
+**Priority:** CRITICAL
