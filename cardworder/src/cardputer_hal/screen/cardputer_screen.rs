@@ -109,8 +109,8 @@ impl CardputerScreen<'_> {
                 .framebuffer
                 .data
                 .data
-                .clone()
-                .into_iter()
+                .iter()
+                .copied()
                 .map(|c| c.into_storage());
             let buf = DataFormat::U16BEIter(&mut iter);
             screen.dcs().di.send_data(buf)?;

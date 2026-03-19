@@ -1,9 +1,9 @@
 //! Compose, scroll, and render logic for scrollable forms in Cardputer UI.
 
-use crate::logic::views::{UiLineType, UiLineElement};
+use crate::logic::views::{UiLineElement, UiLineType};
+use crate::ui::cardworder_ui::{CardworderUi, TOP_BAR_HEIGHT};
+use embedded_graphics::prelude::{Point, Size};
 use embedded_graphics::primitives::Rectangle;
-use embedded_graphics::prelude::{Size, Point};
-use crate::ui::cardworder_ui::CardworderUi;
 
 /// State for a composed form, including scroll offset.
 pub struct ComposedForm {
@@ -13,9 +13,9 @@ pub struct ComposedForm {
     pub total_content_height: u32,
 }
 
-/// A composed line with its rectangle.
+/// A composed line: index into the original `lines` slice plus screen rectangle.
 pub struct ComposedUiLine {
-    pub line: UiLineType,
+    pub line_index: usize,
     pub rect: embedded_graphics::primitives::Rectangle,
 }
 
@@ -102,49 +102,60 @@ impl ScrollBar {
     }
 }
 
-/// Compose the form: calculate line heights, assign rectangles, and return visible lines.
+/// Compose lines in one pass: measure heights once, scroll so `selected_line_idx` is at the top
+/// of the viewport when possible, and return visible rows as indices into `lines`.
 /// `content_top_y` is the screen y where the content area starts (e.g. below the top bar).
-pub fn compose_form(
+pub fn compose_scrolled_form(
     lines: &[UiLineType],
-    scroll_offset: u32,
+    selected_line_idx: usize,
     viewport_height: u32,
     content_top_y: i32,
-    ui: &crate::ui::cardworder_ui::CardworderUi,
+    ui: &CardworderUi,
 ) -> ComposedForm {
-    let mut composed_lines = Vec::new();
+    let width = 240u32;
+    let mut heights = Vec::with_capacity(lines.len());
     let mut y = 0u32;
-    let width = 240; // Assume fixed width for now
-    let viewport_top = scroll_offset;
-    let viewport_bottom = scroll_offset + viewport_height;
+    let mut selected_top = 0u32;
 
-    for line in lines {
-        let height = crate::logic::views::fonts::measure_line_height(ui, line);
-        let _rect = embedded_graphics::primitives::Rectangle::new(
-            embedded_graphics::prelude::Point::new(0, y as i32),
-            embedded_graphics::prelude::Size::new(width, height),
-        );
+    for (idx, line) in lines.iter().enumerate() {
+        let h = crate::logic::views::fonts::measure_line_height(ui, line);
+        if idx == selected_line_idx {
+            selected_top = y;
+        }
+        heights.push(h);
+        y += h;
+    }
+
+    let total_content_height = y;
+    let max_scroll = total_content_height.saturating_sub(viewport_height);
+    let scroll_offset = selected_top.min(max_scroll);
+    let viewport_top = scroll_offset;
+    let viewport_bottom = scroll_offset.saturating_add(viewport_height);
+
+    let mut composed_lines = Vec::new();
+    y = 0;
+    for (idx, _line) in lines.iter().enumerate() {
+        let h = heights[idx];
         let line_top = y;
-        let line_bottom = y + height;
-        // Only include lines that intersect the viewport
+        let line_bottom = y + h;
         if line_bottom > viewport_top && line_top < viewport_bottom {
-            // Adjust rect: viewport-relative y then offset by content area top (e.g. below top bar)
-            let adjusted_rect = embedded_graphics::primitives::Rectangle::new(
-                embedded_graphics::prelude::Point::new(0, (y as i32) - (scroll_offset as i32) + content_top_y),
-                embedded_graphics::prelude::Size::new(width, height),
+            let adjusted_rect = Rectangle::new(
+                Point::new(0, (y as i32) - (scroll_offset as i32) + content_top_y),
+                Size::new(width, h),
             );
             composed_lines.push(ComposedUiLine {
-                line: line.clone(),
+                line_index: idx,
                 rect: adjusted_rect,
             });
         }
-        y += height;
+        y += h;
     }
 
     ComposedForm {
         lines: composed_lines,
         scroll_offset,
         viewport_height,
-        total_content_height: y,
+        total_content_height,
     }
 }
 
@@ -256,20 +267,23 @@ pub fn render_scroll_bar(
 
     // Draw scroll bar track (background) - start below top line zone
     let track_rect = scroll_bar.get_track_rect(screen_width);
-    // Adjust track position to start below top line (y=12)
     let adjusted_track_rect = Rectangle::new(
-        Point::new(track_rect.top_left.x, track_rect.top_left.y + 12),
+        Point::new(
+            track_rect.top_left.x,
+            track_rect.top_left.y + TOP_BAR_HEIGHT as i32,
+        ),
         track_rect.size,
     );
     // Use a dark color for the track
     let track_color = embedded_graphics::pixelcolor::Rgb565::new(20, 20, 20);
     ui.fill_rect(adjusted_track_rect, track_color);
 
-    // Draw scroll bar thumb (the draggable part) - start below top line zone
     let thumb_rect = scroll_bar.get_thumb_rect(screen_width);
-    // Adjust thumb position to start below top line (y=12)
     let adjusted_thumb_rect = Rectangle::new(
-        Point::new(thumb_rect.top_left.x, thumb_rect.top_left.y + 12),
+        Point::new(
+            thumb_rect.top_left.x,
+            thumb_rect.top_left.y + TOP_BAR_HEIGHT as i32,
+        ),
         thumb_rect.size,
     );
     // Use a lighter color for the thumb
@@ -280,16 +294,15 @@ pub fn render_scroll_bar(
 /// Render only visible lines (calls low-level drawing).
 pub fn render_visible_lines(
     composed: &ComposedForm,
+    lines: &[UiLineType],
     ui: &mut CardworderUi<'_>,
 ) {
     for composed_line in &composed.lines {
-        match composed_line.line {
-            UiLineType::Elements(ref elements) => {
+        match &lines[composed_line.line_index] {
+            UiLineType::Elements(elements) => {
                 draw_elements_line(elements, &composed_line.rect, ui);
             }
-            UiLineType::Spacer(_) => {
-                // Spacer: nothing to draw
-            }
+            UiLineType::Spacer(_) => {}
             UiLineType::Line(_, _color) => {
                 // Draw a horizontal line across the rect
                 // (implement as needed)
@@ -297,13 +310,11 @@ pub fn render_visible_lines(
         }
     }
 
-    // Render the scroll bar - account for top line zone (12 pixels)
     let mut scroll_bar = ScrollBar::new();
-    let adjusted_viewport_height = composed.viewport_height.saturating_sub(12); // Subtract top line height
     scroll_bar.calculate(
         composed.total_content_height,
-        adjusted_viewport_height,
+        composed.viewport_height,
         composed.scroll_offset,
     );
-    render_scroll_bar(&scroll_bar, ui, 240); // 240 is the screen width
+    render_scroll_bar(&scroll_bar, ui, 240);
 } 
