@@ -1,7 +1,7 @@
 use embedded_graphics::{pixelcolor::Rgb565, prelude::WebColors};
-use esp_idf_hal::{delay::Delay, prelude::Peripherals};
+use esp_idf_hal::{delay::Delay, peripherals::Peripherals};
 use esp_idf_svc::eventloop::EspSystemEventLoop;
-use esp_idf_hal::gpio::{self, IOPin, Output, OutputPin, PinDriver};
+use esp_idf_hal::gpio::{Output, PinDriver, Pull};
 use esp_idf_svc::wifi::EspWifi;
 
 use crate::cardputer_hal::{
@@ -27,7 +27,9 @@ pub struct KeyboardState {
 
 impl <'a>CardputerHal<'a> {
     pub fn new(peripherals: Peripherals, sysloop: EspSystemEventLoop) -> Self {
+        log::info!("hal: CardputerHal::new — start");
 
+        log::info!("hal: 3a CardputerScreen::build (SPI2 + display) …");
         let screen = CardputerScreen::build(
             Rgb565::CSS_BLACK,
             peripherals.spi2,
@@ -38,7 +40,9 @@ impl <'a>CardputerHal<'a> {
             peripherals.pins.gpio33,
             peripherals.pins.gpio38,
         );
+        log::info!("hal: 3a CardputerScreen::build — done");
 
+        log::info!("hal: 3b CardputerSd::build (SPI3 + SD) …");
         let sd = CardputerSd::build(
             peripherals.spi3,
             peripherals.pins.gpio40,
@@ -46,30 +50,41 @@ impl <'a>CardputerHal<'a> {
             peripherals.pins.gpio14,
             peripherals.pins.gpio12,
         );
+        log::info!("hal: 3b CardputerSd::build — done");
 
-        let mux_pins: [PinDriver<'_, gpio::AnyOutputPin, Output>; 3] = [
-            PinDriver::output(peripherals.pins.gpio8.downgrade_output()).unwrap(),
-            PinDriver::output(peripherals.pins.gpio9.downgrade_output()).unwrap(),
-            PinDriver::output(peripherals.pins.gpio11.downgrade_output()).unwrap(),
+        log::info!("hal: 3c keyboard mux GPIO (8,9,11) …");
+        let mux_pins: [PinDriver<'_, Output>; 3] = [
+            PinDriver::output(peripherals.pins.gpio8.degrade_output()).unwrap(),
+            PinDriver::output(peripherals.pins.gpio9.degrade_output()).unwrap(),
+            PinDriver::output(peripherals.pins.gpio11.degrade_output()).unwrap(),
         ];
-    
+        log::info!("hal: 3c mux pins — done");
+
+        log::info!("hal: 3d keyboard column GPIO (13,15,3–7) …");
         let column_pins = [
-            PinDriver::input(peripherals.pins.gpio13.downgrade()).unwrap(),
-            PinDriver::input(peripherals.pins.gpio15.downgrade()).unwrap(),
-            PinDriver::input(peripherals.pins.gpio3.downgrade()).unwrap(),
-            PinDriver::input(peripherals.pins.gpio4.downgrade()).unwrap(),
-            PinDriver::input(peripherals.pins.gpio5.downgrade()).unwrap(),
-            PinDriver::input(peripherals.pins.gpio6.downgrade()).unwrap(),
-            PinDriver::input(peripherals.pins.gpio7.downgrade()).unwrap(),
+            PinDriver::input(peripherals.pins.gpio13.degrade_input_output(), Pull::Up).unwrap(),
+            PinDriver::input(peripherals.pins.gpio15.degrade_input_output(), Pull::Up).unwrap(),
+            PinDriver::input(peripherals.pins.gpio3.degrade_input_output(), Pull::Up).unwrap(),
+            PinDriver::input(peripherals.pins.gpio4.degrade_input_output(), Pull::Up).unwrap(),
+            PinDriver::input(peripherals.pins.gpio5.degrade_input_output(), Pull::Up).unwrap(),
+            PinDriver::input(peripherals.pins.gpio6.degrade_input_output(), Pull::Up).unwrap(),
+            PinDriver::input(peripherals.pins.gpio7.degrade_input_output(), Pull::Up).unwrap(),
         ];
+        log::info!("hal: 3d column pins — done");
 
+        log::info!("hal: 3e CardputerKeyboard::new + init …");
         let mut keyboard = CardputerKeyboard::new(mux_pins, column_pins);
         keyboard.init();
+        log::info!("hal: 3e keyboard — done");
 
+        log::info!("hal: 3f EspWifi::new (modem + event loop) …");
         let esp_wifi =
         EspWifi::new(peripherals.modem, sysloop, None).unwrap();
+        log::info!("hal: 3f EspWifi::new — done");
 
+        log::info!("hal: 3g CardWorderWifi::wrap …");
         let wifi = CardWorderWifi::new(esp_wifi);
+        log::info!("hal: 3g CardWorderWifi — done");
 
         let input_state = InputState {
             ctrl_pressed: false,
@@ -86,6 +101,7 @@ impl <'a>CardputerHal<'a> {
             pressed: None,
         };
 
+        log::info!("hal: CardputerHal::new — complete");
         Self { screen:Some(screen), sd, keyboard, wifi, keyboard_state }
     }
 
@@ -109,7 +125,7 @@ impl <'a>CardputerHal<'a> {
             let config_str = self
             .sd
             .read_file("wifi_cfg.jsn")
-            .map_err(|e| anyhow::anyhow!("Failed to read wifi_cfg.jsn"))?;
+            .map_err(|_e| anyhow::anyhow!("Failed to read wifi_cfg.jsn"))?;
 
         let config: WifiConfig = serde_json::from_str(&config_str)?;
 
@@ -117,11 +133,11 @@ impl <'a>CardputerHal<'a> {
     }
     
     pub fn connect_wifi(&mut self, wifi_config: WifiConfig) -> anyhow::Result<()> {
-        self.wifi.connect(wifi_config).map_err(|e| anyhow::anyhow!("Failed to connect to wifi"))
+        self.wifi.connect(wifi_config).map_err(|_e| anyhow::anyhow!("Failed to connect to wifi"))
     }
 
     pub fn stop_wifi(&mut self) -> anyhow::Result<()> {
-        self.wifi.stop().map_err(|e| anyhow::anyhow!("Failed to stop wifi"))
+        self.wifi.stop().map_err(|_e| anyhow::anyhow!("Failed to stop wifi"))
     }
 
     pub fn take_screen(&mut self) -> CardputerScreen<'a> {

@@ -1,11 +1,7 @@
-use std::{cmp, ffi::CString};
+use std::ffi::CString;
 
-use embedded_graphics::{
-    pixelcolor::Rgb565,
-    prelude::{Point, RgbColor, WebColors},
-};
 use esp_idf_hal::delay::FreeRtos;
-use esp_idf_sys::{vTaskDelete, xTaskCreatePinnedToCore, BaseType_t, TaskHandle_t};
+use esp_idf_sys::{vTaskDelete, xTaskCreatePinnedToCore, TaskHandle_t};
 use u8g2_fonts::types::VerticalPosition;
 
 use crate::{
@@ -17,7 +13,7 @@ use crate::{
         },
     },
     logic::{view_manager::CardputerView, views::{start::StartView, UiLineElement}},
-    ui::cardworder_ui::{CardFont, CardworderUi, ThemeColor},
+    ui::cardworder_ui::{CardFont, CardworderUi, ThemeColor, TOP_BAR_HEIGHT},
 };
 
 use crate::logic::views::UiLineType;
@@ -25,16 +21,7 @@ use crate::logic::views::UiLineType;
 enum MainMenuOption {
     ConnectWifi,
     UpdateNtp,
-    AdditionalInfo,
-    Settings,
-    About,
-    Help,
-    Exit,
-    Test1,
-    Test2,
-    Test3,
-    Test4,
-    Test5,
+    AdditionalInfo
 }
 
 pub struct MainMenuView {
@@ -52,19 +39,10 @@ impl Default for MainMenuView {
         Self {
             show_fps: false,
             options: vec![
-                MainMenuOption::ConnectWifi, 
-                MainMenuOption::UpdateNtp, 
-                MainMenuOption::AdditionalInfo,
-                MainMenuOption::Settings,
-                MainMenuOption::About,
-                MainMenuOption::Help,
-                MainMenuOption::Exit,
-                MainMenuOption::Test1,
-                MainMenuOption::Test2,
-                MainMenuOption::Test3,
-                MainMenuOption::Test4,
-                MainMenuOption::Test5,
-            ],
+                MainMenuOption::ConnectWifi, MainMenuOption::UpdateNtp, MainMenuOption::AdditionalInfo,
+                MainMenuOption::ConnectWifi, MainMenuOption::UpdateNtp, MainMenuOption::AdditionalInfo,
+                MainMenuOption::ConnectWifi, MainMenuOption::UpdateNtp, MainMenuOption::AdditionalInfo
+                ],
             current_item_idx: 0,
             counter: 0,
             lang: InputLanguage::En,
@@ -78,28 +56,10 @@ fn get_option_text(option: &MainMenuOption, lang: InputLanguage) -> &'static str
     match (lang, option) {
         (InputLanguage::En, MainMenuOption::ConnectWifi) => "Connect Wi-Fi",
         (InputLanguage::En, MainMenuOption::UpdateNtp) => "Update time by NTP",
-        (InputLanguage::En, MainMenuOption::AdditionalInfo) => "Additional info",
-        (InputLanguage::En, MainMenuOption::Settings) => "Settings",
-        (InputLanguage::En, MainMenuOption::About) => "About",
-        (InputLanguage::En, MainMenuOption::Help) => "Help",
-        (InputLanguage::En, MainMenuOption::Exit) => "Exit",
-        (InputLanguage::En, MainMenuOption::Test1) => "Test Item 1",
-        (InputLanguage::En, MainMenuOption::Test2) => "Test Item 2",
-        (InputLanguage::En, MainMenuOption::Test3) => "Test Item 3",
-        (InputLanguage::En, MainMenuOption::Test4) => "Test Item 4",
-        (InputLanguage::En, MainMenuOption::Test5) => "Test Item 5",
         (InputLanguage::Ru, MainMenuOption::ConnectWifi) => "Подключить Wi-Fi",
         (InputLanguage::Ru, MainMenuOption::UpdateNtp) => "Обновить время по NTP",
-        (InputLanguage::Ru, MainMenuOption::AdditionalInfo) => "Дополнительная информация",
-        (InputLanguage::Ru, MainMenuOption::Settings) => "Настройки",
-        (InputLanguage::Ru, MainMenuOption::About) => "О программе",
-        (InputLanguage::Ru, MainMenuOption::Help) => "Помощь",
-        (InputLanguage::Ru, MainMenuOption::Exit) => "Выход",
-        (InputLanguage::Ru, MainMenuOption::Test1) => "Тест 1",
-        (InputLanguage::Ru, MainMenuOption::Test2) => "Тест 2",
-        (InputLanguage::Ru, MainMenuOption::Test3) => "Тест 3",
-        (InputLanguage::Ru, MainMenuOption::Test4) => "Тест 4",
-        (InputLanguage::Ru, MainMenuOption::Test5) => "Тест 5",
+        (InputLanguage::En, MainMenuOption::AdditionalInfo) => "Additional info",
+        (InputLanguage::Ru, MainMenuOption::AdditionalInfo) => "Дополнительная информация LONG LONG LONG LONG LONG LONG",
     }
 }
 
@@ -108,15 +68,6 @@ fn get_option_icon_text(option: &MainMenuOption) -> char {
         MainMenuOption::ConnectWifi => '\u{25A}',
         MainMenuOption::UpdateNtp => '\u{158}',
         MainMenuOption::AdditionalInfo => '\u{1d5}',
-        MainMenuOption::Settings => '\u{25A}',
-        MainMenuOption::About => '\u{25A}',
-        MainMenuOption::Help => '\u{25A}',
-        MainMenuOption::Exit => '\u{25A}',
-        MainMenuOption::Test1 => '\u{25A}',
-        MainMenuOption::Test2 => '\u{25A}',
-        MainMenuOption::Test3 => '\u{25A}',
-        MainMenuOption::Test4 => '\u{25A}',
-        MainMenuOption::Test5 => '\u{25A}',
     }
 }
 
@@ -129,8 +80,7 @@ unsafe extern "C" fn update_counter(arg: *mut core::ffi::c_void) {
     }
 }
 
-impl<'a> CardputerView<'a> for MainMenuView {
-
+impl CardputerView for MainMenuView {
     fn is_need_top_line(&self) -> bool {
         true
     }
@@ -140,26 +90,22 @@ impl<'a> CardputerView<'a> for MainMenuView {
     }
 
     /// Build the menu as a list of UiLineType
-    fn form(&self) -> Vec<UiLineType<'a>> {
-        let mut lines= self.options.iter().enumerate().map(|(idx, o)| {
+    fn form(&mut self) -> Vec<UiLineType> {
+        self.options.iter().enumerate().map(|(idx, o)| {
             let color = if self.current_item_idx == idx {
                 ThemeColor::Selected
             } else {
                 ThemeColor::Text
             };
-            let r:UiLineType<'a> = UiLineType::Elements(vec![
+            UiLineType::Elements(vec![
                 UiLineElement::Icon(get_option_icon_text(&o), CardFont::IconsHuge, color),
                 UiLineElement::Spacer(8),
-                UiLineElement::Text(get_option_text(&o, self.lang), CardFont::Medium, VerticalPosition::Top, color)
-            ]);
-            r
-        }).collect::<Vec<UiLineType<'a>>>();
-
-        lines
-        
+                UiLineElement::Text(get_option_text(&o, self.lang), CardFont::Medium, VerticalPosition::Center, color)
+            ])
+        }).collect()
     }
 
-    fn init(&mut self, hal: &mut CardputerHal<'_>, ui: &mut CardworderUi<'_>) {
+    fn init(&mut self, _hal: &mut CardputerHal<'_>, _ui: &mut CardworderUi<'_>) {
         let mut task_id: TaskHandle_t = core::ptr::null_mut();
         let task_name = CString::new("main_menu_update_counter").unwrap();
         let self_ptr: *mut MainMenuView = self as *mut _;
@@ -184,7 +130,7 @@ impl<'a> CardputerView<'a> for MainMenuView {
         }
     }
 
-    fn update(&mut self, keyboard_state: &KeyboardState) -> Option<Box<dyn CardputerView<'a>>> {
+    fn update(&mut self, keyboard_state: &KeyboardState) -> Option<Box<dyn CardputerView>> {
         self.lang = keyboard_state.input_state.lang;
         match (keyboard_state.input_state.opt_pressed, keyboard_state.key) {
             (true, Some((KeyEvent::Pressed, Scancode::F))) => {
@@ -195,14 +141,12 @@ impl<'a> CardputerView<'a> for MainMenuView {
 
         match keyboard_state.pressed {
             Some((KeyEvent::Pressed, PressedSymbol::ArrowDown)) => {
+                // Wrap: last -> first
                 self.current_item_idx = (self.current_item_idx + 1) % self.options.len();
-                // Scroll down by one line height (approximately 20 pixels for menu items)
-                self.scroll_offset = self.scroll_offset.saturating_add(20);
             }
             Some((KeyEvent::Pressed, PressedSymbol::ArrowUp)) => {
+                // Wrap: first -> last
                 self.current_item_idx = (self.current_item_idx + self.options.len() - 1) % self.options.len();
-                // Scroll up by one line height
-                self.scroll_offset = self.scroll_offset.saturating_sub(20);
             }
             Some((KeyEvent::Pressed, PressedSymbol::Enter)) => {
                 match self.options[self.current_item_idx] {
@@ -218,23 +162,34 @@ impl<'a> CardputerView<'a> for MainMenuView {
         None
     }
 
-    fn draw(&self, ui: &mut CardworderUi<'_>) {
+    fn draw(&mut self, ui: &mut CardworderUi<'_>) {
         use crate::logic::views::render::{compose_form, render_visible_lines};
-        
-        // Clear the screen first
-        ui.clear(Rgb565::BLACK);
-        let scroll_offset = self.scroll_offset;
-        
-        // Generate the form lines
-        let form_lines = self.form();
-        
-        // Compose the form with current scroll offset
-        let composed = compose_form(form_lines.as_slice(), scroll_offset, 125, ui); // 125 = viewport height (135 - 10 for top line)
-        
-        // Render the visible lines and scroll bar
+        use crate::logic::views::fonts;
+        let lines = self.form();
+        // Viewport below top bar: height = screen height - top bar
+        const SCREEN_HEIGHT: u32 = 135;
+        let viewport_height = SCREEN_HEIGHT - TOP_BAR_HEIGHT;
+        // Compute scroll so selected item is always first visible (at top of menu)
+        let mut y = 0u32;
+        let mut selected_top = 0u32;
+        for (idx, line) in lines.iter().enumerate() {
+            let h = fonts::measure_line_height(ui, line);
+            if idx == self.current_item_idx {
+                selected_top = y;
+            }
+            y += h;
+        }
+        let total_height = y;
+        let max_scroll = total_height.saturating_sub(viewport_height);
+        self.scroll_offset = selected_top.min(max_scroll);
+        let composed = compose_form(
+            lines.as_slice(),
+            self.scroll_offset,
+            viewport_height,
+            TOP_BAR_HEIGHT as i32,
+            ui,
+        );
         render_visible_lines(&composed, ui);
-        
-        // Update FPS display
         ui.show_fps = self.show_fps;
     }
 }

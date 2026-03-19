@@ -1,7 +1,7 @@
 [build]
 target = "xtensa-esp32s3-espidf"
 
-[target.xtensa-esp32s3-espidf]
+[target.'cfg(target_os = "espidf")']
 linker = "ldproxy"
 runner = "espflash flash --monitor" # Select this runner for espflash v3.x.x
 rustflags = [ "--cfg",  "espidf_time64"] # Extending time_t for ESP IDF 5: https://github.com/esp-rs/rust/issues/110
@@ -11,8 +11,10 @@ build-std = ["std", "panic_abort"]
 
 [env]
 MCU="esp32s3"
-# Note: this variable is not used by the pio builder (`cargo build --features pio`)
-ESP_IDF_VERSION = "v5.1.4"
+ESP_IDF_VERSION = "v5.5.3"
+ESP_IDF_TOOLS_INSTALL_DIR = "global"
+ESP_IDF_SDKCONFIG_DEFAULTS = "cardworder/sdkconfig.defaults"
+
 
 # Workaround for https://github.com/esp-rs/esp-idf-template/issues/174 
-CRATE_CC_NO_DEFAULTS = "1"
+# CRATE_CC_NO_DEFAULTS = "1"

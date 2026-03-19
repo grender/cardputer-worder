@@ -16,6 +16,7 @@ pub struct CardWorderWifi<'a> {
 
 impl<'a> CardWorderWifi<'a> {
     pub fn new(wifi: EspWifi<'a>) -> Self {
+        log::info!("wifi: CardWorderWifi::new (driver ready)");
         Self {
             driver: wifi
         }

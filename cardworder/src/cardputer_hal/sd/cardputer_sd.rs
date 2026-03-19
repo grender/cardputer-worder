@@ -4,13 +4,11 @@ use embedded_sdmmc::{
 };
 use esp_idf_hal::{
     delay::Delay,
-    spi::{config::DriverConfig, SpiConfig, SpiDeviceDriver},
+    gpio::{InputPin, OutputPin},
+    spi::{
+        config::DriverConfig, SpiAnyPins, SpiConfig, SpiDeviceDriver, SpiDriver,
+    },
     units::FromValueType,
-};
-use esp_idf_hal::{
-    gpio::{Gpio12, Gpio14, Gpio39, Gpio40},
-    peripheral::Peripheral,
-    spi::{SpiAnyPins, SpiDriver},
 };
 
 use embedded_sdmmc::SdCardError;
@@ -40,13 +38,14 @@ impl embedded_sdmmc::TimeSource for FakeTimesource {
 }
 
 impl CardputerSd<'_, Delay> {
-    pub fn build<'a, SPI: SpiAnyPins>(
-        spi: impl Peripheral<P = SPI> + 'a,
-        sclk: impl Peripheral<P = Gpio40> + 'a,
-        miso: impl Peripheral<P = Gpio39> + 'a,
-        mosi: impl Peripheral<P = Gpio14> + 'a,
-        cs: impl Peripheral<P = Gpio12> + 'a,
+    pub fn build<'a, SPI: SpiAnyPins + 'a>(
+        spi: SPI,
+        sclk: impl OutputPin + 'a,
+        miso: impl InputPin + 'a,
+        mosi: impl OutputPin + 'a,
+        cs: impl OutputPin + 'a,
     ) -> CardputerSd<'a, Delay> {
+        log::info!("sd: CardputerSd::build — start (SPI3, DMA off)");
         let delay = Delay::new_default();
 
         let spi_config = SpiConfig::new()
@@ -55,6 +54,7 @@ impl CardputerSd<'_, Delay> {
             .queue_size(1);
         let device_config = DriverConfig::new().dma(esp_idf_hal::spi::Dma::Auto(4096));
 
+        log::info!("sd: SpiDeviceDriver::new_single …");
         let spi = SpiDeviceDriver::new_single(
             spi,
             sclk,
@@ -65,13 +65,18 @@ impl CardputerSd<'_, Delay> {
             &spi_config,
         )
         .unwrap();
+        log::info!("sd: SpiDeviceDriver::new_single — ok");
 
-        log::info!("SPI initialized. Initializing SD-Card...");
+        log::info!("sd: SdCard::new …");
         let sdcard = SdCard::new(spi, delay);
 
-        log::info!("Card size is {} bytes", sdcard.num_bytes().unwrap());
+        log::info!("sd: probing card (num_bytes) …");
+        let card_bytes = sdcard.num_bytes().unwrap();
+        log::info!("sd: card size is {} bytes", card_bytes);
 
+        log::info!("sd: VolumeManager::new …");
         let volume_manager = embedded_sdmmc::VolumeManager::new(sdcard, FakeTimesource());
+        log::info!("sd: CardputerSd::build — complete");
         return CardputerSd {
             volume_manager: volume_manager,
         };

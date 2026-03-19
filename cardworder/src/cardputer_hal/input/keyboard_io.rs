@@ -1,16 +1,16 @@
-use esp_idf_hal::gpio::{AnyIOPin, AnyOutputPin, PinDriver};
+use esp_idf_hal::gpio::{Input, Output, PinDriver};
 
 type KeyboardState = [u8; 8];
 pub struct CardputerKeyboard<'a> {
-    mux: [PinDriver<'a, AnyOutputPin, esp_idf_hal::gpio::Output>; 3],
-    columns: [PinDriver<'a, AnyIOPin, esp_idf_hal::gpio::Input>; 7],
+    mux: [PinDriver<'a, Output>; 3],
+    columns: [PinDriver<'a, Input>; 7],
     state: KeyboardState,
 }
 
 impl<'a> CardputerKeyboard<'a> {
     pub fn new(
-        mux: [PinDriver<'a, AnyOutputPin, esp_idf_hal::gpio::Output>; 3],
-        columns: [PinDriver<'a, AnyIOPin, esp_idf_hal::gpio::Input>; 7],
+        mux: [PinDriver<'a, Output>; 3],
+        columns: [PinDriver<'a, Input>; 7],
     ) -> Self {
         Self {
             mux,
@@ -20,9 +20,7 @@ impl<'a> CardputerKeyboard<'a> {
     }
 
     pub fn init(&mut self) {
-        for pin in self.columns.iter_mut() {
-            pin.set_pull(esp_idf_hal::gpio::Pull::Up).unwrap();
-        }
+        // Pull-up is configured in CardputerHal::new via PinDriver::input(..., Pull::Up).
     }
 
     pub fn read_columns(&self) -> u8 {
@@ -57,6 +55,7 @@ impl<'a> CardputerKeyboard<'a> {
 
     /// Reads the state of the keyboard and returns a list of pressed keys.
     pub fn read_keys(&mut self) -> Vec<Scancode> {
+        log::info!("keyboard_io: read_keys — called");
         let raw = self.read_keys_raw();
         let mut result = Vec::new();
         for (i, byte) in raw.iter().enumerate() {

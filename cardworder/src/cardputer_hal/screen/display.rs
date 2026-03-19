@@ -3,10 +3,9 @@ use anyhow::Result;
 use display_interface_spi::SPIInterface;
 use esp_idf_hal::{
     delay::Delay,
-    gpio::{AnyIOPin, Gpio33, Gpio34, Gpio35, Gpio36, Gpio37, Gpio38, Output, PinDriver},
-    peripheral::Peripheral,
-    prelude::*,
+    gpio::{AnyInputPin, Output, OutputPin, PinDriver},
     spi::{config::DriverConfig, SpiAnyPins, SpiConfig, SpiDeviceDriver, SpiDriver},
+    units::FromValueType,
 };
 use mipidsi::{
     options::{
@@ -19,9 +18,9 @@ use mipidsi::{
 use crate::cardputer_hal::screen::st7789v2::ST7789V2;
 
 type Drawable<'a> = Display<
-    SPIInterface<SpiDeviceDriver<'a, SpiDriver<'a>>, PinDriver<'a, Gpio34, Output>>,
+    SPIInterface<SpiDeviceDriver<'a, SpiDriver<'a>>, PinDriver<'a, Output>>,
     ST7789V2,
-    PinDriver<'a, Gpio33, Output>,
+    PinDriver<'a, Output>,
 >;
 
 /// Display width
@@ -31,53 +30,56 @@ pub const DISPLAY_SIZE_HEIGHT: u16 = 135;
 
 pub struct CardputerDisplay<'a> {
     pub screen: Drawable<'a>,
-    pub backlight_pin: PinDriver<'a, Gpio38, Output>,
+    pub backlight_pin: PinDriver<'a, Output>,
 }
 
 pub fn build<'a, SPI>(
-    spi: impl Peripheral<P = SPI> + 'a,
-    sck: impl Peripheral<P = Gpio36> + 'a,
-    dc: impl Peripheral<P = Gpio35> + 'a,
-    cs: impl Peripheral<P = Gpio37> + 'a,
-    rs: impl Peripheral<P = Gpio34> + 'a,
-    rst: impl Peripheral<P = Gpio33> + 'a,
-    bl: impl Peripheral<P = Gpio38> + 'a,
+    spi: SPI,
+    sck: impl OutputPin + 'a,
+    dc: impl OutputPin + 'a,
+    cs: impl OutputPin + 'a,
+    rs: impl OutputPin + 'a,
+    rst: impl OutputPin + 'a,
+    bl: impl OutputPin + 'a,
 ) -> Result<CardputerDisplay<'a>>
 where
-    SPI: SpiAnyPins,
+    SPI: SpiAnyPins + 'a,
 {
-    log::info!("start building");
+    log::info!("display: build — start (SPI2, DMA off, queue 1)");
     let spi_config = SpiConfig::new()
         .baudrate(80.MHz().into())
         .data_mode(esp_idf_hal::spi::config::MODE_0)
         .queue_size(1);
     let device_config = DriverConfig::new().dma(esp_idf_hal::spi::Dma::Auto(4096));
 
+    log::info!("display: SpiDeviceDriver::new_single …");
     let spi = SpiDeviceDriver::new_single(
         spi,
         sck,
         dc,
-        Option::<AnyIOPin>::None,
+        None::<AnyInputPin<'_>>,
         Some(cs),
         &device_config,
         &spi_config,
     )?;
+    log::info!("display: SpiDeviceDriver::new_single — ok");
 
     let model: ST7789V2 = ST7789V2 {};
 
     let mut delay = Delay::new_default();
 
+    log::info!("display: RS/RST as output …");
     let rs = PinDriver::output(rs)?;
     let rst = PinDriver::output(rst)?;
 
-    log::info!("activate backlight");
+    log::info!("display: backlight pulse …");
     let mut bl = PinDriver::output(bl)?;
     bl.set_low()?;
     delay.delay_us(10_000);
     bl.set_high()?;
     delay.delay_us(10_000);
 
-    log::info!("create drawable");
+    log::info!("display: mipidsi Builder::init …");
     let drawable = Builder::new(model, SPIInterface::new(spi, rs))
         .reset_pin(rst)
         .display_size(DISPLAY_SIZE_HEIGHT, DISPLAY_SIZE_WIDTH)
@@ -95,7 +97,7 @@ where
             anyhow::Error::msg("unknown")
         })?;
 
-    log::info!("create drawable");
+    log::info!("display: mipidsi init — ok, build complete");
 
     Ok(CardputerDisplay {
         screen: drawable,

@@ -6,11 +6,8 @@ use embedded_graphics::{
     prelude::{IntoStorage, Point},
 };
 use embedded_graphics_framebuf::FrameBuf;
-use esp_idf_hal::{
-    gpio::{Gpio33, Gpio34, Gpio35, Gpio36, Gpio37, Gpio38},
-    peripheral::Peripheral,
-    spi::SpiAnyPins,
-};
+use esp_idf_hal::gpio::OutputPin;
+use esp_idf_hal::spi::SpiAnyPins;
 use mipidsi::dcs::{SetColumnAddress, SetPageAddress, WriteMemoryStart};
 
 use super::{display::CardputerDisplay, framebuffer::CardputerFramebuffer};
@@ -64,19 +61,25 @@ impl<'a> embedded_graphics::draw_target::DrawTarget for CardputerScreen<'a> {
 }
 
 impl CardputerScreen<'_> {
-    pub fn build<'a, SPI: SpiAnyPins>(
+    pub fn build<'a, SPI>(
         initial_color: Rgb565,
-        spi: impl Peripheral<P = SPI> + 'a,
-        sck: impl Peripheral<P = Gpio36> + 'a,
-        dc: impl Peripheral<P = Gpio35> + 'a,
-        cs: impl Peripheral<P = Gpio37> + 'a,
-        rs: impl Peripheral<P = Gpio34> + 'a,
-        rst: impl Peripheral<P = Gpio33> + 'a,
-        bl: impl Peripheral<P = Gpio38> + 'a,
-    ) -> CardputerScreen<'a> {
+        spi: SPI,
+        sck: impl OutputPin + 'a,
+        dc: impl OutputPin + 'a,
+        cs: impl OutputPin + 'a,
+        rs: impl OutputPin + 'a,
+        rst: impl OutputPin + 'a,
+        bl: impl OutputPin + 'a,
+    ) -> CardputerScreen<'a>
+    where
+        SPI: SpiAnyPins + 'a,
+    {
+        log::info!("CardputerScreen::build — calling display::build");
         let display = super::display::build(spi, sck, dc, cs, rs, rst, bl).unwrap();
+        log::info!("CardputerScreen::build — framebuffer …");
         let framebuffer_data = CardputerFramebuffer::new(initial_color);
         let framebuffer = FrameBuf::new_with_origin(framebuffer_data, 240, 135, Point::new(52, 40));
+        log::info!("CardputerScreen::build — done");
         CardputerScreen {
             cardputer_display: display,
             framebuffer: framebuffer,

@@ -2,12 +2,12 @@ use embedded_graphics::{pixelcolor::Rgb565, prelude::RgbColor};
 use esp_idf_svc::sntp::{EspSntp, SyncStatus};
 use esp_idf_sys::{setenv, tzset};
 
-use crate::{cardputer_hal::{cardputer_hal::{CardputerHal, KeyboardState}, wifi::wifi::WifiConfig}, logic::{view_manager::CardputerView, views::main_menu::MainMenuView}, ui::cardworder_ui::CardworderUi, ResultExt};
+use crate::{cardputer_hal::cardputer_hal::{CardputerHal, KeyboardState}, logic::{view_manager::CardputerView, views::main_menu::MainMenuView}, ui::cardworder_ui::CardworderUi, ResultExt};
 
 pub struct StartView {
 }
 
-impl <'a> CardputerView<'a> for StartView {
+impl CardputerView for StartView {
     fn is_need_top_line(&self) -> bool {
         false
     }
@@ -38,11 +38,11 @@ impl <'a> CardputerView<'a> for StartView {
             heapless::String::try_from("52525252").unwrap(),
         ).unwrap_or_log("error create wifi file");
     
-        //let wifi_config = hal.load_wifi_config().unwrap_or_log("error load wifi config");
-        let wifi_config = WifiConfig {
-            ssid: heapless::String::try_from("ATOM").unwrap(),
-            password: heapless::String::try_from("pw!!ATOM2023@@").unwrap(),
-        };
+        let wifi_config = hal.load_wifi_config().unwrap_or_log("error load wifi config");
+        //let wifi_config = WifiConfig {
+        //    ssid: heapless::String::try_from("ATOM").unwrap(),
+        //    password: heapless::String::try_from("pw!!ATOM2023@@").unwrap(),
+        //};
         
     
         ui.draw_starting_line_text("Starting Wifi...", Rgb565::BLACK, Rgb565::WHITE);
@@ -72,14 +72,14 @@ impl <'a> CardputerView<'a> for StartView {
         
     }
 
-    fn update(&mut self, keyboard_state: &KeyboardState) -> Option<Box<dyn CardputerView<'a>>> {
+    fn update(&mut self, _keyboard_state: &KeyboardState) -> Option<Box<dyn CardputerView>> {
         Some(Box::new(MainMenuView::default()))
     }
 
-    fn draw(&self, ui: &mut CardworderUi<'_>) {
+    fn draw(&mut self, _ui: &mut CardworderUi<'_>) {
     }
     
-    fn form(&self) -> Vec<crate::logic::views::UiLineType<'a>> {
+    fn form(&mut self) -> Vec<crate::logic::views::UiLineType> {
         Vec::new()
     }
 }

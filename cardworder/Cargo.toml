@@ -2,17 +2,40 @@
 name = "cardworder"
 authors = ["Aleksandr Kopytov <grender.no8@gmail.com>"]
 edition = "2021"
+resolver = "2"
+rust-version = "1.82"
+
 
 [[bin]]
 name = "cardworder"
 harness = false # do not use the built in cargo test harness -> resolve rust-analyzer errors
 
+[[bin]]
+name = "hal_test_screen"
+path = "src/bin/hal_test_screen.rs"
+harness = false
+
+[[bin]]
+name = "hal_test_keyboard"
+path = "src/bin/hal_test_keyboard.rs"
+harness = false
+
+[[bin]]
+name = "hal_test_wifi"
+path = "src/bin/hal_test_wifi.rs"
+harness = false
+
+[[bin]]
+name = "hal_test_sd"
+path = "src/bin/hal_test_sd.rs"
+harness = false
+
 [profile.release]
-opt-level = "z"
+opt-level = "s"
 
 [profile.dev]
 debug = true    # Symbols are nice and they don't increase the size on Flash
-opt-level = "s"
+opt-level = "z"
 
 [features]
 default = []
@@ -21,9 +44,9 @@ experimental = ["esp-idf-svc/experimental"]
 [dependencies]
 # can't up esp-idf-svc to last cuz embassy does'nt support latest extenza rust toolchain
 # if not need embassy - be happy to upgrade
-esp-idf-svc = { version = "0.50.1", features = ["critical-section", "embassy-time-driver"] }
-esp-idf-hal = {version="0.45.2"}
-esp-idf-sys = { version = "0.36.1", features = ["native", "panic_handler"] }
+esp-idf-svc = { version = "0.52.1", features = ["critical-section"] }
+esp-idf-hal = {version="0.46.2"}
+esp-idf-sys = { version = "0.37.2", features = ["native", "panic_handler"] }
 embedded-hal = "1.0.0"
 embedded-graphics = "0.8.1"
 embedded-fps = { version = "0.1.0", features = [] }
@@ -37,7 +60,7 @@ mipidsi = "0.8.0" # can't update cuz codebase change
 embedded-sdmmc = { version = "0.9.0", features = ["log"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
-heapless = { version = "0.8.0", features = ["serde"] }
+heapless = { version = "0.9.0", features = ["serde"] }
 anyhow = "1.0.94"
 log = "0.4"
 rs-fsrs = { version = "1.2.1" }
