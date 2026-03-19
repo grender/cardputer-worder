@@ -49,7 +49,7 @@ where
     let spi_config = SpiConfig::new()
         .baudrate(80.MHz().into())
         .data_mode(esp_idf_hal::spi::config::MODE_0)
-        .queue_size(1);
+        .queue_size(4);
     let device_config = DriverConfig::new().dma(esp_idf_hal::spi::Dma::Auto(4096));
 
     log::info!("display: SpiDeviceDriver::new_single …");

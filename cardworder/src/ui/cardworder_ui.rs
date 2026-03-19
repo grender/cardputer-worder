@@ -37,6 +37,10 @@ pub struct CardworderUi<'a> {
     fps_counter: FPS<45, CardworderClock>,
     renderers: HashMap<CardFont, FontRenderer>,
     pub show_fps: bool,
+    flip_sample_count: u64,
+    flip_total_us_acc: u64,
+    flip_fps_overlay_us_acc: u64,
+    flip_flush_us_acc: u64,
 }
 
 #[derive(Copy, Clone)]
@@ -142,6 +146,10 @@ impl CardworderUi<'_> {
             fps_counter: fps_counter,
             renderers: renderers,
             show_fps: false,
+            flip_sample_count: 0,
+            flip_total_us_acc: 0,
+            flip_fps_overlay_us_acc: 0,
+            flip_flush_us_acc: 0,
         }
     }
 
@@ -162,6 +170,7 @@ impl CardworderUi<'_> {
     }
 
     pub fn flip_buffer(&mut self) {
+        let t0 = unsafe { esp_idf_svc::sys::esp_timer_get_time() as u64 };
         let fps = self.fps_counter.tick();
         if self.show_fps {
             let fps_text = format!("FPS: {}", fps);
@@ -191,7 +200,38 @@ impl CardworderUi<'_> {
                 )
                 .unwrap();
         }
-        self.screen.flush_framebuffer();
+        let t_after_overlay = unsafe { esp_idf_svc::sys::esp_timer_get_time() as u64 };
+        match self.screen.flush_framebuffer() {
+            Ok(()) => {}
+            Err(e) => log::error!("hal_test_screen: flush_framebuffer — err {:?}", e),
+        }
+        let t_after_flush = unsafe { esp_idf_svc::sys::esp_timer_get_time() as u64 };
+
+        let total_us = t_after_flush - t0;
+        let fps_overlay_us = t_after_overlay - t0;
+        let flush_us = t_after_flush - t_after_overlay;
+
+        self.flip_sample_count = self.flip_sample_count.wrapping_add(1);
+        self.flip_total_us_acc += total_us;
+        self.flip_fps_overlay_us_acc += fps_overlay_us;
+        self.flip_flush_us_acc += flush_us;
+
+        if self.flip_sample_count >= 30 || total_us > 1_000_000 {
+            let n = self.flip_sample_count.max(1);
+            log::info!(
+                "perf flip_buffer avg us (total={}, fps_overlay={}, flush={}); last us (total={}, fps_overlay={}, flush={})",
+                self.flip_total_us_acc / n,
+                self.flip_fps_overlay_us_acc / n,
+                self.flip_flush_us_acc / n,
+                total_us,
+                fps_overlay_us,
+                flush_us
+            );
+            self.flip_sample_count = 0;
+            self.flip_total_us_acc = 0;
+            self.flip_fps_overlay_us_acc = 0;
+            self.flip_flush_us_acc = 0;
+        }
     }
 
     pub fn backlight_off(&mut self) {

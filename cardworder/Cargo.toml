@@ -35,7 +35,7 @@ opt-level = "s"
 
 [profile.dev]
 debug = true    # Symbols are nice and they don't increase the size on Flash
-opt-level = "z"
+opt-level = "s"
 
 [features]
 default = []

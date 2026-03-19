@@ -4,6 +4,7 @@ use cardworder::logic::views::main_menu::MainMenuView;
 use cardworder::logic::views::start::StartView;
 use cardworder::ui::cardworder_ui::CardworderUi;
 use cardworder::ResultExt;
+use esp_idf_hal::delay::FreeRtos;
 use esp_idf_svc::eventloop::EspSystemEventLoop;
 use esp_idf_svc::hal::peripherals::Peripherals;
 
@@ -29,6 +30,7 @@ fn main() {
     log::info!("boot: init done, entering main loop");
 
     loop {
+        FreeRtos::delay_ms(16);
         view_manager.loop_logic();
     }
 }

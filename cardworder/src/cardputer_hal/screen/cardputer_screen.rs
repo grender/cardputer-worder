@@ -8,14 +8,25 @@ use embedded_graphics::{
 use embedded_graphics_framebuf::FrameBuf;
 use esp_idf_hal::gpio::OutputPin;
 use esp_idf_hal::spi::SpiAnyPins;
+use esp_idf_sys;
 use mipidsi::dcs::{SetColumnAddress, SetPageAddress, WriteMemoryStart};
+use esp_idf_hal::delay::FreeRtos;
 
-use super::{display::CardputerDisplay, framebuffer::CardputerFramebuffer};
+use super::{
+    display::{CardputerDisplay, DISPLAY_SIZE_HEIGHT, DISPLAY_SIZE_WIDTH},
+    framebuffer::CardputerFramebuffer,
+};
 use display_interface::WriteOnlyDataCommand;
 
 pub struct CardputerScreen<'a> {
     cardputer_display: CardputerDisplay<'a>,
     pub framebuffer: FrameBuf<Rgb565, CardputerFramebuffer>,
+    flush_sample_count: u64,
+    flush_total_us_acc: u64,
+    flush_cmd_us_acc: u64,
+    flush_iter_us_acc: u64,
+    flush_delay_us_acc: u64,
+    flush_send_us_acc: u64,
 }
 
 impl<'a> embedded_graphics::geometry::OriginDimensions for CardputerScreen<'a> {
@@ -83,6 +94,12 @@ impl CardputerScreen<'_> {
         CardputerScreen {
             cardputer_display: display,
             framebuffer: framebuffer,
+            flush_sample_count: 0,
+            flush_total_us_acc: 0,
+            flush_cmd_us_acc: 0,
+            flush_iter_us_acc: 0,
+            flush_delay_us_acc: 0,
+            flush_send_us_acc: 0,
         }
     }
 
@@ -96,6 +113,7 @@ impl CardputerScreen<'_> {
 
     pub fn flush_framebuffer(&mut self) -> Result<(), DisplayError> {
         //let mut screen: mipidsi::Display<display_interface_spi::SPIInterface<esp_idf_hal::spi::SpiDeviceDriver<'_, esp_idf_hal::spi::SpiDriver<'_>>, esp_idf_hal::gpio::PinDriver<'_, Gpio34, esp_idf_hal::gpio::Output>>, super::st7789v2::ST7789V2, esp_idf_hal::gpio::PinDriver<'_, Gpio33, esp_idf_hal::gpio::Output>> = self.cardputer_display.screen;
+        let t0 = unsafe { esp_idf_sys::esp_timer_get_time() as u64 };
         let screen = &mut self.cardputer_display.screen;
         unsafe {
             screen.dcs().write_command(SetColumnAddress::new(40, 279))?;
@@ -103,17 +121,55 @@ impl CardputerScreen<'_> {
             screen.dcs().write_command(SetPageAddress::new(53, 187))?;
 
             screen.dcs().write_command(WriteMemoryStart)?;
+            let t_after_cmd = esp_idf_sys::esp_timer_get_time() as u64;
 
             //let buf = DataFormat::U8(framebuffer_data);
-            let mut iter = self
-                .framebuffer
-                .data
-                .data
-                .iter()
-                .copied()
-                .map(|c| c.into_storage());
-            let buf = DataFormat::U16BEIter(&mut iter);
-            screen.dcs().di.send_data(buf)?;
+            let pixel_data: &[Rgb565] = &self.framebuffer.data.data;
+            let byte_slice = core::slice::from_raw_parts(
+                pixel_data.as_ptr() as *const u8,
+                pixel_data.len() * 2, // 2 bytes per Rgb565 pixel
+            );
+            screen.dcs().di.send_data(DataFormat::U8(byte_slice))?;
+
+            let t_after_iter = esp_idf_sys::esp_timer_get_time() as u64;
+            let t_after_delay = esp_idf_sys::esp_timer_get_time() as u64;
+            let t_after_send = esp_idf_sys::esp_timer_get_time() as u64;
+
+            let cmd_us = t_after_cmd - t0;
+            let iter_us = t_after_iter - t_after_cmd;
+            let delay_us = t_after_delay - t_after_iter;
+            let send_us = t_after_send - t_after_delay;
+            let total_us = t_after_send - t0;
+
+            self.flush_sample_count = self.flush_sample_count.wrapping_add(1);
+            self.flush_total_us_acc += total_us;
+            self.flush_cmd_us_acc += cmd_us;
+            self.flush_iter_us_acc += iter_us;
+            self.flush_delay_us_acc += delay_us;
+            self.flush_send_us_acc += send_us;
+
+            if self.flush_sample_count >= 30 || total_us > 1_000_000 {
+                let n = self.flush_sample_count.max(1);
+                log::info!(
+                    "perf flush_framebuffer avg us (total={}, cmd={}, iter={}, delay={}, send={}); last us (total={}, cmd={}, iter={}, delay={}, send={})",
+                    self.flush_total_us_acc / n,
+                    self.flush_cmd_us_acc / n,
+                    self.flush_iter_us_acc / n,
+                    self.flush_delay_us_acc / n,
+                    self.flush_send_us_acc / n,
+                    total_us,
+                    cmd_us,
+                    iter_us,
+                    delay_us,
+                    send_us
+                );
+                self.flush_sample_count = 0;
+                self.flush_total_us_acc = 0;
+                self.flush_cmd_us_acc = 0;
+                self.flush_iter_us_acc = 0;
+                self.flush_delay_us_acc = 0;
+                self.flush_send_us_acc = 0;
+            }
         }
         Ok(())
     }
