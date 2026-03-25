@@ -43,6 +43,8 @@ pub struct MainMenuView {
     draw_recolor_us_acc: u64,
     draw_clear_dirty_us_acc: u64,
     draw_render_us_acc: u64,
+
+    is_need_clear_on_update: bool,
 }
 
 impl Default for MainMenuView {
@@ -67,6 +69,7 @@ impl Default for MainMenuView {
             draw_recolor_us_acc: 0,
             draw_clear_dirty_us_acc: 0,
             draw_render_us_acc: 0,
+            is_need_clear_on_update: true,
         }
     }
 }
@@ -96,7 +99,7 @@ impl CardputerView for MainMenuView {
     }
 
     fn is_need_clear_on_update(&self) -> bool {
-        false
+        self.is_need_clear_on_update
     }
 
     /// Build the menu as a list of UiLineType
@@ -130,6 +133,7 @@ impl CardputerView for MainMenuView {
 
     fn update(&mut self, keyboard_state: &KeyboardState) -> Option<Box<dyn CardputerView>> {
         self.lang = keyboard_state.input_state.lang;
+        self.is_need_clear_on_update = false;
         match (keyboard_state.input_state.opt_pressed, keyboard_state.key) {
             (true, Some((KeyEvent::Pressed, Scancode::F))) => {
                 self.show_fps = !self.show_fps;
@@ -139,13 +143,16 @@ impl CardputerView for MainMenuView {
 
         match keyboard_state.pressed {
             Some((KeyEvent::Pressed, PressedSymbol::ArrowDown)) => {
+                self.is_need_clear_on_update = true;
                 self.current_item_idx = (self.current_item_idx + 1) % self.options.len();
             }
             Some((KeyEvent::Pressed, PressedSymbol::ArrowUp)) => {
+                self.is_need_clear_on_update = true;
                 self.current_item_idx =
                     (self.current_item_idx + self.options.len() - 1) % self.options.len();
             }
             Some((KeyEvent::Pressed, PressedSymbol::Enter)) => {
+                self.is_need_clear_on_update = true;
                 match self.options[self.current_item_idx] {
                     MainMenuOption::ConnectWifi => {
                         return Some(Box::new(StartView {}));

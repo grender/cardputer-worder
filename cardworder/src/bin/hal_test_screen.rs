@@ -63,7 +63,6 @@ fn main() {
     let mut n = 0u32;
     loop {
         // Run fast enough to make FPS readable.
-        FreeRtos::delay_ms(16);
         n = n.wrapping_add(1);
 
         // Fill whole framebuffer each iteration (acts as a visual "heartbeat").

@@ -30,7 +30,7 @@ fn main() {
     log::info!("boot: init done, entering main loop");
 
     loop {
-        FreeRtos::delay_ms(16);
+        FreeRtos::delay_ms(1);
         view_manager.loop_logic();
     }
 }

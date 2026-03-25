@@ -3,6 +3,8 @@ use core::iter;
 use embedded_graphics::pixelcolor::{raw::RawU16, IntoStorage, Rgb565};
 use embedded_graphics_framebuf::backends::FrameBufferBackend;
 
+use esp_idf_sys::{heap_caps_malloc, heap_caps_free, MALLOC_CAP_DMA, MALLOC_CAP_INTERNAL};
+
 use super::display::{DISPLAY_SIZE_HEIGHT, DISPLAY_SIZE_WIDTH};
 
 const DISPLAY_SIZE_WIDTH_U: usize = DISPLAY_SIZE_WIDTH as usize;
@@ -10,7 +12,7 @@ const DISPLAY_SIZE_HEIGHT_U: usize = DISPLAY_SIZE_HEIGHT as usize;
 
 pub struct CardputerFramebuffer {
     /// Raw RGB565 storage values (u16). Using u16 lets the SPI flush path send a slice efficiently.
-    pub data: Vec<Rgb565>,
+    pub data: &'static mut [u16],
 
     // Dirty region tracking used by `CardputerScreen::flush_framebuffer()`.
     dirty_any: bool,
@@ -24,7 +26,7 @@ impl FrameBufferBackend for CardputerFramebuffer {
     type Color = Rgb565;
 
     fn set(&mut self, index: usize, color: Self::Color) {
-        self.data[index] = color;
+        self.data[index] = color.into_storage().swap_bytes();
 
         // Track modified pixels since the last flush.
         let x = index % DISPLAY_SIZE_WIDTH_U;
@@ -44,7 +46,7 @@ impl FrameBufferBackend for CardputerFramebuffer {
     }
 
     fn get(&self, index: usize) -> Self::Color {
-        self.data[index]
+        Rgb565::from(RawU16::new(self.data[index].swap_bytes()))
     }
 
     fn nr_elements(&self) -> usize {
@@ -54,13 +56,20 @@ impl FrameBufferBackend for CardputerFramebuffer {
 
 impl CardputerFramebuffer {
     pub fn new(initial_color: Rgb565) -> Self {
-        let fb_data = iter::repeat(initial_color)
-            .take(DISPLAY_SIZE_WIDTH_U * DISPLAY_SIZE_HEIGHT_U)
-            // .map(|c| c.into_storage())
-            .collect();
-        // Force an initial flush of the whole buffer so the display state is correct.
+        let count = DISPLAY_SIZE_WIDTH_U * DISPLAY_SIZE_HEIGHT_U;
+        let ptr = unsafe {
+            heap_caps_malloc(
+                count * 2,
+                MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL
+            ) as *mut u16
+        };
+        assert!(!ptr.is_null(), "DMA heap allocation failed");
+        let data = unsafe { core::slice::from_raw_parts_mut(ptr, count) };
+        let fill = initial_color.into_storage().swap_bytes();
+        data.fill(fill);
+
         CardputerFramebuffer {
-            data: fb_data,
+            data,
             dirty_any: true,
             dirty_min_x: 0,
             dirty_min_y: 0,

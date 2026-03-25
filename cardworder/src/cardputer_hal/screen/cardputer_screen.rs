@@ -124,12 +124,8 @@ impl CardputerScreen<'_> {
             let t_after_cmd = esp_idf_sys::esp_timer_get_time() as u64;
 
             //let buf = DataFormat::U8(framebuffer_data);
-            let pixel_data: &[Rgb565] = &self.framebuffer.data.data;
-            let byte_slice = core::slice::from_raw_parts(
-                pixel_data.as_ptr() as *const u8,
-                pixel_data.len() * 2, // 2 bytes per Rgb565 pixel
-            );
-            screen.dcs().di.send_data(DataFormat::U8(byte_slice))?;
+            let pixel_data: &[u16] = &self.framebuffer.data.data;
+            screen.dcs().di.send_data(DataFormat::U16(pixel_data))?;
 
             let t_after_iter = esp_idf_sys::esp_timer_get_time() as u64;
             let t_after_delay = esp_idf_sys::esp_timer_get_time() as u64;
