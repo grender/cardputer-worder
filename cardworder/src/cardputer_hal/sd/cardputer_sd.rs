@@ -2,6 +2,7 @@ use embedded_hal::delay::DelayNs;
 use embedded_sdmmc::{
     BlockDevice, Directory, Error, Mode, SdCard, TimeSource, VolumeIdx, VolumeManager,
 };
+use embedded_sdmmc::sdcard::AcquireOpts;
 use esp_idf_hal::{
     delay::Delay,
     gpio::{InputPin, OutputPin},
@@ -12,6 +13,7 @@ use esp_idf_hal::{
 };
 
 use embedded_sdmmc::SdCardError;
+use esp_idf_sys;
 
 pub struct CardputerSd<'a, DELAYER>
 where
@@ -48,8 +50,10 @@ impl CardputerSd<'_, Delay> {
         log::info!("sd: CardputerSd::build — start (SPI3, DMA off)");
         let delay = Delay::new_default();
 
+        // SD spec requires ≤400kHz during initialization.
+        // Using 400kHz avoids flaky cold-start behavior on some cards.
         let spi_config = SpiConfig::new()
-            .baudrate(1.MHz().into())
+            .baudrate(400.kHz().into())
             .data_mode(esp_idf_hal::spi::config::MODE_0)
             .queue_size(1);
         let device_config = DriverConfig::new().dma(esp_idf_hal::spi::Dma::Auto(4096));
@@ -67,11 +71,36 @@ impl CardputerSd<'_, Delay> {
         .unwrap();
         log::info!("sd: SpiDeviceDriver::new_single — ok");
 
-        log::info!("sd: SdCard::new …");
-        let sdcard = SdCard::new(spi, delay);
+        // Give the SD card time to power up before first command
+        delay.delay_ms(100);
 
-        log::info!("sd: probing card (num_bytes) …");
-        let card_bytes = sdcard.num_bytes().unwrap();
+        log::info!("sd: SdCard::new (acquire_retries=10) …");
+        let opts = AcquireOpts {
+            acquire_retries: 10,
+            ..AcquireOpts::default()
+        };
+        let sdcard = SdCard::new_with_options(spi, delay, opts);
+
+        log::info!("sd: probing card (num_bytes), retrying up to 5 times …");
+        // Remove main task from watchdog during SD init (can take seconds on cold start)
+        unsafe { esp_idf_sys::esp_task_wdt_delete(esp_idf_sys::xTaskGetCurrentTaskHandle()); }
+        let mut card_bytes = None;
+        for attempt in 1..=5 {
+            match sdcard.num_bytes() {
+                Ok(bytes) => {
+                    card_bytes = Some(bytes);
+                    break;
+                }
+                Err(e) => {
+                    log::warn!("sd: attempt {} failed: {:?}, waiting 500ms…", attempt, e);
+                    sdcard.mark_card_uninit();
+                    // Use esp_idf delay since we consumed `delay` into SdCard
+                    unsafe { esp_idf_sys::vTaskDelay(50); } // ~500ms (tick = 10ms)
+                }
+            }
+        }
+        unsafe { esp_idf_sys::esp_task_wdt_add(esp_idf_sys::xTaskGetCurrentTaskHandle()); }
+        let card_bytes = card_bytes.expect("SD card init failed after 5 attempts");
         log::info!("sd: card size is {} bytes", card_bytes);
 
         log::info!("sd: VolumeManager::new …");

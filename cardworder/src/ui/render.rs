@@ -1,6 +1,6 @@
 //! Compose, scroll, and render logic for scrollable forms in Cardputer UI.
 
-use crate::logic::views::{UiLineElement, UiLineType};
+use crate::ui::elements::{UiLineElement, UiLineType};
 use crate::ui::cardworder_ui::{CardworderUi, TOP_BAR_HEIGHT};
 use embedded_graphics::prelude::{Point, Size};
 use embedded_graphics::primitives::Rectangle;
@@ -19,18 +19,6 @@ pub struct ComposedUiLine {
     pub rect: embedded_graphics::primitives::Rectangle,
 }
 
-/// Scroll bar configuration and state
-/// 
-/// The scroll bar provides visual feedback about:
-/// - How much content is visible vs. total content
-/// - Current scroll position within the content
-/// - Whether scrolling is possible (content > viewport)
-/// 
-/// The scroll bar appears on the right side of the screen and shows:
-/// - A dark track (background) representing the total viewport height
-/// - A lighter thumb (slider) whose size and position indicate:
-///   - Size: proportional to visible content (smaller thumb = more content hidden)
-///   - Position: current scroll offset relative to total scrollable area
 pub struct ScrollBar {
     pub visible: bool,
     pub width: u32,
@@ -43,11 +31,10 @@ pub struct ScrollBar {
 }
 
 impl ScrollBar {
-    /// Create a new scroll bar with default configuration
     pub fn new() -> Self {
         Self {
             visible: false,
-            width: 4, // 4 pixels wide
+            width: 4,
             track_height: 0,
             thumb_height: 0,
             thumb_position: 0,
@@ -57,35 +44,25 @@ impl ScrollBar {
         }
     }
 
-    /// Calculate scroll bar dimensions and position based on content and viewport
     pub fn calculate(&mut self, total_content_height: u32, viewport_height: u32, scroll_offset: u32) {
         self.total_content_height = total_content_height;
         self.viewport_height = viewport_height;
         self.scroll_offset = scroll_offset;
-        
-        // Only show scroll bar if content is taller than viewport
         self.visible = total_content_height > viewport_height;
-        
+
         if self.visible {
             self.track_height = viewport_height;
-            
-            // Calculate thumb height (proportional to visible content)
             let visible_ratio = viewport_height as f32 / total_content_height as f32;
             self.thumb_height = (viewport_height as f32 * visible_ratio) as u32;
-            
-            // Ensure minimum thumb height for usability
             if self.thumb_height < 8 {
                 self.thumb_height = 8;
             }
-            
-            // Calculate thumb position based on scroll offset
             let scroll_ratio = scroll_offset as f32 / (total_content_height - viewport_height) as f32;
             let max_thumb_offset = viewport_height - self.thumb_height;
             self.thumb_position = (scroll_ratio * max_thumb_offset as f32) as u32;
         }
     }
 
-    /// Get the scroll bar rectangle for rendering
     pub fn get_track_rect(&self, screen_width: u32) -> Rectangle {
         Rectangle::new(
             Point::new((screen_width - self.width) as i32, 0),
@@ -93,7 +70,6 @@ impl ScrollBar {
         )
     }
 
-    /// Get the scroll bar thumb rectangle for rendering
     pub fn get_thumb_rect(&self, screen_width: u32) -> Rectangle {
         Rectangle::new(
             Point::new((screen_width - self.width) as i32, self.thumb_position as i32),
@@ -102,9 +78,7 @@ impl ScrollBar {
     }
 }
 
-/// Compose lines in one pass: measure heights once, scroll so `selected_line_idx` is at the top
-/// of the viewport when possible, and return visible rows as indices into `lines`.
-/// `content_top_y` is the screen y where the content area starts (e.g. below the top bar).
+/// Compose lines: measure heights, scroll so `selected_line_idx` is visible.
 pub fn compose_scrolled_form(
     lines: &[UiLineType],
     selected_line_idx: usize,
@@ -118,7 +92,7 @@ pub fn compose_scrolled_form(
     let mut selected_top = 0u32;
 
     for (idx, line) in lines.iter().enumerate() {
-        let h = crate::logic::views::fonts::measure_line_height(ui, line);
+        let h = crate::ui::fonts::measure_line_height(ui, line);
         if idx == selected_line_idx {
             selected_top = y;
         }
@@ -159,57 +133,11 @@ pub fn compose_scrolled_form(
     }
 }
 
-/// Scroll up by one line (returns new offset).
-pub fn scroll_up(current_offset: u32, lines: &[ComposedUiLine], _viewport_height: u32) -> u32 {
-    // Find the first line that starts at or above the current offset
-    if lines.is_empty() || current_offset == 0 {
-        return 0;
-    }
-    // Find the line whose bottom is just above the current offset
-    let mut prev_offset = 0u32;
-    for line in lines {
-        let line_bottom = (line.rect.top_left.y + line.rect.size.height as i32) as u32;
-        if line_bottom >= current_offset {
-            break;
-        }
-        prev_offset = line.rect.top_left.y as u32 + 0; // top of this line
-    }
-    prev_offset
-}
-
-/// Scroll down by one line (returns new offset).
-pub fn scroll_down(current_offset: u32, lines: &[ComposedUiLine], viewport_height: u32) -> u32 {
-    if lines.is_empty() {
-        return current_offset;
-    }
-    // Find the first line whose top is below the current viewport
-    let mut next_offset = current_offset;
-    for line in lines {
-        let line_top = line.rect.top_left.y as u32;
-        if line_top > 0 && line_top > current_offset {
-            next_offset = line_top;
-            break;
-        }
-    }
-    // Clamp so we don't scroll past the last line
-    let total_height = lines.last().map(|l| (l.rect.top_left.y + l.rect.size.height as i32) as u32).unwrap_or(0);
-    if next_offset + viewport_height > total_height {
-        if total_height > viewport_height {
-            return total_height - viewport_height;
-        } else {
-            return 0;
-        }
-    }
-    next_offset
-}
-
-/// Draws a line of type Elements using the provided UI context.
-/// Uses the vertical center of the line rect for Center-aligned elements so glyphs
-/// do not extend above the content area (e.g. into the top bar).
+/// Draws a line of type Elements.
 fn draw_elements_line(
-    elements: &[crate::logic::views::UiLineElement],
-    rect: &embedded_graphics::primitives::Rectangle,
-    ui: &mut CardworderUi<'_>,
+    elements: &[UiLineElement],
+    rect: &Rectangle,
+    ui: &mut CardworderUi,
 ) {
     let mut x = rect.top_left.x;
     let line_top_y = rect.top_left.y;
@@ -222,7 +150,7 @@ fn draw_elements_line(
                     *ch,
                     *font,
                     *color,
-                    embedded_graphics::prelude::Point::new(x, y_center),
+                    Point::new(x, y_center),
                     u8g2_fonts::types::VerticalPosition::Center,
                 );
                 x += ui.font_height(*font) as i32;
@@ -235,11 +163,8 @@ fn draw_elements_line(
                     u8g2_fonts::types::VerticalPosition::Baseline => y_center,
                 };
                 let text_rect = ui.draw_text_oneline(
-                    *text,
-                    *font,
-                    *color,
-                    embedded_graphics::prelude::Point::new(x, draw_y),
-                    *vpos,
+                    *text, *font, *color,
+                    Point::new(x, draw_y), *vpos,
                 );
                 if let Some(r) = text_rect {
                     x += r.size.width as i32;
@@ -248,65 +173,42 @@ fn draw_elements_line(
             UiLineElement::Spacer(pixels) => {
                 x += *pixels as i32;
             }
-            UiLineElement::Filler => {
-                // Filler: do nothing
-            }
+            UiLineElement::Filler => {}
         }
     }
 }
 
-/// Render the scroll bar if it's visible
-pub fn render_scroll_bar(
-    scroll_bar: &ScrollBar,
-    ui: &mut CardworderUi<'_>,
-    screen_width: u32,
-) {
+/// Render the scroll bar if visible.
+pub fn render_scroll_bar(scroll_bar: &ScrollBar, ui: &mut CardworderUi, screen_width: u32) {
     if !scroll_bar.visible {
         return;
     }
-
-    // Draw scroll bar track (background) - start below top line zone
     let track_rect = scroll_bar.get_track_rect(screen_width);
     let adjusted_track_rect = Rectangle::new(
-        Point::new(
-            track_rect.top_left.x,
-            track_rect.top_left.y + TOP_BAR_HEIGHT as i32,
-        ),
+        Point::new(track_rect.top_left.x, track_rect.top_left.y + TOP_BAR_HEIGHT as i32),
         track_rect.size,
     );
-    // Use a dark color for the track
     let track_color = embedded_graphics::pixelcolor::Rgb565::new(20, 20, 20);
     ui.fill_rect(adjusted_track_rect, track_color);
 
     let thumb_rect = scroll_bar.get_thumb_rect(screen_width);
     let adjusted_thumb_rect = Rectangle::new(
-        Point::new(
-            thumb_rect.top_left.x,
-            thumb_rect.top_left.y + TOP_BAR_HEIGHT as i32,
-        ),
+        Point::new(thumb_rect.top_left.x, thumb_rect.top_left.y + TOP_BAR_HEIGHT as i32),
         thumb_rect.size,
     );
-    // Use a lighter color for the thumb
     let thumb_color = embedded_graphics::pixelcolor::Rgb565::new(100, 100, 100);
     ui.fill_rect(adjusted_thumb_rect, thumb_color);
 }
 
-/// Render only visible lines (calls low-level drawing).
-pub fn render_visible_lines(
-    composed: &ComposedForm,
-    lines: &[UiLineType],
-    ui: &mut CardworderUi<'_>,
-) {
+/// Render only visible lines.
+pub fn render_visible_lines(composed: &ComposedForm, lines: &[UiLineType], ui: &mut CardworderUi) {
     for composed_line in &composed.lines {
         match &lines[composed_line.line_index] {
             UiLineType::Elements(elements) => {
                 draw_elements_line(elements, &composed_line.rect, ui);
             }
             UiLineType::Spacer(_) => {}
-            UiLineType::Line(_, _color) => {
-                // Draw a horizontal line across the rect
-                // (implement as needed)
-            }
+            UiLineType::Line(_, _color) => {}
         }
     }
 
@@ -317,4 +219,4 @@ pub fn render_visible_lines(
         composed.scroll_offset,
     );
     render_scroll_bar(&scroll_bar, ui, 240);
-} 
+}

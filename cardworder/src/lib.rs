@@ -2,7 +2,10 @@
 
 pub mod cardputer_hal;
 pub mod ui;
-pub mod logic;
+pub mod types;
+pub mod screen;
+pub mod runtime;
+pub mod screens;
 
 pub trait ResultExt<R, E> {
     fn unwrap_or_log(self, message: &str) -> R;

@@ -1,7 +1,7 @@
-//! Font logic, font height constants, and multiline/line height measurement for Cardputer UI.
+//! Font measurement helpers for Cardputer UI.
 
 use crate::ui::cardworder_ui::CardFont;
-use crate::logic::views::{UiLineElement, UiLineType};
+use crate::ui::elements::{UiLineElement, UiLineType};
 
 /// Measures the height of a single UiLineElement.
 pub fn measure_element_height(ui: &crate::ui::cardworder_ui::CardworderUi, element: &UiLineElement) -> u32 {
@@ -9,7 +9,7 @@ pub fn measure_element_height(ui: &crate::ui::cardworder_ui::CardworderUi, eleme
         UiLineElement::Icon(_, font, _) => ui.font_height(*font),
         UiLineElement::Text(_, font, _, _) => ui.font_height(*font),
         UiLineElement::Spacer(pixels) => *pixels as u32,
-        UiLineElement::Filler => 0, // Filler does not contribute height
+        UiLineElement::Filler => 0,
     }
 }
 
@@ -25,13 +25,11 @@ pub fn measure_line_height(ui: &crate::ui::cardworder_ui::CardworderUi, line: &U
 }
 
 /// Measures the height and line count for a multiline text.
-/// Returns (line_count, total_height).
 pub fn measure_multiline_text(
     _text: &str,
-    font: CardFont, 
+    font: CardFont,
     _max_width: u32,
     ui: &crate::ui::cardworder_ui::CardworderUi,
 ) -> (u32, u32) {
-    // TODO: Implement text wrapping and height calculation
     (1, ui.font_height(font))
-} 
+}

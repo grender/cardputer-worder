@@ -71,8 +71,17 @@ impl<'a> embedded_graphics::draw_target::DrawTarget for CardputerScreen<'a> {
     }
 }
 
-impl CardputerScreen<'_> {
-    pub fn build<'a, SPI>(
+impl<'a> CardputerScreen<'a> {
+    pub fn into_parts(
+        self,
+    ) -> (
+        super::display::CardputerDisplay<'a>,
+        FrameBuf<Rgb565, CardputerFramebuffer>,
+    ) {
+        (self.cardputer_display, self.framebuffer)
+    }
+
+    pub fn build<SPI>(
         initial_color: Rgb565,
         spi: SPI,
         sck: impl OutputPin + 'a,

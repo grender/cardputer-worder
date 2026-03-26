@@ -1,4 +1,5 @@
 use embedded_graphics::{pixelcolor::Rgb565, prelude::WebColors};
+use embedded_graphics_framebuf::FrameBuf;
 use esp_idf_hal::{delay::Delay, peripherals::Peripherals};
 use esp_idf_svc::eventloop::EspSystemEventLoop;
 use esp_idf_hal::gpio::{Output, PinDriver, Pull};
@@ -6,28 +7,38 @@ use esp_idf_svc::wifi::EspWifi;
 
 use crate::cardputer_hal::{
     input::{keyboard::{InputLanguage, InputState, PressedSymbol}, keyboard_io::{CardputerKeyboard, Scancode, KeyEvent}},
-    screen::cardputer_screen::CardputerScreen,
+    screen::{cardputer_screen::CardputerScreen, display::CardputerDisplay, framebuffer::CardputerFramebuffer},
     sd::cardputer_sd::CardputerSd,
     wifi::wifi::{CardWorderWifi, WifiConfig}};
 
-pub struct CardputerHal<'a> {
-    screen: Option<CardputerScreen<'a>>,
-    sd: CardputerSd<'a, Delay>,
-    keyboard: CardputerKeyboard<'a>,
-    wifi: CardWorderWifi<'a>,
-
-    pub keyboard_state: KeyboardState,
-}
-
+#[derive(Clone, Copy)]
 pub struct KeyboardState {
     pub key: Option<(KeyEvent, Scancode)>,
     pub input_state: InputState,
-    pub pressed: Option<(KeyEvent,PressedSymbol)>,
+    pub pressed: Option<(KeyEvent, PressedSymbol)>,
 }
 
-impl <'a>CardputerHal<'a> {
-    pub fn new(peripherals: Peripherals, sysloop: EspSystemEventLoop) -> Self {
-        log::info!("hal: CardputerHal::new — start");
+/// All hardware components returned by `build_all`, ready to distribute across tasks.
+pub struct CardputerParts<'a> {
+    pub keyboard: CardputerKeyboard<'a>,
+    pub display: CardputerDisplay<'a>,
+    pub framebuffer: FrameBuf<Rgb565, CardputerFramebuffer>,
+    pub hal: CardputerHal<'a>,
+}
+
+/// Slim HAL that owns only SD + Wi-Fi (used by the app task).
+pub struct CardputerHal<'a> {
+    sd: CardputerSd<'a, Delay>,
+    wifi: CardWorderWifi<'a>,
+}
+
+impl<'a> CardputerHal<'a> {
+    /// Build all hardware and return parts for distribution to tasks.
+    pub fn build_all(
+        peripherals: Peripherals,
+        sysloop: EspSystemEventLoop,
+    ) -> CardputerParts<'a> {
+        log::info!("hal: build_all — start");
 
         log::info!("hal: 3a CardputerScreen::build (SPI2 + display) …");
         let screen = CardputerScreen::build(
@@ -78,31 +89,22 @@ impl <'a>CardputerHal<'a> {
         log::info!("hal: 3e keyboard — done");
 
         log::info!("hal: 3f EspWifi::new (modem + event loop) …");
-        let esp_wifi =
-        EspWifi::new(peripherals.modem, sysloop, None).unwrap();
+        let esp_wifi = EspWifi::new(peripherals.modem, sysloop, None).unwrap();
         log::info!("hal: 3f EspWifi::new — done");
 
         log::info!("hal: 3g CardWorderWifi::wrap …");
         let wifi = CardWorderWifi::new(esp_wifi);
         log::info!("hal: 3g CardWorderWifi — done");
 
-        let input_state = InputState {
-            ctrl_pressed: false,
-            shift_pressed: false,
-            opt_pressed: false,
-            alt_pressed: false,
-            fn_pressed: false,
-            lang: InputLanguage::En,
-        };
+        let (display, framebuffer) = screen.into_parts();
 
-        let keyboard_state = KeyboardState {
-            key: None,
-            input_state,
-            pressed: None,
-        };
-
-        log::info!("hal: CardputerHal::new — complete");
-        Self { screen:Some(screen), sd, keyboard, wifi, keyboard_state }
+        log::info!("hal: build_all — complete");
+        CardputerParts {
+            keyboard,
+            display,
+            framebuffer,
+            hal: CardputerHal { sd, wifi },
+        }
     }
 
     pub fn create_wifi_file_if_non_exists(
@@ -122,7 +124,7 @@ impl <'a>CardputerHal<'a> {
     }
 
     pub fn load_wifi_config(&mut self) -> anyhow::Result<WifiConfig> {
-            let config_str = self
+        let config_str = self
             .sd
             .read_file("wifi_cfg.jsn")
             .map_err(|_e| anyhow::anyhow!("Failed to read wifi_cfg.jsn"))?;
@@ -131,27 +133,12 @@ impl <'a>CardputerHal<'a> {
 
         Ok(config)
     }
-    
+
     pub fn connect_wifi(&mut self, wifi_config: WifiConfig) -> anyhow::Result<()> {
         self.wifi.connect(wifi_config).map_err(|_e| anyhow::anyhow!("Failed to connect to wifi"))
     }
 
     pub fn stop_wifi(&mut self) -> anyhow::Result<()> {
         self.wifi.stop().map_err(|_e| anyhow::anyhow!("Failed to stop wifi"))
-    }
-
-    pub fn take_screen(&mut self) -> CardputerScreen<'a> {
-        core::mem::replace(&mut self.screen, None).unwrap()
-    }
-
-    pub fn update_keyboard_state(&mut self) {
-        let key = self.keyboard.read_events();
-
-        let pressed = match key {
-            Some((event, key)) => self.keyboard_state.input_state.eat_keys(event, key).map(|f| (event, f)),
-            None => None,
-        };
-        self.keyboard_state.key = key;
-        self.keyboard_state.pressed = pressed;
     }
 }

@@ -1,4 +1,4 @@
 pub mod cardputer_screen;
 pub mod display;
-mod framebuffer;
+pub mod framebuffer;
 mod st7789v2;

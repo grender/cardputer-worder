@@ -2,11 +2,6 @@ use u8g2_fonts::types::VerticalPosition;
 
 use crate::ui::cardworder_ui::{CardFont, ThemeColor};
 
-pub mod main_menu;
-pub mod start;
-pub mod fonts;
-pub mod render;
-
 #[derive(Clone)]
 /// A primitive UI element for a line in a form.
 pub enum UiLineElement {
