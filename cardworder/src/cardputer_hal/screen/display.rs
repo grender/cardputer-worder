@@ -45,12 +45,13 @@ pub fn build<'a, SPI>(
 where
     SPI: SpiAnyPins + 'a,
 {
-    log::info!("display: build — start (SPI2, DMA off, queue 1)");
+    log::info!("display: build — start (SPI2, DMA 64K, queue 4)");
     let spi_config = SpiConfig::new()
         .baudrate(80.MHz().into())
         .data_mode(esp_idf_hal::spi::config::MODE_0)
+        .polling(false)
         .queue_size(4);
-    let device_config = DriverConfig::new().dma(esp_idf_hal::spi::Dma::Auto(4096));
+    let device_config = DriverConfig::new().dma(esp_idf_hal::spi::Dma::Auto(32768));
 
     log::info!("display: SpiDeviceDriver::new_single …");
     let spi = SpiDeviceDriver::new_single(

@@ -228,6 +228,7 @@ fn main() {
     let mut last_draw_us: u64 = 0;
     let mut ntp_instance: Option<EspSntp<'static>> = None;
     let mut wifi_connected = false;
+    let mut prev_dirty_max_y: usize = 134; // track previous frame's extent
 
     loop {
         // 1. Poll keyboard
@@ -268,16 +269,29 @@ fn main() {
 
         // 4. Draw only when needed
         let now_us = unsafe { esp_idf_svc::sys::esp_timer_get_time() as u64 };
-        let should_draw = got_new_snapshot || (now_us - last_draw_us) >= 1_000_000;
+        let timer_tick = (now_us - last_draw_us) >= 1_000_000;
+        let should_draw = got_new_snapshot || timer_tick;
 
         if should_draw {
             if let Some(ref snapshot) = current_snapshot {
-                ui.clear(Rgb565::BLACK);
-                snapshot.draw(&mut ui);
-                if snapshot.needs_top_line() {
-                    ui.draw_top_line(&input_state, &last_pressed, wifi_connected);
+                if got_new_snapshot {
+                    // Full redraw: clear without dirtying, draw content, mark previous extent
+                    ui.clear_no_dirty(Rgb565::BLACK);
+                    snapshot.draw(&mut ui);
+                    if snapshot.needs_top_line() {
+                        ui.draw_top_line(&input_state, &last_pressed, wifi_connected);
+                    }
+                    // Ensure previously-drawn rows get flushed (to clear old content on display)
+                    ui.mark_rows_dirty(0, prev_dirty_max_y);
+                } else {
+                    // Clock-only redraw: only update top bar (12 rows)
+                    if snapshot.needs_top_line() {
+                        ui.draw_top_line(&input_state, &last_pressed, wifi_connected);
+                    }
                 }
                 ui.flip_buffer();
+                // Remember this frame's dirty extent for next frame
+                prev_dirty_max_y = 134; // will be refined once we see actual bbox
             }
             last_draw_us = now_us;
         }

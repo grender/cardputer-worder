@@ -78,6 +78,29 @@ impl CardputerFramebuffer {
         }
     }
 
+    /// Fill buffer with color without updating dirty tracking.
+    /// Used to avoid marking the entire screen dirty on every frame.
+    pub fn clear_no_dirty(&mut self, color: Rgb565) {
+        let fill = color.into_storage().swap_bytes();
+        self.data.fill(fill);
+    }
+
+    /// Expand dirty bbox to include given row range (used to flush previously-drawn areas).
+    pub fn mark_rows_dirty(&mut self, min_y: usize, max_y: usize) {
+        if !self.dirty_any {
+            self.dirty_min_x = 0;
+            self.dirty_max_x = DISPLAY_SIZE_WIDTH_U - 1;
+            self.dirty_min_y = min_y;
+            self.dirty_max_y = max_y;
+            self.dirty_any = true;
+        } else {
+            self.dirty_min_x = 0;
+            self.dirty_max_x = DISPLAY_SIZE_WIDTH_U - 1;
+            self.dirty_min_y = self.dirty_min_y.min(min_y);
+            self.dirty_max_y = self.dirty_max_y.max(max_y);
+        }
+    }
+
     pub fn take_dirty_bbox(&mut self) -> Option<(usize, usize, usize, usize)> {
         if !self.dirty_any {
             return None;

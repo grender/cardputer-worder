@@ -160,6 +160,17 @@ impl CardworderUi {
         self.framebuffer.clear(color).ok();
     }
 
+    /// Clear framebuffer without marking pixels dirty.
+    /// After drawing, call `mark_prev_extent` to ensure old content is flushed.
+    pub fn clear_no_dirty(&mut self, color: Rgb565) {
+        self.framebuffer.data.clear_no_dirty(color);
+    }
+
+    /// Expand dirty region to include given row range.
+    pub fn mark_rows_dirty(&mut self, min_y: usize, max_y: usize) {
+        self.framebuffer.data.mark_rows_dirty(min_y, max_y);
+    }
+
     /// Flush dirty region of framebuffer to display via SPI (partial flush).
     pub fn flip_buffer(&mut self) {
         let t0 = unsafe { esp_idf_svc::sys::esp_timer_get_time() as u64 };
@@ -196,7 +207,11 @@ impl CardworderUi {
                 let start = min_y * 240;
                 let end = (max_y + 1) * 240;
                 let pixel_data: &[u16] = &self.framebuffer.data.data;
-                screen.dcs().di.send_data(DataFormat::U16(&pixel_data[start..end])).unwrap();
+                let bytes: &[u8] = core::slice::from_raw_parts(
+                    pixel_data[start..end].as_ptr() as *const u8,
+                    (end - start) * 2,
+                );
+                screen.dcs().di.send_data(DataFormat::U8(bytes)).unwrap();
             }
         }
 
