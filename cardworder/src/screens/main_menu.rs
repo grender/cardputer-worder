@@ -1,10 +1,12 @@
 use u8g2_fonts::types::VerticalPosition;
 
-use crate::cardputer_hal::cardputer_hal::CardputerHal;
+
 use crate::cardputer_hal::input::keyboard::{InputLanguage, PressedSymbol};
 use crate::cardputer_hal::input::keyboard_io::{KeyEvent, Scancode};
-use crate::screen::{Renderable, Screen};
-use crate::screens::start::StartScreen;
+use crate::screen::{Screen, Snapshot};
+use crate::screens::wifi_config::WifiConfigScreen;
+use crate::screens::ntp::NtpScreen;
+use crate::screens::settings::SettingsScreen;
 use crate::screens::system_info::SystemInfoScreen;
 use crate::types::{Command, KeyMsg, Msg, SharedState};
 use crate::ui::cardworder_ui::{CardFont, CardworderUi, ThemeColor, TOP_BAR_HEIGHT};
@@ -15,6 +17,7 @@ enum MainMenuOption {
     ConnectWifi,
     UpdateNtp,
     SystemInfo,
+    Settings,
     AdditionalInfo,
 }
 
@@ -32,6 +35,7 @@ impl Default for MainMenuScreen {
                 MainMenuOption::ConnectWifi,
                 MainMenuOption::UpdateNtp,
                 MainMenuOption::SystemInfo,
+                MainMenuOption::Settings,
                 MainMenuOption::AdditionalInfo,
             ],
             current_item_idx: 0,
@@ -49,6 +53,8 @@ fn get_option_text(option: &MainMenuOption, lang: InputLanguage) -> &'static str
         (InputLanguage::Ru, MainMenuOption::UpdateNtp) => "Обновить время по NTP",
         (InputLanguage::En, MainMenuOption::SystemInfo) => "System Info",
         (InputLanguage::Ru, MainMenuOption::SystemInfo) => "Системная информация",
+        (InputLanguage::En, MainMenuOption::Settings) => "Settings",
+        (InputLanguage::Ru, MainMenuOption::Settings) => "Настройки",
         (InputLanguage::En, MainMenuOption::AdditionalInfo) => "Additional info",
         (InputLanguage::Ru, MainMenuOption::AdditionalInfo) => "Дополнительная информация",
     }
@@ -59,12 +65,13 @@ fn get_option_icon(option: &MainMenuOption) -> char {
         MainMenuOption::ConnectWifi => '\u{25A}',
         MainMenuOption::UpdateNtp => '\u{158}',
         MainMenuOption::SystemInfo => '\u{15e}',
+        MainMenuOption::Settings => '\u{1d3}',
         MainMenuOption::AdditionalInfo => '\u{1d5}',
     }
 }
 
 impl Screen for MainMenuScreen {
-    fn handle_msg(&mut self, msg: Msg, _hal: &mut CardputerHal<'_>, _shared: &SharedState) -> Command {
+    fn handle_msg(&mut self, msg: Msg, _shared: &SharedState) -> Command {
         match msg {
             Msg::Key(key_msg) => {
                 self.lang = key_msg.input_state.lang;
@@ -87,10 +94,16 @@ impl Screen for MainMenuScreen {
                     Some((KeyEvent::Pressed, PressedSymbol::Enter)) => {
                         match self.options[self.current_item_idx] {
                             MainMenuOption::ConnectWifi => {
-                                return Command::SwitchTo(Box::new(StartScreen::new()));
+                                return Command::SwitchTo(Box::new(WifiConfigScreen::new()));
                             }
                             MainMenuOption::SystemInfo => {
                                 return Command::SwitchTo(Box::new(SystemInfoScreen::new()));
+                            }
+                            MainMenuOption::Settings => {
+                                return Command::SwitchTo(Box::new(SettingsScreen::new()));
+                            }
+                            MainMenuOption::UpdateNtp => {
+                                return Command::SwitchTo(Box::new(NtpScreen::new()));
                             }
                             _ => {}
                         }
@@ -103,7 +116,7 @@ impl Screen for MainMenuScreen {
         }
     }
 
-    fn snapshot(&self) -> Box<dyn Renderable> {
+    fn snapshot(&self, _shared: &SharedState) -> Snapshot {
         let items: Vec<MainMenuSnapshotItem> = self
             .options
             .iter()
@@ -113,7 +126,7 @@ impl Screen for MainMenuScreen {
             })
             .collect();
 
-        Box::new(MainMenuSnapshot {
+        Snapshot::MainMenu(MainMenuSnapshot {
             items,
             selected_idx: self.current_item_idx,
             show_fps: self.show_fps,
@@ -123,22 +136,19 @@ impl Screen for MainMenuScreen {
 
 // ---- Snapshot (sent to Core 0) ----
 
-struct MainMenuSnapshotItem {
-    icon: char,
-    text: &'static str,
+pub struct MainMenuSnapshotItem {
+    pub icon: char,
+    pub text: &'static str,
 }
 
-struct MainMenuSnapshot {
-    items: Vec<MainMenuSnapshotItem>,
-    selected_idx: usize,
-    show_fps: bool,
+pub struct MainMenuSnapshot {
+    pub items: Vec<MainMenuSnapshotItem>,
+    pub selected_idx: usize,
+    pub show_fps: bool,
 }
 
-// SAFETY: MainMenuSnapshot only contains data types (no pointers to non-Send data)
-unsafe impl Send for MainMenuSnapshot {}
-
-impl Renderable for MainMenuSnapshot {
-    fn draw(&self, ui: &mut CardworderUi) {
+impl MainMenuSnapshot {
+    pub fn draw(&self, ui: &mut CardworderUi) {
         const SCREEN_HEIGHT: u32 = 135;
         let viewport_height = SCREEN_HEIGHT - TOP_BAR_HEIGHT;
 

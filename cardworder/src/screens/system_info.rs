@@ -3,34 +3,61 @@ use embedded_graphics::pixelcolor::Rgb565;
 use embedded_graphics::prelude::{Point, RgbColor, WebColors};
 use u8g2_fonts::types::VerticalPosition;
 
-use crate::cardputer_hal::cardputer_hal::CardputerHal;
-use crate::cardputer_hal::input::keyboard::PressedSymbol;
+use crate::cardputer_hal::input::keyboard::{InputLanguage, PressedSymbol};
 use crate::cardputer_hal::input::keyboard_io::KeyEvent;
-use crate::screen::{Renderable, Screen};
+use crate::screen::{Screen, Snapshot};
 use crate::screens::main_menu::MainMenuScreen;
-use crate::types::{Command, Msg, SharedState};
+use crate::types::{Command, Core0Action, Core0Result, Msg, SharedState};
 use crate::ui::cardworder_ui::{CardFont, CardworderUi, ThemeColor, TOP_BAR_HEIGHT};
+use crate::ui::elements::{UiLineElement, UiLineType};
+use crate::ui::render::{compose_scrolled_form, render_visible_lines};
 
-pub struct SystemInfoScreen {}
+pub struct SystemInfoScreen {
+    focused_idx: usize,
+    wifi_ip: Option<heapless::String<16>>,
+    needs_network_info: bool,
+}
 
 impl SystemInfoScreen {
     pub fn new() -> Self {
-        Self {}
+        Self {
+            focused_idx: 0,
+            wifi_ip: None,
+            needs_network_info: true,
+        }
     }
 }
 
 impl Screen for SystemInfoScreen {
-    fn handle_msg(
-        &mut self,
-        msg: Msg,
-        _hal: &mut CardputerHal<'_>,
-        _shared: &SharedState,
-    ) -> Command {
+    fn on_mount(&mut self, _shared: &SharedState, _state_tx: &std::sync::mpsc::Sender<Snapshot>) -> Command {
+        self.needs_network_info = true;
+        Command::None
+    }
+
+    fn handle_msg(&mut self, msg: Msg, _shared: &SharedState) -> Command {
         match msg {
+            Msg::Core0Result(result) => {
+                match result {
+                    Core0Result::NetworkInfo { ip } => {
+                        self.wifi_ip = if ip.is_empty() { None } else { Some(ip) };
+                        self.needs_network_info = false;
+                    }
+                    _ => {}
+                }
+                Command::None
+            }
             Msg::Key(key_msg) => match key_msg.pressed {
                 Some((KeyEvent::Pressed, PressedSymbol::Esc))
                 | Some((KeyEvent::Pressed, PressedSymbol::Enter)) => {
                     Command::SwitchTo(Box::new(MainMenuScreen::default()))
+                }
+                Some((KeyEvent::Pressed, PressedSymbol::ArrowDown)) => {
+                    self.focused_idx += 1;
+                    Command::None
+                }
+                Some((KeyEvent::Pressed, PressedSymbol::ArrowUp)) => {
+                    if self.focused_idx > 0 { self.focused_idx -= 1; }
+                    Command::None
                 }
                 _ => Command::None,
             },
@@ -38,107 +65,114 @@ impl Screen for SystemInfoScreen {
         }
     }
 
-    fn snapshot(&self) -> Box<dyn Renderable> {
-        let free_heap = unsafe {
-            esp_idf_sys::heap_caps_get_free_size(esp_idf_sys::MALLOC_CAP_DEFAULT)
-        };
-        let total_heap = unsafe {
-            esp_idf_sys::heap_caps_get_total_size(esp_idf_sys::MALLOC_CAP_DEFAULT)
-        };
-        let free_dma = unsafe {
-            esp_idf_sys::heap_caps_get_free_size(
-                esp_idf_sys::MALLOC_CAP_DMA | esp_idf_sys::MALLOC_CAP_INTERNAL,
-            )
-        };
-        let largest_block = unsafe {
-            esp_idf_sys::heap_caps_get_largest_free_block(esp_idf_sys::MALLOC_CAP_DEFAULT)
-        };
+    fn snapshot(&self, shared: &SharedState) -> Snapshot {
+        let free_heap = unsafe { esp_idf_sys::heap_caps_get_free_size(esp_idf_sys::MALLOC_CAP_DEFAULT) };
+        let total_heap = unsafe { esp_idf_sys::heap_caps_get_total_size(esp_idf_sys::MALLOC_CAP_DEFAULT) };
+        let free_dma = unsafe { esp_idf_sys::heap_caps_get_free_size(esp_idf_sys::MALLOC_CAP_DMA | esp_idf_sys::MALLOC_CAP_INTERNAL) };
+        let largest_block = unsafe { esp_idf_sys::heap_caps_get_largest_free_block(esp_idf_sys::MALLOC_CAP_DEFAULT) };
         let uptime_us = unsafe { esp_idf_sys::esp_timer_get_time() as u64 };
 
-        Box::new(SystemInfoSnapshot {
+        let pending_action = if self.needs_network_info {
+            Some(Core0Action::GetNetworkInfo)
+        } else {
+            None
+        };
+
+        Snapshot::SystemInfo(SystemInfoSnapshot {
             free_heap_bytes: free_heap as u32,
             total_heap_bytes: total_heap as u32,
             free_dma_bytes: free_dma as u32,
             largest_block_bytes: largest_block as u32,
             uptime_secs: (uptime_us / 1_000_000) as u32,
+            wifi_connected: shared.wifi_connected,
+            wifi_ssid: shared.wifi_ssid.clone(),
+            wifi_ip: self.wifi_ip.clone(),
+            focused_idx: self.focused_idx,
+            lang: shared.lang,
+            pending_action,
         })
     }
 }
 
-struct SystemInfoSnapshot {
-    free_heap_bytes: u32,
-    total_heap_bytes: u32,
-    free_dma_bytes: u32,
-    largest_block_bytes: u32,
-    uptime_secs: u32,
+pub struct SystemInfoSnapshot {
+    pub free_heap_bytes: u32,
+    pub total_heap_bytes: u32,
+    pub free_dma_bytes: u32,
+    pub largest_block_bytes: u32,
+    pub uptime_secs: u32,
+    pub wifi_connected: bool,
+    pub wifi_ssid: Option<heapless::String<32>>,
+    pub wifi_ip: Option<heapless::String<16>>,
+    pub focused_idx: usize,
+    pub lang: InputLanguage,
+    pub pending_action: Option<Core0Action>,
 }
 
-unsafe impl Send for SystemInfoSnapshot {}
+fn t(en: &'static str, ru: &'static str, lang: InputLanguage) -> &'static str {
+    match lang { InputLanguage::En => en, InputLanguage::Ru => ru }
+}
 
-impl Renderable for SystemInfoSnapshot {
-    fn draw(&self, ui: &mut CardworderUi) {
+impl SystemInfoSnapshot {
+    pub fn draw(&self, ui: &mut CardworderUi) {
         let font = CardFont::Medium;
         let color = ThemeColor::Text;
         let label_color = ThemeColor::Color(Rgb565::CSS_GRAY);
-        let line_h = ui.font_height(font) as i32 + 2;
-        let mut y = TOP_BAR_HEIGHT as i32 + 4;
+        let l = self.lang;
 
-        // Title
-        ui.draw_text_oneline(
-            "System Info",
-            CardFont::Large,
-            ThemeColor::Selected,
-            Point::new(4, y),
-            VerticalPosition::Top,
-        );
-        y += ui.font_height(CardFont::Large) as i32 + 6;
+        const SCREEN_HEIGHT: u32 = 135;
+        let viewport_height = SCREEN_HEIGHT - TOP_BAR_HEIGHT;
 
-        // Free heap
         let used = self.total_heap_bytes.saturating_sub(self.free_heap_bytes);
-        let mut text = heapless::String::<48>::new();
-        let _ = write!(text, "Heap: {}KB / {}KB", self.free_heap_bytes / 1024, self.total_heap_bytes / 1024);
-        ui.draw_text_oneline(text.as_str(), font, color, Point::new(4, y), VerticalPosition::Top);
-        y += line_h;
-
-        // Free DMA
-        text.clear();
-        let _ = write!(text, "DMA free: {}KB", self.free_dma_bytes / 1024);
-        ui.draw_text_oneline(text.as_str(), font, color, Point::new(4, y), VerticalPosition::Top);
-        y += line_h;
-
-        // Largest free block
-        text.clear();
-        let _ = write!(text, "Largest block: {}KB", self.largest_block_bytes / 1024);
-        ui.draw_text_oneline(text.as_str(), font, color, Point::new(4, y), VerticalPosition::Top);
-        y += line_h;
-
-        // Uptime
+        let pct = if self.total_heap_bytes > 0 { (used as u64 * 100 / self.total_heap_bytes as u64) as u32 } else { 0 };
         let hours = self.uptime_secs / 3600;
         let mins = (self.uptime_secs % 3600) / 60;
         let secs = self.uptime_secs % 60;
-        text.clear();
-        let _ = write!(text, "Uptime: {:02}:{:02}:{:02}", hours, mins, secs);
-        ui.draw_text_oneline(text.as_str(), font, color, Point::new(4, y), VerticalPosition::Top);
-        y += line_h;
 
-        // Heap usage percentage
-        let pct = if self.total_heap_bytes > 0 {
-            (used as u64 * 100 / self.total_heap_bytes as u64) as u32
-        } else {
-            0
-        };
-        text.clear();
-        let _ = write!(text, "Heap used: {}%", pct);
-        ui.draw_text_oneline(text.as_str(), font, label_color, Point::new(4, y), VerticalPosition::Top);
-        y += line_h + 4;
+        let mut s_heap = heapless::String::<48>::new();
+        let _ = write!(s_heap, "{}: {}KB / {}KB", t("Heap", "Куча", l), self.free_heap_bytes / 1024, self.total_heap_bytes / 1024);
+        let mut s_dma = heapless::String::<48>::new();
+        let _ = write!(s_dma, "{}: {}KB", t("DMA free", "DMA свобод.", l), self.free_dma_bytes / 1024);
+        let mut s_block = heapless::String::<48>::new();
+        let _ = write!(s_block, "{}: {}KB", t("Largest block", "Макс. блок", l), self.largest_block_bytes / 1024);
+        let mut s_uptime = heapless::String::<48>::new();
+        let _ = write!(s_uptime, "{}: {:02}:{:02}:{:02}", t("Uptime", "Время работы", l), hours, mins, secs);
+        let mut s_pct = heapless::String::<48>::new();
+        let _ = write!(s_pct, "{}: {}%", t("Heap used", "Куча занята", l), pct);
 
-        // Back button
-        ui.draw_text_oneline(
-            "<- Back (Enter/Esc)",
-            font,
-            ThemeColor::Selected,
-            Point::new(4, y),
-            VerticalPosition::Top,
-        );
+        let wifi_status = if self.wifi_connected { t("WiFi: Connected", "WiFi: Подключен", l) } else { t("WiFi: Not connected", "WiFi: Не подключен", l) };
+        let mut s_ssid = heapless::String::<48>::new();
+        if let Some(ref ssid) = self.wifi_ssid {
+            let _ = write!(s_ssid, "SSID: {}", ssid.as_str());
+        }
+        let mut s_ip = heapless::String::<48>::new();
+        if let Some(ref ip) = self.wifi_ip {
+            let _ = write!(s_ip, "IP: {}", ip.as_str());
+        }
+
+        let wifi_color = if self.wifi_connected { ThemeColor::Color(Rgb565::new(0, 50, 0)) } else { label_color };
+
+        let mut lines: Vec<UiLineType> = vec![
+            UiLineType::Elements(vec![UiLineElement::Text(t("System Info", "Системная информация", l), CardFont::Large, VerticalPosition::Top, ThemeColor::Selected)]),
+            UiLineType::Elements(vec![UiLineElement::Text(s_heap.as_str(), font, VerticalPosition::Top, color)]),
+            UiLineType::Elements(vec![UiLineElement::Text(s_dma.as_str(), font, VerticalPosition::Top, color)]),
+            UiLineType::Elements(vec![UiLineElement::Text(s_block.as_str(), font, VerticalPosition::Top, color)]),
+            UiLineType::Elements(vec![UiLineElement::Text(s_uptime.as_str(), font, VerticalPosition::Top, color)]),
+            UiLineType::Elements(vec![UiLineElement::Text(s_pct.as_str(), font, VerticalPosition::Top, label_color)]),
+            UiLineType::Spacer(4),
+            UiLineType::Elements(vec![UiLineElement::Text(wifi_status, font, VerticalPosition::Top, wifi_color)]),
+        ];
+        if self.wifi_connected {
+            if !s_ssid.is_empty() {
+                lines.push(UiLineType::Elements(vec![UiLineElement::Text(s_ssid.as_str(), font, VerticalPosition::Top, color)]));
+            }
+            if !s_ip.is_empty() {
+                lines.push(UiLineType::Elements(vec![UiLineElement::Text(s_ip.as_str(), font, VerticalPosition::Top, color)]));
+            }
+        }
+        lines.push(UiLineType::Spacer(4));
+        lines.push(UiLineType::Elements(vec![UiLineElement::Text(t("<- Back (Enter/Esc)", "<- Назад (Enter/Esc)", l), font, VerticalPosition::Top, ThemeColor::Selected)]));
+
+        let composed = compose_scrolled_form(&lines, self.focused_idx.min(lines.len().saturating_sub(1)), viewport_height, TOP_BAR_HEIGHT as i32, ui);
+        render_visible_lines(&composed, &lines, ui);
     }
 }

@@ -5,30 +5,26 @@ use esp_idf_hal::delay::FreeRtos;
 use esp_idf_hal::task::thread::ThreadSpawnConfiguration;
 use esp_idf_hal::cpu::Core;
 
-use crate::cardputer_hal::cardputer_hal::CardputerHal;
-use crate::screen::{Renderable, Screen};
+use crate::screen::{Snapshot, Screen};
 use crate::types::{Command, Msg, SharedState, SharedStateUpdate, TaskHandle};
 
 pub struct Runtime {
     screen: Box<dyn Screen>,
-    hal: &'static mut CardputerHal<'static>,
     shared: SharedState,
     msg_rx: Receiver<Msg>,
     msg_tx: Sender<Msg>,
-    state_tx: Sender<Box<dyn Renderable>>,
+    state_tx: Sender<Snapshot>,
 }
 
 impl Runtime {
     pub fn new(
         screen: Box<dyn Screen>,
-        hal: &'static mut CardputerHal<'static>,
         msg_rx: Receiver<Msg>,
         msg_tx: Sender<Msg>,
-        state_tx: Sender<Box<dyn Renderable>>,
+        state_tx: Sender<Snapshot>,
     ) -> Self {
         Self {
             screen,
-            hal,
             shared: SharedState::default(),
             msg_rx,
             msg_tx,
@@ -40,20 +36,38 @@ impl Runtime {
         log::info!("runtime: started on Core 1");
 
         // Mount initial screen
-        let cmd = self.screen.on_mount(&mut self.hal, &self.shared, &self.state_tx);
+        let cmd = self.screen.on_mount(&self.shared, &self.state_tx);
         self.execute(cmd);
-        let _ = self.state_tx.send(self.screen.snapshot());
+        let _ = self.state_tx.send(self.screen.snapshot(&self.shared));
 
         // Message loop — poll with FreeRtos yield (avoids ESP-IDF pthread issues)
         loop {
             match self.msg_rx.try_recv() {
                 Ok(msg) => {
-                    let cmd = self.screen.handle_msg(msg, &mut self.hal, &self.shared);
+                    // Update shared state from messages
+                    match &msg {
+                        Msg::Key(key_msg) => {
+                            self.shared.lang = key_msg.input_state.lang;
+                        }
+                        Msg::Core0Result(ref result) => match result {
+                            crate::types::Core0Result::WifiConnected { ref ssid } => {
+                                self.shared.wifi_connected = true;
+                                self.shared.wifi_ssid = Some(ssid.clone());
+                            }
+                            crate::types::Core0Result::WifiStopped => {
+                                self.shared.wifi_connected = false;
+                                self.shared.wifi_ssid = None;
+                            }
+                            _ => {}
+                        },
+                        _ => {}
+                    }
+                    let cmd = self.screen.handle_msg(msg, &self.shared);
                     self.execute(cmd);
-                    let _ = self.state_tx.send(self.screen.snapshot());
+                    let _ = self.state_tx.send(self.screen.snapshot(&self.shared));
                 }
                 Err(TryRecvError::Empty) => {
-                    FreeRtos::delay_ms(1); // yield, 0 CPU when idle
+                    FreeRtos::delay_ms(1);
                 }
                 Err(TryRecvError::Disconnected) => {
                     log::error!("runtime: msg channel disconnected");
@@ -83,10 +97,9 @@ impl Runtime {
                 std::thread::spawn(move || task(handle));
             }
             Command::SwitchTo(mut new_screen) => {
-                let mount_cmd = new_screen.on_mount(&mut self.hal, &self.shared, &self.state_tx);
+                let mount_cmd = new_screen.on_mount(&self.shared, &self.state_tx);
                 self.screen = new_screen;
-                // Send snapshot after mount so Core 0 can draw the new screen
-                let _ = self.state_tx.send(self.screen.snapshot());
+                let _ = self.state_tx.send(self.screen.snapshot(&self.shared));
                 self.execute(mount_cmd);
             }
             Command::UpdateShared(update) => match update {

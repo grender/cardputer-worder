@@ -255,6 +255,7 @@ impl CardworderUi {
         &mut self,
         input_state: &InputState,
         key_event: &Option<(KeyEvent, PressedSymbol)>,
+        wifi_connected: bool,
     ) {
         let top_line_area = Rectangle {
             top_left: Point { x: 0, y: 0 },
@@ -317,11 +318,13 @@ impl CardworderUi {
                 .unwrap();
         }
 
-        let time_x = 240 - 2 - 5 * 8;
-        &self.renderers[CardFont::Icons as usize]
-            .render(80 as char, Point::new(time_x - 9, 0), VerticalPosition::Top,
-                FontColor::Transparent(Rgb565::WHITE), &mut self.framebuffer)
-            .unwrap();
+        let time_x = 240 - 2 - 8 * 6; // 8 chars "HH:MM:SS" × 6px Medium font width
+        if wifi_connected {
+            self.renderers[CardFont::Icons as usize]
+                .render(80 as char, Point::new(time_x - 11, 0), VerticalPosition::Top,
+                    FontColor::Transparent(Rgb565::CSS_LIGHT_GREEN), &mut self.framebuffer)
+                .unwrap();
+        }
 
         let mut tm = tm { tm_sec: 0, tm_min: 0, tm_hour: 0, tm_mday: 0, tm_mon: 0, tm_year: 0, tm_wday: 0, tm_yday: 0, tm_isdst: 0 };
         let mut now_time: time_t = 0;

@@ -79,8 +79,8 @@ impl ScrollBar {
 }
 
 /// Compose lines: measure heights, scroll so `selected_line_idx` is visible.
-pub fn compose_scrolled_form(
-    lines: &[UiLineType],
+pub fn compose_scrolled_form<'a>(
+    lines: &[UiLineType<'a>],
     selected_line_idx: usize,
     viewport_height: u32,
     content_top_y: i32,
@@ -135,7 +135,7 @@ pub fn compose_scrolled_form(
 
 /// Draws a line of type Elements.
 fn draw_elements_line(
-    elements: &[UiLineElement],
+    elements: &[UiLineElement<'_>],
     rect: &Rectangle,
     ui: &mut CardworderUi,
 ) {
@@ -200,12 +200,86 @@ pub fn render_scroll_bar(scroll_bar: &ScrollBar, ui: &mut CardworderUi, screen_w
     ui.fill_rect(adjusted_thumb_rect, thumb_color);
 }
 
+/// Draws an InputField line: label above, bordered input box with value and cursor.
+fn draw_input_field_line(
+    label: &str,
+    value: &str,
+    cursor_pos: usize,
+    focused: bool,
+    rect: &Rectangle,
+    ui: &mut CardworderUi,
+) {
+    use crate::ui::cardworder_ui::{CardFont, ThemeColor};
+    use embedded_graphics::pixelcolor::Rgb565;
+    use embedded_graphics::prelude::{RgbColor, WebColors};
+
+    let x = rect.top_left.x + 2;
+    let y = rect.top_left.y;
+    let width = rect.size.width.saturating_sub(4);
+
+    // Label
+    let label_h = ui.font_height(CardFont::Small) as i32;
+    ui.draw_text_oneline(
+        label,
+        CardFont::Small,
+        ThemeColor::Text,
+        Point::new(x, y),
+        u8g2_fonts::types::VerticalPosition::Top,
+    );
+
+    // Input box
+    let box_y = y + label_h + 2;
+    let box_h = ui.font_height(CardFont::Medium) as i32 + 6;
+    let border_color = if focused {
+        Rgb565::CSS_LIGHT_BLUE
+    } else {
+        Rgb565::CSS_GRAY
+    };
+
+    // Border (top, bottom, left, right)
+    let box_rect = Rectangle::new(Point::new(x, box_y), Size::new(width, box_h as u32));
+    ui.fill_rect(box_rect, border_color);
+    // Interior (1px border)
+    let inner = Rectangle::new(
+        Point::new(x + 1, box_y + 1),
+        Size::new(width.saturating_sub(2), (box_h - 2).max(0) as u32),
+    );
+    ui.fill_rect(inner, Rgb565::new(4, 8, 4)); // dark background
+
+    // Value text
+    let text_x = x + 3;
+    let text_y = box_y + 3;
+    if !value.is_empty() {
+        ui.draw_text_oneline(
+            value,
+            CardFont::Medium,
+            ThemeColor::Text,
+            Point::new(text_x, text_y),
+            u8g2_fonts::types::VerticalPosition::Top,
+        );
+    }
+
+    // Cursor (when focused)
+    if focused {
+        let char_w = ui.font_width(CardFont::Medium) as i32;
+        let cursor_x = text_x + (cursor_pos as i32) * char_w;
+        let cursor_rect = Rectangle::new(
+            Point::new(cursor_x, box_y + 2),
+            Size::new(2, (box_h - 4).max(1) as u32),
+        );
+        ui.fill_rect(cursor_rect, Rgb565::WHITE);
+    }
+}
+
 /// Render only visible lines.
-pub fn render_visible_lines(composed: &ComposedForm, lines: &[UiLineType], ui: &mut CardworderUi) {
+pub fn render_visible_lines(composed: &ComposedForm, lines: &[UiLineType<'_>], ui: &mut CardworderUi) {
     for composed_line in &composed.lines {
         match &lines[composed_line.line_index] {
             UiLineType::Elements(elements) => {
                 draw_elements_line(elements, &composed_line.rect, ui);
+            }
+            UiLineType::InputField { label, value, cursor_pos, focused } => {
+                draw_input_field_line(label, value.as_str(), *cursor_pos, *focused, &composed_line.rect, ui);
             }
             UiLineType::Spacer(_) => {}
             UiLineType::Line(_, _color) => {}

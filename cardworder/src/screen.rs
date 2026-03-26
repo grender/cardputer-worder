@@ -1,42 +1,66 @@
 use std::sync::mpsc::Sender;
 
-use crate::cardputer_hal::cardputer_hal::CardputerHal;
-use crate::types::{Command, Msg, SharedState};
+use crate::types::{Command, Core0Action, Msg, SharedState};
 use crate::ui::cardworder_ui::CardworderUi;
 
-/// Implemented by each screen's snapshot. Core 0 calls `draw()` on this.
-/// Must be `Send` because snapshots cross from Core 1 to Core 0 via channel.
-pub trait Renderable: Send {
-    /// Draw the snapshot onto the framebuffer. Called on Core 0.
-    fn draw(&self, ui: &mut CardworderUi);
+/// Concrete snapshot enum — avoids Box<dyn> fat pointer / vtable issues across ESP-IDF threads.
+pub enum Snapshot {
+    MainMenu(crate::screens::main_menu::MainMenuSnapshot),
+    Start(crate::screens::start::StartSnapshot),
+    SystemInfo(crate::screens::system_info::SystemInfoSnapshot),
+    Settings(crate::screens::settings::SettingsSnapshot),
+    WifiConfig(crate::screens::wifi_config::WifiConfigSnapshot),
+    WifiConnect(crate::screens::wifi_connect::WifiConnectSnapshot),
+    Ntp(crate::screens::ntp::NtpSnapshot),
+}
 
-    /// Whether the top bar (clock, input state) should be drawn.
-    fn needs_top_line(&self) -> bool {
-        true
+impl Snapshot {
+    pub fn draw(&self, ui: &mut CardworderUi) {
+        match self {
+            Snapshot::MainMenu(s) => s.draw(ui),
+            Snapshot::Start(s) => s.draw(ui),
+            Snapshot::SystemInfo(s) => s.draw(ui),
+            Snapshot::Settings(s) => s.draw(ui),
+            Snapshot::WifiConfig(s) => s.draw(ui),
+            Snapshot::WifiConnect(s) => s.draw(ui),
+            Snapshot::Ntp(s) => s.draw(ui),
+        }
+    }
+
+    pub fn needs_top_line(&self) -> bool {
+        match self {
+            Snapshot::Start(_) => false,
+            _ => true,
+        }
+    }
+
+    pub fn action(&self) -> Option<Core0Action> {
+        match self {
+            Snapshot::Start(s) => s.pending_action.clone(),
+            Snapshot::WifiConfig(s) => s.pending_action.clone(),
+            Snapshot::WifiConnect(s) => s.pending_action.clone(),
+            Snapshot::Ntp(s) => s.pending_action.clone(),
+            Snapshot::SystemInfo(s) => s.pending_action.clone(),
+            _ => None,
+        }
     }
 }
 
 /// Implemented on the Core 1 side. One screen is active at a time.
+/// Screens do NOT get HAL access — use Core0Action via snapshots instead.
 pub trait Screen: Send {
     /// Called once when this screen becomes active (Core 1).
-    /// `state_tx` allows sending intermediate snapshots during long operations.
     fn on_mount(
         &mut self,
-        _hal: &mut CardputerHal<'_>,
         _shared: &SharedState,
-        _state_tx: &Sender<Box<dyn Renderable>>,
+        _state_tx: &Sender<Snapshot>,
     ) -> Command {
         Command::None
     }
 
     /// Core 1: process a message, mutate self, return a command.
-    fn handle_msg(
-        &mut self,
-        msg: Msg,
-        hal: &mut CardputerHal<'_>,
-        shared: &SharedState,
-    ) -> Command;
+    fn handle_msg(&mut self, msg: Msg, shared: &SharedState) -> Command;
 
     /// Core 1: produce a snapshot for Core 0 to draw.
-    fn snapshot(&self) -> Box<dyn Renderable>;
+    fn snapshot(&self, shared: &SharedState) -> Snapshot;
 }

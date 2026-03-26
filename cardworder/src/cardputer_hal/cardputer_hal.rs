@@ -26,10 +26,15 @@ pub struct CardputerParts<'a> {
     pub hal: CardputerHal<'a>,
 }
 
-/// Slim HAL that owns only SD + Wi-Fi (used by the app task).
+/// Slim HAL that owns SD + Wi-Fi (lazy). Used on Core 0.
 pub struct CardputerHal<'a> {
-    sd: CardputerSd<'a, Delay>,
-    wifi: CardWorderWifi<'a>,
+    sd: &'a mut CardputerSd<'a, Delay>,
+    /// WiFi driver — created lazily on first StartWifi to save ~50KB heap
+    wifi: Option<CardWorderWifi<'a>>,
+    /// Modem peripheral — stored until WiFi is needed
+    modem: Option<esp_idf_hal::modem::Modem<'a>>,
+    /// System event loop — needed to create EspWifi
+    sysloop: EspSystemEventLoop,
 }
 
 impl<'a> CardputerHal<'a> {
@@ -54,13 +59,16 @@ impl<'a> CardputerHal<'a> {
         log::info!("hal: 3a CardputerScreen::build — done");
 
         log::info!("hal: 3b CardputerSd::build (SPI3 + SD) …");
-        let sd = CardputerSd::build(
-            peripherals.spi3,
-            peripherals.pins.gpio40,
-            peripherals.pins.gpio39,
-            peripherals.pins.gpio14,
-            peripherals.pins.gpio12,
-        );
+        // Box::leak immediately — ESP-IDF SPI DMA has internal state that breaks if the struct moves
+        let sd: &'a mut CardputerSd<'a, Delay> = unsafe {
+            std::mem::transmute(Box::leak(Box::new(CardputerSd::build(
+                peripherals.spi3,
+                peripherals.pins.gpio40,
+                peripherals.pins.gpio39,
+                peripherals.pins.gpio14,
+                peripherals.pins.gpio12,
+            ))))
+        };
         log::info!("hal: 3b CardputerSd::build — done");
 
         log::info!("hal: 3c keyboard mux GPIO (8,9,11) …");
@@ -88,13 +96,9 @@ impl<'a> CardputerHal<'a> {
         keyboard.init();
         log::info!("hal: 3e keyboard — done");
 
-        log::info!("hal: 3f EspWifi::new (modem + event loop) …");
-        let esp_wifi = EspWifi::new(peripherals.modem, sysloop, None).unwrap();
-        log::info!("hal: 3f EspWifi::new — done");
-
-        log::info!("hal: 3g CardWorderWifi::wrap …");
-        let wifi = CardWorderWifi::new(esp_wifi);
-        log::info!("hal: 3g CardWorderWifi — done");
+        // WiFi is NOT created at boot — deferred until Core0Action::StartWifi
+        // This saves ~50KB heap when WiFi is not in use
+        log::info!("hal: 3f WiFi modem stored (lazy init)");
 
         let (display, framebuffer) = screen.into_parts();
 
@@ -103,7 +107,12 @@ impl<'a> CardputerHal<'a> {
             keyboard,
             display,
             framebuffer,
-            hal: CardputerHal { sd, wifi },
+            hal: CardputerHal {
+                sd,
+                wifi: None,
+                modem: Some(peripherals.modem),
+                sysloop,
+            },
         }
     }
 
@@ -134,11 +143,69 @@ impl<'a> CardputerHal<'a> {
         Ok(config)
     }
 
+    /// Lazily create EspWifi from modem if not already created.
+    fn ensure_wifi(&mut self) -> anyhow::Result<()> {
+        if self.wifi.is_none() {
+            let modem = self.modem.take()
+                .ok_or_else(|| anyhow::anyhow!("Modem already taken"))?;
+            log::info!("hal: creating EspWifi (lazy init)");
+            let esp_wifi = EspWifi::new(modem, self.sysloop.clone(), None)
+                .map_err(|e| anyhow::anyhow!("EspWifi::new failed: {:?}", e))?;
+            self.wifi = Some(CardWorderWifi::new(esp_wifi));
+        }
+        Ok(())
+    }
+
+    fn wifi(&mut self) -> anyhow::Result<&mut CardWorderWifi<'a>> {
+        self.wifi.as_mut().ok_or_else(|| anyhow::anyhow!("WiFi not initialized"))
+    }
+
     pub fn connect_wifi(&mut self, wifi_config: WifiConfig) -> anyhow::Result<()> {
-        self.wifi.connect(wifi_config).map_err(|_e| anyhow::anyhow!("Failed to connect to wifi"))
+        self.wifi()?.connect(wifi_config).map_err(|e| anyhow::anyhow!("Connect: {:?}", e))
     }
 
     pub fn stop_wifi(&mut self) -> anyhow::Result<()> {
-        self.wifi.stop().map_err(|_e| anyhow::anyhow!("Failed to stop wifi"))
+        if let Some(mut wifi) = self.wifi.take() {
+            wifi.stop().map_err(|e| anyhow::anyhow!("Stop: {:?}", e))?;
+            drop(wifi); // drops EspWifi, frees ~50KB WiFi buffers
+            // SAFETY: EspWifi deregistered the driver on drop, modem peripheral is free.
+            // steal() is safe because no one else uses the modem after EspWifi is dropped.
+            self.modem = Some(unsafe { esp_idf_hal::modem::Modem::steal() });
+            log::info!("hal: WiFi dropped, modem recovered (~50KB freed)");
+        }
+        Ok(())
+    }
+
+    pub fn start_wifi(&mut self) -> anyhow::Result<()> {
+        self.ensure_wifi()?;
+        self.wifi()?.start().map_err(|e| anyhow::anyhow!("Start: {:?}", e))
+    }
+
+    pub fn scan_wifi(&mut self) -> anyhow::Result<Vec<esp_idf_svc::wifi::AccessPointInfo>> {
+        self.wifi()?.scan().map_err(|e| anyhow::anyhow!("Scan: {:?}", e))
+    }
+
+    pub fn load_wifi_list(&mut self) -> anyhow::Result<crate::types::WifiConfigList> {
+        use crate::types::WifiConfigList;
+        let exists = self.sd.is_file_exists("wifilist.jsn")
+            .map_err(|_| anyhow::anyhow!("Failed to check wifilist.jsn"))?;
+        if !exists {
+            return Ok(WifiConfigList::default());
+        }
+        let content = self.sd.read_file("wifilist.jsn")
+            .map_err(|_| anyhow::anyhow!("Failed to read wifilist.jsn"))?;
+        let list: WifiConfigList = serde_json::from_str(&content)?;
+        Ok(list)
+    }
+
+    pub fn save_wifi_list(&mut self, list: &crate::types::WifiConfigList) -> anyhow::Result<()> {
+        let content = serde_json::to_string(list)?;
+        log::info!("save_wifi_list: writing {} bytes to wifilist.jsn", content.len());
+        self.sd.write_file("wifilist.jsn", &content)
+            .map_err(|e| {
+                log::error!("save_wifi_list: SD write error: {:?}", e);
+                anyhow::anyhow!("SD write error: {:?}", e)
+            })?;
+        Ok(())
     }
 }
