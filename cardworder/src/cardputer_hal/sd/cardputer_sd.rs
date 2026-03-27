@@ -150,6 +150,30 @@ impl CardputerSd<'_, Delay> {
         Ok(())
     }
 
+    pub fn read_file_bytes(&mut self, path: &str) -> Result<Vec<u8>, Error<SdCardError>> {
+        let volume0 = self.volume_manager.open_volume(VolumeIdx(0))?;
+        let root_dir = volume0.open_root_dir()?;
+        let file = root_dir.open_file_in_dir(path, Mode::ReadOnly)?;
+        let mut contents = Vec::new();
+        let mut buffer = [0u8; 512];
+        loop {
+            let bytes_read = file.read(&mut buffer)?;
+            if bytes_read == 0 { break; }
+            contents.extend_from_slice(&buffer[..bytes_read]);
+        }
+        Ok(contents)
+    }
+
+    pub fn write_file_bytes(&mut self, path: &str, data: &[u8]) -> Result<(), Error<SdCardError>> {
+        let volume0 = self.volume_manager.open_volume(VolumeIdx(0))?;
+        let root_dir = volume0.open_root_dir()?;
+        let file = root_dir.open_file_in_dir(path, Mode::ReadWriteCreateOrTruncate)?;
+        file.write(data)?;
+        file.flush()?;
+        file.close()?;
+        Ok(())
+    }
+
     pub fn is_file_exists(&mut self, path: &str) -> Result<bool, Error<SdCardError>> {
         let volume0 = self.volume_manager.open_volume(VolumeIdx(0))?;
         let root_dir = volume0.open_root_dir()?;

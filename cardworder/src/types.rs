@@ -105,6 +105,10 @@ pub enum Core0Action {
     CheckNtpStatus,
     // Network info (reads IP from esp_netif on Core 0)
     GetNetworkInfo,
+    // Word pairs (SD card)
+    LoadPairs,
+    /// Pre-serialized postcard bytes — avoids cloning PairsFile across threads
+    SavePairsBytes(Vec<u8>),
     // Legacy (kept for StartScreen compatibility)
     CreateWifiFileIfNotExists {
         ssid: heapless::String<32>,
@@ -131,6 +135,9 @@ pub enum Core0Result {
     // NTP
     NtpStarted,
     NtpSynced(bool),
+    // Word pairs
+    PairsLoaded(fsrs_core::PairsFile),
+    PairsSaved,
     // Legacy
     WifiFileCreated,
     WifiConfigLoaded(WifiConfig),

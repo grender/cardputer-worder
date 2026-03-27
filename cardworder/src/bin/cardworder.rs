@@ -78,6 +78,18 @@ fn execute_core0_action(
                 Err(e) => Core0Result::Error(format!("Stop WiFi: {:?}", e)),
             }
         }
+        Core0Action::LoadPairs => {
+            match hal.load_pairs() {
+                Ok(file) => Core0Result::PairsLoaded(file),
+                Err(e) => Core0Result::Error(format!("Load pairs: {:?}", e)),
+            }
+        }
+        Core0Action::SavePairsBytes(bytes) => {
+            match hal.save_pairs_bytes(&bytes) {
+                Ok(()) => Core0Result::PairsSaved,
+                Err(e) => Core0Result::Error(format!("Save pairs: {:?}", e)),
+            }
+        }
         Core0Action::LoadWifiList => {
             match hal.load_wifi_list() {
                 Ok(list) => Core0Result::WifiListLoaded(list),

@@ -1,75 +1,76 @@
-use fsrs_core::{Storage, VocabularyError, WordCard, CardId};
+use fsrs_core::{PairStorage, VocabularyError, WordPair, WordPairId, PairsFile};
 use std::collections::HashMap;
 use std::fs;
 use std::path::PathBuf;
 
-/// JSON file-based storage implementation
-/// 
-/// Stores all word cards in a single JSON file
-pub struct JsonFileStorage {
+pub struct PostcardFileStorage {
     file_path: PathBuf,
-    cards: HashMap<CardId, WordCard>,
+    pairs: HashMap<WordPairId, WordPair>,
+    next_id: WordPairId,
 }
 
-impl JsonFileStorage {
-    /// Create a new JSON file storage
+impl PostcardFileStorage {
     pub fn new<P: Into<PathBuf>>(file_path: P) -> Self {
         Self {
             file_path: file_path.into(),
-            cards: HashMap::new(),
+            pairs: HashMap::new(),
+            next_id: 1,
         }
     }
 
-    /// Load cards from the JSON file
     pub fn load(&mut self) -> Result<(), VocabularyError> {
         if !self.file_path.exists() {
-            // File doesn't exist yet, start with empty collection
             return Ok(());
         }
 
-        let contents = fs::read_to_string(&self.file_path)
-            .map_err(VocabularyError::storage)?;
-        
-        let cards_vec: Vec<WordCard> = serde_json::from_str(&contents)
+        let bytes = fs::read(&self.file_path).map_err(VocabularyError::storage)?;
+        let file: PairsFile = postcard::from_bytes(&bytes)
             .map_err(|e| VocabularyError::Serialization(e.to_string()))?;
-        
-        self.cards = cards_vec.into_iter().map(|card| (card.id, card)).collect();
-        
+
+        self.next_id = file.next_id;
+        self.pairs = file.pairs.into_iter().map(|p| (p.id, p)).collect();
         Ok(())
     }
 
-    /// Save cards to the JSON file
-    pub fn save(&self) -> Result<(), VocabularyError> {
-        let cards_vec: Vec<&WordCard> = self.cards.values().collect();
-        let json = serde_json::to_string_pretty(&cards_vec)
+    fn save(&self) -> Result<(), VocabularyError> {
+        let file = PairsFile {
+            next_id: self.next_id,
+            pairs: self.pairs.values().cloned().collect(),
+        };
+        let bytes = postcard::to_allocvec(&file)
             .map_err(|e| VocabularyError::Serialization(e.to_string()))?;
-        
-        fs::write(&self.file_path, json)
-            .map_err(VocabularyError::storage)?;
-        
+        fs::write(&self.file_path, bytes).map_err(VocabularyError::storage)?;
         Ok(())
     }
-}
 
-impl Storage for JsonFileStorage {
-    fn save_card(&mut self, card: WordCard) -> Result<(), VocabularyError> {
-        self.cards.insert(card.id, card);
-        self.save()
+    pub fn next_id(&self) -> WordPairId {
+        self.next_id
     }
 
-    fn load_card(&self, id: CardId) -> Result<WordCard, VocabularyError> {
-        self.cards.get(&id)
-            .ok_or_else(|| VocabularyError::CardNotFound(id))
-            .map(|c| c.clone())
-    }
-
-    fn load_all_cards(&self) -> Result<Vec<WordCard>, VocabularyError> {
-        Ok(self.cards.values().cloned().collect())
-    }
-
-    fn delete_card(&mut self, id: CardId) -> Result<(), VocabularyError> {
-        self.cards.remove(&id).ok_or_else(|| VocabularyError::CardNotFound(id))?;
-        self.save()
+    pub fn set_next_id(&mut self, id: WordPairId) {
+        self.next_id = id;
     }
 }
 
+impl PairStorage for PostcardFileStorage {
+    fn save_pair(&mut self, pair: WordPair) -> Result<(), VocabularyError> {
+        if pair.id >= self.next_id {
+            self.next_id = pair.id + 1;
+        }
+        self.pairs.insert(pair.id, pair);
+        self.save()
+    }
+
+    fn load_pair(&self, id: WordPairId) -> Result<WordPair, VocabularyError> {
+        self.pairs.get(&id).cloned().ok_or(VocabularyError::CardNotFound(id))
+    }
+
+    fn load_all_pairs(&self) -> Result<Vec<WordPair>, VocabularyError> {
+        Ok(self.pairs.values().cloned().collect())
+    }
+
+    fn delete_pair(&mut self, id: WordPairId) -> Result<(), VocabularyError> {
+        self.pairs.remove(&id).ok_or(VocabularyError::CardNotFound(id))?;
+        self.save()
+    }
+}

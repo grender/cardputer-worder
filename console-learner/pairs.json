@@ -1,0 +1,2414 @@
+{
+  "next_id": 66,
+  "pairs": [
+    {
+      "id": 5,
+      "en": "unveiled",
+      "ru": "раскрывать, развуалировать",
+      "examples": [],
+      "fsrs": [
+        {
+          "card": {
+            "due": "2025-11-16T00:12:14.607493Z",
+            "stability": 18.239411151722685,
+            "difficulty": 3.011599501986166,
+            "elapsed_days": 325,
+            "scheduled_days": 18,
+            "reps": 5,
+            "lapses": 3,
+            "state": "Review",
+            "last_review": "2025-10-29T00:12:14.607493Z"
+          },
+          "last_review": "2025-10-29T00:12:14+00:00"
+        },
+        {
+          "card": {
+            "due": "2026-03-27T01:38:12.878410Z",
+            "stability": 0.0,
+            "difficulty": 0.0,
+            "elapsed_days": 0,
+            "scheduled_days": 0,
+            "reps": 0,
+            "lapses": 0,
+            "state": "New",
+            "last_review": "2026-03-27T01:38:12.878412Z"
+          },
+          "last_review": null
+        }
+      ],
+      "created_at": "2024-12-07T20:57:23+00:00"
+    },
+    {
+      "id": 48,
+      "en": "Deign",
+      "ru": "Соизволить, снизойти,удостоить",
+      "examples": [],
+      "fsrs": [
+        {
+          "card": {
+            "due": "2025-10-29T00:13:30.851471Z",
+            "stability": 0.4072,
+            "difficulty": 7.2102,
+            "elapsed_days": 0,
+            "scheduled_days": 0,
+            "reps": 2,
+            "lapses": 0,
+            "state": "Learning",
+            "last_review": "2025-10-29T00:12:30.851471Z"
+          },
+          "last_review": "2025-10-29T00:12:30+00:00"
+        },
+        {
+          "card": {
+            "due": "2026-03-27T01:38:12.878438Z",
+            "stability": 0.0,
+            "difficulty": 0.0,
+            "elapsed_days": 0,
+            "scheduled_days": 0,
+            "reps": 0,
+            "lapses": 0,
+            "state": "New",
+            "last_review": "2026-03-27T01:38:12.878438Z"
+          },
+          "last_review": null
+        }
+      ],
+      "created_at": "2024-12-13T10:46:52+00:00"
+    },
+    {
+      "id": 59,
+      "en": "Grope",
+      "ru": "идти на ощупь",
+      "examples": [],
+      "fsrs": [
+        {
+          "card": {
+            "due": "2025-10-29T00:13:47.734917Z",
+            "stability": 0.4072,
+            "difficulty": 7.2102,
+            "elapsed_days": 0,
+            "scheduled_days": 0,
+            "reps": 2,
+            "lapses": 0,
+            "state": "Learning",
+            "last_review": "2025-10-29T00:12:47.734917Z"
+          },
+          "last_review": "2025-10-29T00:12:47+00:00"
+        },
+        {
+          "card": {
+            "due": "2026-03-27T01:38:12.878461Z",
+            "stability": 0.0,
+            "difficulty": 0.0,
+            "elapsed_days": 0,
+            "scheduled_days": 0,
+            "reps": 0,
+            "lapses": 0,
+            "state": "New",
+            "last_review": "2026-03-27T01:38:12.878461Z"
+          },
+          "last_review": null
+        }
+      ],
+      "created_at": "2024-12-13T10:46:54+00:00"
+    },
+    {
+      "id": 35,
+      "en": "mutter",
+      "ru": "бормотание",
+      "examples": [],
+      "fsrs": [
+        {
+          "card": {
+            "due": "2025-10-29T00:17:55.969681Z",
+            "stability": 0.528878523956207,
+            "difficulty": 4.188500161986166,
+            "elapsed_days": 325,
+            "scheduled_days": 0,
+            "reps": 4,
+            "lapses": 2,
+            "state": "Learning",
+            "last_review": "2025-10-29T00:12:55.969681Z"
+          },
+          "last_review": "2025-10-29T00:12:55+00:00"
+        },
+        {
+          "card": {
+            "due": "2026-03-27T01:38:12.878484Z",
+            "stability": 0.0,
+            "difficulty": 0.0,
+            "elapsed_days": 0,
+            "scheduled_days": 0,
+            "reps": 0,
+            "lapses": 0,
+            "state": "New",
+            "last_review": "2026-03-27T01:38:12.878484Z"
+          },
+          "last_review": null
+        }
+      ],
+      "created_at": "2024-12-07T20:41:52+00:00"
+    },
+    {
+      "id": 36,
+      "en": "drowsy",
+      "ru": "сонный",
+      "examples": [],
+      "fsrs": [
+        {
+          "card": {
+            "due": "2025-10-29T00:48:47.427165Z",
+            "stability": 0.528878523956207,
+            "difficulty": 4.188500161986166,
+            "elapsed_days": 319,
+            "scheduled_days": 0,
+            "reps": 4,
+            "lapses": 2,
+            "state": "Learning",
+            "last_review": "2025-10-29T00:43:47.427165Z"
+          },
+          "last_review": "2025-10-29T00:43:47+00:00"
+        },
+        {
+          "card": {
+            "due": "2026-03-27T01:38:12.878507Z",
+            "stability": 0.0,
+            "difficulty": 0.0,
+            "elapsed_days": 0,
+            "scheduled_days": 0,
+            "reps": 0,
+            "lapses": 0,
+            "state": "New",
+            "last_review": "2026-03-27T01:38:12.878507Z"
+          },
+          "last_review": null
+        }
+      ],
+      "created_at": "2024-12-13T10:48:06+00:00"
+    },
+    {
+      "id": 21,
+      "en": "destrier/garron",
+      "ru": "вид коней подходящий для рыцарей- крупные [Дестриэ](https://ru.wikipedia.org/wiki/%D0%94%D0%B5%D1%81%D1%82%D1%80%D0%B8%D1%8D)/маленькие кони-пони но крепкие [Garron](https://en.wikipedia.org/wiki/Garron)",
+      "examples": [],
+      "fsrs": [
+        {
+          "card": {
+            "due": "2025-01-08T01:08:20.363Z",
+            "stability": 1.33,
+            "difficulty": 2.66,
+            "elapsed_days": 28,
+            "scheduled_days": 28,
+            "reps": 4,
+            "lapses": 3,
+            "state": "Review",
+            "last_review": "2024-12-10T18:08:20.364Z"
+          },
+          "last_review": "2024-12-10T18:08:20+00:00"
+        },
+        {
+          "card": {
+            "due": "2026-03-27T01:38:12.878531Z",
+            "stability": 0.0,
+            "difficulty": 0.0,
+            "elapsed_days": 0,
+            "scheduled_days": 0,
+            "reps": 0,
+            "lapses": 0,
+            "state": "New",
+            "last_review": "2026-03-27T01:38:12.878531Z"
+          },
+          "last_review": null
+        }
+      ],
+      "created_at": "2024-12-10T18:08:20+00:00"
+    },
+    {
+      "id": 64,
+      "en": "Dirk",
+      "ru": "кинжал",
+      "examples": [],
+      "fsrs": [
+        {
+          "card": {
+            "due": "2024-12-16T03:42:12.397Z",
+            "stability": 1.04,
+            "difficulty": 2.08,
+            "elapsed_days": 8,
+            "scheduled_days": 8,
+            "reps": 3,
+            "lapses": 2,
+            "state": "Learning",
+            "last_review": "2024-12-07T20:42:12.398Z"
+          },
+          "last_review": "2024-12-07T20:42:12+00:00"
+        },
+        {
+          "card": {
+            "due": "2026-03-27T01:38:12.878554Z",
+            "stability": 0.0,
+            "difficulty": 0.0,
+            "elapsed_days": 0,
+            "scheduled_days": 0,
+            "reps": 0,
+            "lapses": 0,
+            "state": "New",
+            "last_review": "2026-03-27T01:38:12.878554Z"
+          },
+          "last_review": null
+        }
+      ],
+      "created_at": "2024-12-07T20:42:12+00:00"
+    },
+    {
+      "id": 6,
+      "en": "urged",
+      "ru": "побуждение, стремление",
+      "examples": [
+        "urge to go back - потянуло вернуться назад"
+      ],
+      "fsrs": [
+        {
+          "card": {
+            "due": "2024-12-13T21:00:00Z",
+            "stability": 1.25,
+            "difficulty": 2.5,
+            "elapsed_days": 0,
+            "scheduled_days": 0,
+            "reps": 1,
+            "lapses": 0,
+            "state": "New",
+            "last_review": "2024-12-13T10:45:47.133Z"
+          },
+          "last_review": "2024-12-13T10:45:47+00:00"
+        },
+        {
+          "card": {
+            "due": "2026-03-27T01:38:12.878577Z",
+            "stability": 0.0,
+            "difficulty": 0.0,
+            "elapsed_days": 0,
+            "scheduled_days": 0,
+            "reps": 0,
+            "lapses": 0,
+            "state": "New",
+            "last_review": "2026-03-27T01:38:12.878578Z"
+          },
+          "last_review": null
+        }
+      ],
+      "created_at": "2024-12-13T10:45:47+00:00"
+    },
+    {
+      "id": 19,
+      "en": "slender",
+      "ru": "тонкий / стройный",
+      "examples": [],
+      "fsrs": [
+        {
+          "card": {
+            "due": "2024-12-24T00:07:28.606Z",
+            "stability": 0.97,
+            "difficulty": 1.94,
+            "elapsed_days": 15,
+            "scheduled_days": 15,
+            "reps": 4,
+            "lapses": 3,
+            "state": "Review",
+            "last_review": "2024-12-08T23:07:28.606Z"
+          },
+          "last_review": "2024-12-08T23:07:28+00:00"
+        },
+        {
+          "card": {
+            "due": "2026-03-27T01:38:12.878600Z",
+            "stability": 0.0,
+            "difficulty": 0.0,
+            "elapsed_days": 0,
+            "scheduled_days": 0,
+            "reps": 0,
+            "lapses": 0,
+            "state": "New",
+            "last_review": "2026-03-27T01:38:12.878600Z"
+          },
+          "last_review": null
+        }
+      ],
+      "created_at": "2024-12-08T23:07:28+00:00"
+    },
+    {
+      "id": 28,
+      "en": "buck",
+      "ru": "олень",
+      "examples": [],
+      "fsrs": [
+        {
+          "card": {
+            "due": "2025-01-01T18:40:20.345Z",
+            "stability": 1.21,
+            "difficulty": 2.42,
+            "elapsed_days": 23,
+            "scheduled_days": 23,
+            "reps": 4,
+            "lapses": 3,
+            "state": "Review",
+            "last_review": "2024-12-09T08:40:20.346Z"
+          },
+          "last_review": "2024-12-09T08:40:20+00:00"
+        },
+        {
+          "card": {
+            "due": "2026-03-27T01:38:12.878639Z",
+            "stability": 0.0,
+            "difficulty": 0.0,
+            "elapsed_days": 0,
+            "scheduled_days": 0,
+            "reps": 0,
+            "lapses": 0,
+            "state": "New",
+            "last_review": "2026-03-27T01:38:12.878639Z"
+          },
+          "last_review": null
+        }
+      ],
+      "created_at": "2024-12-09T08:40:20+00:00"
+    },
+    {
+      "id": 4,
+      "en": "pageant",
+      "ru": "действо, церемония, процессия",
+      "examples": [],
+      "fsrs": [
+        {
+          "card": {
+            "due": "2024-12-19T09:48:00.957Z",
+            "stability": 1.04,
+            "difficulty": 2.08,
+            "elapsed_days": 5,
+            "scheduled_days": 5,
+            "reps": 3,
+            "lapses": 2,
+            "state": "Learning",
+            "last_review": "2024-12-13T10:48:00.958Z"
+          },
+          "last_review": "2024-12-13T10:48:00+00:00"
+        },
+        {
+          "card": {
+            "due": "2026-03-27T01:38:12.878662Z",
+            "stability": 0.0,
+            "difficulty": 0.0,
+            "elapsed_days": 0,
+            "scheduled_days": 0,
+            "reps": 0,
+            "lapses": 0,
+            "state": "New",
+            "last_review": "2026-03-27T01:38:12.878662Z"
+          },
+          "last_review": null
+        }
+      ],
+      "created_at": "2024-12-13T10:48:00+00:00"
+    },
+    {
+      "id": 15,
+      "en": "rustle",
+      "ru": "шелест/ шелестеть",
+      "examples": [],
+      "fsrs": [
+        {
+          "card": {
+            "due": "2024-12-13T21:00:00Z",
+            "stability": 1.11,
+            "difficulty": 2.22,
+            "elapsed_days": 0,
+            "scheduled_days": 0,
+            "reps": 1,
+            "lapses": 0,
+            "state": "New",
+            "last_review": "2024-12-13T10:47:50.823Z"
+          },
+          "last_review": "2024-12-13T10:47:50+00:00"
+        },
+        {
+          "card": {
+            "due": "2026-03-27T01:38:12.878684Z",
+            "stability": 0.0,
+            "difficulty": 0.0,
+            "elapsed_days": 0,
+            "scheduled_days": 0,
+            "reps": 0,
+            "lapses": 0,
+            "state": "New",
+            "last_review": "2026-03-27T01:38:12.878684Z"
+          },
+          "last_review": null
+        }
+      ],
+      "created_at": "2024-12-13T10:47:50+00:00"
+    },
+    {
+      "id": 51,
+      "en": "thicket",
+      "ru": "Чаща, заросли,  кустарник",
+      "examples": [],
+      "fsrs": [
+        {
+          "card": {
+            "due": "2024-12-20T05:28:31.531Z",
+            "stability": 1.11,
+            "difficulty": 2.22,
+            "elapsed_days": 8,
+            "scheduled_days": 8,
+            "reps": 3,
+            "lapses": 2,
+            "state": "Learning",
+            "last_review": "2024-12-11T08:28:31.532Z"
+          },
+          "last_review": "2024-12-11T08:28:31+00:00"
+        },
+        {
+          "card": {
+            "due": "2026-03-27T01:38:12.878730Z",
+            "stability": 0.0,
+            "difficulty": 0.0,
+            "elapsed_days": 0,
+            "scheduled_days": 0,
+            "reps": 0,
+            "lapses": 0,
+            "state": "New",
+            "last_review": "2026-03-27T01:38:12.878731Z"
+          },
+          "last_review": null
+        }
+      ],
+      "created_at": "2024-12-11T08:28:31+00:00"
+    },
+    {
+      "id": 58,
+      "en": "Abandoned",
+      "ru": "покинутый/брошенный",
+      "examples": [],
+      "fsrs": [
+        {
+          "card": {
+            "due": "2024-12-16T20:56:44.426Z",
+            "stability": 1.11,
+            "difficulty": 2.22,
+            "elapsed_days": 8,
+            "scheduled_days": 8,
+            "reps": 3,
+            "lapses": 2,
+            "state": "Learning",
+            "last_review": "2024-12-07T23:56:44.426Z"
+          },
+          "last_review": "2024-12-07T23:56:44+00:00"
+        },
+        {
+          "card": {
+            "due": "2026-03-27T01:38:12.878745Z",
+            "stability": 0.0,
+            "difficulty": 0.0,
+            "elapsed_days": 0,
+            "scheduled_days": 0,
+            "reps": 0,
+            "lapses": 0,
+            "state": "New",
+            "last_review": "2026-03-27T01:38:12.878745Z"
+          },
+          "last_review": null
+        }
+      ],
+      "created_at": "2024-12-07T23:56:44+00:00"
+    },
+    {
+      "id": 1,
+      "en": "splendid",
+      "ru": "великолепный",
+      "examples": [],
+      "fsrs": [
+        {
+          "card": {
+            "due": "2024-12-13T21:00:00Z",
+            "stability": 1.18,
+            "difficulty": 2.36,
+            "elapsed_days": 0,
+            "scheduled_days": 0,
+            "reps": 1,
+            "lapses": 0,
+            "state": "New",
+            "last_review": "2024-12-13T10:45:33.090Z"
+          },
+          "last_review": "2024-12-13T10:45:33+00:00"
+        },
+        {
+          "card": {
+            "due": "2026-03-27T01:38:12.878752Z",
+            "stability": 0.0,
+            "difficulty": 0.0,
+            "elapsed_days": 0,
+            "scheduled_days": 0,
+            "reps": 0,
+            "lapses": 0,
+            "state": "New",
+            "last_review": "2026-03-27T01:38:12.878752Z"
+          },
+          "last_review": null
+        }
+      ],
+      "created_at": "2024-12-13T10:45:33+00:00"
+    },
+    {
+      "id": 44,
+      "en": "nod",
+      "ru": "Кивок",
+      "examples": [],
+      "fsrs": [
+        {
+          "card": {
+            "due": "2024-12-24T00:07:39.497Z",
+            "stability": 0.97,
+            "difficulty": 1.94,
+            "elapsed_days": 15,
+            "scheduled_days": 15,
+            "reps": 4,
+            "lapses": 3,
+            "state": "Review",
+            "last_review": "2024-12-08T23:07:39.498Z"
+          },
+          "last_review": "2024-12-08T23:07:39+00:00"
+        },
+        {
+          "card": {
+            "due": "2026-03-27T01:38:12.878759Z",
+            "stability": 0.0,
+            "difficulty": 0.0,
+            "elapsed_days": 0,
+            "scheduled_days": 0,
+            "reps": 0,
+            "lapses": 0,
+            "state": "New",
+            "last_review": "2026-03-27T01:38:12.878759Z"
+          },
+          "last_review": null
+        }
+      ],
+      "created_at": "2024-12-08T23:07:39+00:00"
+    },
+    {
+      "id": 57,
+      "en": "Dare",
+      "ru": "вызов",
+      "examples": [],
+      "fsrs": [
+        {
+          "card": {
+            "due": "2024-12-16T04:11:26.440Z",
+            "stability": 1.04,
+            "difficulty": 2.08,
+            "elapsed_days": 17,
+            "scheduled_days": 17,
+            "reps": 4,
+            "lapses": 3,
+            "state": "Review",
+            "last_review": "2024-11-28T21:11:26.440Z"
+          },
+          "last_review": "2024-11-28T21:11:26+00:00"
+        },
+        {
+          "card": {
+            "due": "2026-03-27T01:38:12.878766Z",
+            "stability": 0.0,
+            "difficulty": 0.0,
+            "elapsed_days": 0,
+            "scheduled_days": 0,
+            "reps": 0,
+            "lapses": 0,
+            "state": "New",
+            "last_review": "2026-03-27T01:38:12.878766Z"
+          },
+          "last_review": null
+        }
+      ],
+      "created_at": "2024-11-28T21:11:26+00:00"
+    },
+    {
+      "id": 22,
+      "en": "vocation",
+      "ru": "призвание",
+      "examples": [],
+      "fsrs": [
+        {
+          "card": {
+            "due": "2025-01-03T04:08:13.812Z",
+            "stability": 1.21,
+            "difficulty": 2.42,
+            "elapsed_days": 23,
+            "scheduled_days": 23,
+            "reps": 4,
+            "lapses": 3,
+            "state": "Review",
+            "last_review": "2024-12-10T18:08:13.812Z"
+          },
+          "last_review": "2024-12-10T18:08:13+00:00"
+        },
+        {
+          "card": {
+            "due": "2026-03-27T01:38:12.878776Z",
+            "stability": 0.0,
+            "difficulty": 0.0,
+            "elapsed_days": 0,
+            "scheduled_days": 0,
+            "reps": 0,
+            "lapses": 0,
+            "state": "New",
+            "last_review": "2026-03-27T01:38:12.878776Z"
+          },
+          "last_review": null
+        }
+      ],
+      "created_at": "2024-12-10T18:08:13+00:00"
+    },
+    {
+      "id": 63,
+      "en": "Slipped",
+      "ru": "скользнуть",
+      "examples": [],
+      "fsrs": [
+        {
+          "card": {
+            "due": "2024-12-18T01:41:56.665Z",
+            "stability": 1.28,
+            "difficulty": 2.56,
+            "elapsed_days": 10,
+            "scheduled_days": 10,
+            "reps": 3,
+            "lapses": 2,
+            "state": "Learning",
+            "last_review": "2024-12-07T20:41:56.665Z"
+          },
+          "last_review": "2024-12-07T20:41:56+00:00"
+        },
+        {
+          "card": {
+            "due": "2026-03-27T01:38:12.878783Z",
+            "stability": 0.0,
+            "difficulty": 0.0,
+            "elapsed_days": 0,
+            "scheduled_days": 0,
+            "reps": 0,
+            "lapses": 0,
+            "state": "New",
+            "last_review": "2026-03-27T01:38:12.878783Z"
+          },
+          "last_review": null
+        }
+      ],
+      "created_at": "2024-12-07T20:41:56+00:00"
+    },
+    {
+      "id": 30,
+      "en": "admit",
+      "ru": "признавать",
+      "examples": [],
+      "fsrs": [
+        {
+          "card": {
+            "due": "2025-01-01T18:40:30.446Z",
+            "stability": 1.21,
+            "difficulty": 2.42,
+            "elapsed_days": 23,
+            "scheduled_days": 23,
+            "reps": 4,
+            "lapses": 3,
+            "state": "Review",
+            "last_review": "2024-12-09T08:40:30.446Z"
+          },
+          "last_review": "2024-12-09T08:40:30+00:00"
+        },
+        {
+          "card": {
+            "due": "2026-03-27T01:38:12.878789Z",
+            "stability": 0.0,
+            "difficulty": 0.0,
+            "elapsed_days": 0,
+            "scheduled_days": 0,
+            "reps": 0,
+            "lapses": 0,
+            "state": "New",
+            "last_review": "2026-03-27T01:38:12.878789Z"
+          },
+          "last_review": null
+        }
+      ],
+      "created_at": "2024-12-09T08:40:30+00:00"
+    },
+    {
+      "id": 20,
+      "en": "graceful",
+      "ru": "грациозный/изящный",
+      "examples": [],
+      "fsrs": [
+        {
+          "card": {
+            "due": "2024-12-20T16:07:50.954Z",
+            "stability": 1.04,
+            "difficulty": 2.08,
+            "elapsed_days": 11,
+            "scheduled_days": 11,
+            "reps": 4,
+            "lapses": 3,
+            "state": "Review",
+            "last_review": "2024-12-08T23:07:50.954Z"
+          },
+          "last_review": "2024-12-08T23:07:50+00:00"
+        },
+        {
+          "card": {
+            "due": "2026-03-27T01:38:12.878798Z",
+            "stability": 0.0,
+            "difficulty": 0.0,
+            "elapsed_days": 0,
+            "scheduled_days": 0,
+            "reps": 0,
+            "lapses": 0,
+            "state": "New",
+            "last_review": "2026-03-27T01:38:12.878798Z"
+          },
+          "last_review": null
+        }
+      ],
+      "created_at": "2024-12-08T23:07:50+00:00"
+    },
+    {
+      "id": 17,
+      "en": "hell bent",
+      "ru": "с дъявольским упорством",
+      "examples": [],
+      "fsrs": [
+        {
+          "card": {
+            "due": "2024-12-19T20:47:02.561Z",
+            "stability": 1.04,
+            "difficulty": 2.08,
+            "elapsed_days": 6,
+            "scheduled_days": 6,
+            "reps": 3,
+            "lapses": 2,
+            "state": "Learning",
+            "last_review": "2024-12-13T10:47:02.562Z"
+          },
+          "last_review": "2024-12-13T10:47:02+00:00"
+        },
+        {
+          "card": {
+            "due": "2026-03-27T01:38:12.878804Z",
+            "stability": 0.0,
+            "difficulty": 0.0,
+            "elapsed_days": 0,
+            "scheduled_days": 0,
+            "reps": 0,
+            "lapses": 0,
+            "state": "New",
+            "last_review": "2026-03-27T01:38:12.878805Z"
+          },
+          "last_review": null
+        }
+      ],
+      "created_at": "2024-12-13T10:47:02+00:00"
+    },
+    {
+      "id": 2,
+      "en": "compulsive",
+      "ru": "непреодолимый",
+      "examples": [],
+      "fsrs": [
+        {
+          "card": {
+            "due": "2024-12-13T21:00:00Z",
+            "stability": 1.18,
+            "difficulty": 2.36,
+            "elapsed_days": 0,
+            "scheduled_days": 0,
+            "reps": 1,
+            "lapses": 0,
+            "state": "New",
+            "last_review": "2024-12-13T10:46:40.418Z"
+          },
+          "last_review": "2024-12-13T10:46:40+00:00"
+        },
+        {
+          "card": {
+            "due": "2026-03-27T01:38:12.878811Z",
+            "stability": 0.0,
+            "difficulty": 0.0,
+            "elapsed_days": 0,
+            "scheduled_days": 0,
+            "reps": 0,
+            "lapses": 0,
+            "state": "New",
+            "last_review": "2026-03-27T01:38:12.878811Z"
+          },
+          "last_review": null
+        }
+      ],
+      "created_at": "2024-12-13T10:46:40+00:00"
+    },
+    {
+      "id": 12,
+      "en": "unease",
+      "ru": "неловкость",
+      "examples": [],
+      "fsrs": [
+        {
+          "card": {
+            "due": "2024-12-13T21:00:00Z",
+            "stability": 1.25,
+            "difficulty": 2.5,
+            "elapsed_days": 0,
+            "scheduled_days": 0,
+            "reps": 1,
+            "lapses": 0,
+            "state": "New",
+            "last_review": "2024-12-13T10:46:16.917Z"
+          },
+          "last_review": "2024-12-13T10:46:16+00:00"
+        },
+        {
+          "card": {
+            "due": "2026-03-27T01:38:12.878817Z",
+            "stability": 0.0,
+            "difficulty": 0.0,
+            "elapsed_days": 0,
+            "scheduled_days": 0,
+            "reps": 0,
+            "lapses": 0,
+            "state": "New",
+            "last_review": "2026-03-27T01:38:12.878817Z"
+          },
+          "last_review": null
+        }
+      ],
+      "created_at": "2024-12-13T10:46:16+00:00"
+    },
+    {
+      "id": 25,
+      "en": "fortnight",
+      "ru": "две недели",
+      "examples": [],
+      "fsrs": [
+        {
+          "card": {
+            "due": "2024-12-24T00:07:23.812Z",
+            "stability": 0.97,
+            "difficulty": 1.94,
+            "elapsed_days": 15,
+            "scheduled_days": 15,
+            "reps": 4,
+            "lapses": 3,
+            "state": "Review",
+            "last_review": "2024-12-08T23:07:23.812Z"
+          },
+          "last_review": "2024-12-08T23:07:23+00:00"
+        },
+        {
+          "card": {
+            "due": "2026-03-27T01:38:12.878824Z",
+            "stability": 0.0,
+            "difficulty": 0.0,
+            "elapsed_days": 0,
+            "scheduled_days": 0,
+            "reps": 0,
+            "lapses": 0,
+            "state": "New",
+            "last_review": "2026-03-27T01:38:12.878824Z"
+          },
+          "last_review": null
+        }
+      ],
+      "created_at": "2024-12-08T23:07:23+00:00"
+    },
+    {
+      "id": 50,
+      "en": "acquiescence",
+      "ru": "Уступка, согласие",
+      "examples": [],
+      "fsrs": [
+        {
+          "card": {
+            "due": "2024-12-18T05:39:52.689Z",
+            "stability": 1.11,
+            "difficulty": 2.22,
+            "elapsed_days": 8,
+            "scheduled_days": 8,
+            "reps": 3,
+            "lapses": 2,
+            "state": "Learning",
+            "last_review": "2024-12-09T08:39:52.690Z"
+          },
+          "last_review": "2024-12-09T08:39:52+00:00"
+        },
+        {
+          "card": {
+            "due": "2026-03-27T01:38:12.878831Z",
+            "stability": 0.0,
+            "difficulty": 0.0,
+            "elapsed_days": 0,
+            "scheduled_days": 0,
+            "reps": 0,
+            "lapses": 0,
+            "state": "New",
+            "last_review": "2026-03-27T01:38:12.878831Z"
+          },
+          "last_review": null
+        }
+      ],
+      "created_at": "2024-12-09T08:39:52+00:00"
+    },
+    {
+      "id": 56,
+      "en": "Tug",
+      "ru": "рывок, дергать",
+      "examples": [],
+      "fsrs": [
+        {
+          "card": {
+            "due": "2024-12-16T03:42:04.901Z",
+            "stability": 1.04,
+            "difficulty": 2.08,
+            "elapsed_days": 8,
+            "scheduled_days": 8,
+            "reps": 3,
+            "lapses": 2,
+            "state": "Learning",
+            "last_review": "2024-12-07T20:42:04.902Z"
+          },
+          "last_review": "2024-12-07T20:42:04+00:00"
+        },
+        {
+          "card": {
+            "due": "2026-03-27T01:38:12.878838Z",
+            "stability": 0.0,
+            "difficulty": 0.0,
+            "elapsed_days": 0,
+            "scheduled_days": 0,
+            "reps": 0,
+            "lapses": 0,
+            "state": "New",
+            "last_review": "2026-03-27T01:38:12.878838Z"
+          },
+          "last_review": null
+        }
+      ],
+      "created_at": "2024-12-07T20:42:04+00:00"
+    },
+    {
+      "id": 62,
+      "en": "Sap",
+      "ru": "соки дерева",
+      "examples": [],
+      "fsrs": [
+        {
+          "card": {
+            "due": "2024-12-16T03:42:20.125Z",
+            "stability": 1.04,
+            "difficulty": 2.08,
+            "elapsed_days": 8,
+            "scheduled_days": 8,
+            "reps": 3,
+            "lapses": 2,
+            "state": "Learning",
+            "last_review": "2024-12-07T20:42:20.125Z"
+          },
+          "last_review": "2024-12-07T20:42:20+00:00"
+        },
+        {
+          "card": {
+            "due": "2026-03-27T01:38:12.878844Z",
+            "stability": 0.0,
+            "difficulty": 0.0,
+            "elapsed_days": 0,
+            "scheduled_days": 0,
+            "reps": 0,
+            "lapses": 0,
+            "state": "New",
+            "last_review": "2026-03-27T01:38:12.878844Z"
+          },
+          "last_review": null
+        }
+      ],
+      "created_at": "2024-12-07T20:42:20+00:00"
+    },
+    {
+      "id": 65,
+      "en": "Sheath",
+      "ru": "чехол/ножны",
+      "examples": [],
+      "fsrs": [
+        {
+          "card": {
+            "due": "2024-12-16T12:45:42.717Z",
+            "stability": 1.04,
+            "difficulty": 2.08,
+            "elapsed_days": 3,
+            "scheduled_days": 3,
+            "reps": 2,
+            "lapses": 1,
+            "state": "Learning",
+            "last_review": "2024-12-13T10:45:42.717Z"
+          },
+          "last_review": "2024-12-13T10:45:42+00:00"
+        },
+        {
+          "card": {
+            "due": "2026-03-27T01:38:12.878851Z",
+            "stability": 0.0,
+            "difficulty": 0.0,
+            "elapsed_days": 0,
+            "scheduled_days": 0,
+            "reps": 0,
+            "lapses": 0,
+            "state": "New",
+            "last_review": "2026-03-27T01:38:12.878851Z"
+          },
+          "last_review": null
+        }
+      ],
+      "created_at": "2024-12-13T10:45:42+00:00"
+    },
+    {
+      "id": 34,
+      "en": "shivered",
+      "ru": "дрожь",
+      "examples": [],
+      "fsrs": [
+        {
+          "card": {
+            "due": "2024-12-13T21:00:00Z",
+            "stability": 1.18,
+            "difficulty": 2.36,
+            "elapsed_days": 0,
+            "scheduled_days": 0,
+            "reps": 1,
+            "lapses": 0,
+            "state": "New",
+            "last_review": "2024-12-13T10:45:51.938Z"
+          },
+          "last_review": "2024-12-13T10:45:51+00:00"
+        },
+        {
+          "card": {
+            "due": "2026-03-27T01:38:12.878857Z",
+            "stability": 0.0,
+            "difficulty": 0.0,
+            "elapsed_days": 0,
+            "scheduled_days": 0,
+            "reps": 0,
+            "lapses": 0,
+            "state": "New",
+            "last_review": "2026-03-27T01:38:12.878857Z"
+          },
+          "last_review": null
+        }
+      ],
+      "created_at": "2024-12-13T10:45:51+00:00"
+    },
+    {
+      "id": 39,
+      "en": "hunched",
+      "ru": "ссутулился",
+      "examples": [],
+      "fsrs": [
+        {
+          "card": {
+            "due": "2024-12-14T18:07:17.792Z",
+            "stability": 1.04,
+            "difficulty": 2.08,
+            "elapsed_days": 4,
+            "scheduled_days": 4,
+            "reps": 2,
+            "lapses": 1,
+            "state": "Learning",
+            "last_review": "2024-12-10T18:07:17.798Z"
+          },
+          "last_review": "2024-12-10T18:07:17+00:00"
+        },
+        {
+          "card": {
+            "due": "2026-03-27T01:38:12.878864Z",
+            "stability": 0.0,
+            "difficulty": 0.0,
+            "elapsed_days": 0,
+            "scheduled_days": 0,
+            "reps": 0,
+            "lapses": 0,
+            "state": "New",
+            "last_review": "2026-03-27T01:38:12.878864Z"
+          },
+          "last_review": null
+        }
+      ],
+      "created_at": "2024-12-10T18:07:17+00:00"
+    },
+    {
+      "id": 55,
+      "en": "Slither",
+      "ru": "скользить",
+      "examples": [],
+      "fsrs": [
+        {
+          "card": {
+            "due": "2024-12-13T21:00:00Z",
+            "stability": 1.25,
+            "difficulty": 2.5,
+            "elapsed_days": 0,
+            "scheduled_days": 0,
+            "reps": 1,
+            "lapses": 0,
+            "state": "New",
+            "last_review": "2024-12-13T10:45:55.696Z"
+          },
+          "last_review": "2024-12-13T10:45:55+00:00"
+        },
+        {
+          "card": {
+            "due": "2026-03-27T01:38:12.878872Z",
+            "stability": 0.0,
+            "difficulty": 0.0,
+            "elapsed_days": 0,
+            "scheduled_days": 0,
+            "reps": 0,
+            "lapses": 0,
+            "state": "New",
+            "last_review": "2026-03-27T01:38:12.878872Z"
+          },
+          "last_review": null
+        }
+      ],
+      "created_at": "2024-12-13T10:45:55+00:00"
+    },
+    {
+      "id": 41,
+      "en": "casually",
+      "ru": "мимоходом, ненароком",
+      "examples": [],
+      "fsrs": [
+        {
+          "card": {
+            "due": "2024-12-13T21:00:00Z",
+            "stability": 1.04,
+            "difficulty": 2.08,
+            "elapsed_days": 0,
+            "scheduled_days": 0,
+            "reps": 1,
+            "lapses": 0,
+            "state": "New",
+            "last_review": "2024-12-13T10:47:40.813Z"
+          },
+          "last_review": "2024-12-13T10:47:40+00:00"
+        },
+        {
+          "card": {
+            "due": "2026-03-27T01:38:12.878878Z",
+            "stability": 0.0,
+            "difficulty": 0.0,
+            "elapsed_days": 0,
+            "scheduled_days": 0,
+            "reps": 0,
+            "lapses": 0,
+            "state": "New",
+            "last_review": "2026-03-27T01:38:12.878878Z"
+          },
+          "last_review": null
+        }
+      ],
+      "created_at": "2024-12-13T10:47:40+00:00"
+    },
+    {
+      "id": 54,
+      "en": "Crust",
+      "ru": "корка",
+      "examples": [],
+      "fsrs": [
+        {
+          "card": {
+            "due": "2024-12-16T03:42:07.941Z",
+            "stability": 1.04,
+            "difficulty": 2.08,
+            "elapsed_days": 8,
+            "scheduled_days": 8,
+            "reps": 3,
+            "lapses": 2,
+            "state": "Learning",
+            "last_review": "2024-12-07T20:42:07.941Z"
+          },
+          "last_review": "2024-12-07T20:42:07+00:00"
+        },
+        {
+          "card": {
+            "due": "2026-03-27T01:38:12.878887Z",
+            "stability": 0.0,
+            "difficulty": 0.0,
+            "elapsed_days": 0,
+            "scheduled_days": 0,
+            "reps": 0,
+            "lapses": 0,
+            "state": "New",
+            "last_review": "2026-03-27T01:38:12.878887Z"
+          },
+          "last_review": null
+        }
+      ],
+      "created_at": "2024-12-07T20:42:07+00:00"
+    },
+    {
+      "id": 43,
+      "en": "weeping",
+      "ru": "Покрытый влагой, мокрый",
+      "examples": [],
+      "fsrs": [
+        {
+          "card": {
+            "due": "2024-12-16T03:41:39.426Z",
+            "stability": 1.04,
+            "difficulty": 2.08,
+            "elapsed_days": 8,
+            "scheduled_days": 8,
+            "reps": 3,
+            "lapses": 2,
+            "state": "Learning",
+            "last_review": "2024-12-07T20:41:39.427Z"
+          },
+          "last_review": "2024-12-07T20:41:39+00:00"
+        },
+        {
+          "card": {
+            "due": "2026-03-27T01:38:12.878894Z",
+            "stability": 0.0,
+            "difficulty": 0.0,
+            "elapsed_days": 0,
+            "scheduled_days": 0,
+            "reps": 0,
+            "lapses": 0,
+            "state": "New",
+            "last_review": "2026-03-27T01:38:12.878894Z"
+          },
+          "last_review": null
+        }
+      ],
+      "created_at": "2024-12-07T20:41:39+00:00"
+    },
+    {
+      "id": 53,
+      "en": "Sentinel",
+      "ru": "часовой",
+      "examples": [],
+      "fsrs": [
+        {
+          "card": {
+            "due": "2024-12-17T15:39:58.812Z",
+            "stability": 1.04,
+            "difficulty": 2.08,
+            "elapsed_days": 8,
+            "scheduled_days": 8,
+            "reps": 3,
+            "lapses": 2,
+            "state": "Learning",
+            "last_review": "2024-12-09T08:39:58.813Z"
+          },
+          "last_review": "2024-12-09T08:39:58+00:00"
+        },
+        {
+          "card": {
+            "due": "2026-03-27T01:38:12.878900Z",
+            "stability": 0.0,
+            "difficulty": 0.0,
+            "elapsed_days": 0,
+            "scheduled_days": 0,
+            "reps": 0,
+            "lapses": 0,
+            "state": "New",
+            "last_review": "2026-03-27T01:38:12.878900Z"
+          },
+          "last_review": null
+        }
+      ],
+      "created_at": "2024-12-09T08:39:58+00:00"
+    },
+    {
+      "id": 27,
+      "en": "poacher",
+      "ru": "браконьер",
+      "examples": [],
+      "fsrs": [
+        {
+          "card": {
+            "due": "2024-12-28T08:40:17.323Z",
+            "stability": 1.09,
+            "difficulty": 2.18,
+            "elapsed_days": 19,
+            "scheduled_days": 19,
+            "reps": 4,
+            "lapses": 3,
+            "state": "Review",
+            "last_review": "2024-12-09T08:40:17.323Z"
+          },
+          "last_review": "2024-12-09T08:40:17+00:00"
+        },
+        {
+          "card": {
+            "due": "2026-03-27T01:38:12.878913Z",
+            "stability": 0.0,
+            "difficulty": 0.0,
+            "elapsed_days": 0,
+            "scheduled_days": 0,
+            "reps": 0,
+            "lapses": 0,
+            "state": "New",
+            "last_review": "2026-03-27T01:38:12.878913Z"
+          },
+          "last_review": null
+        }
+      ],
+      "created_at": "2024-12-09T08:40:17+00:00"
+    },
+    {
+      "id": 52,
+      "en": "Vantage",
+      "ru": "преимущество",
+      "examples": [],
+      "fsrs": [
+        {
+          "card": {
+            "due": "2024-12-20T16:07:54.576Z",
+            "stability": 1.04,
+            "difficulty": 2.08,
+            "elapsed_days": 11,
+            "scheduled_days": 11,
+            "reps": 4,
+            "lapses": 3,
+            "state": "Review",
+            "last_review": "2024-12-08T23:07:54.577Z"
+          },
+          "last_review": "2024-12-08T23:07:54+00:00"
+        },
+        {
+          "card": {
+            "due": "2026-03-27T01:38:12.878932Z",
+            "stability": 0.0,
+            "difficulty": 0.0,
+            "elapsed_days": 0,
+            "scheduled_days": 0,
+            "reps": 0,
+            "lapses": 0,
+            "state": "New",
+            "last_review": "2026-03-27T01:38:12.878932Z"
+          },
+          "last_review": null
+        }
+      ],
+      "created_at": "2024-12-08T23:07:54+00:00"
+    },
+    {
+      "id": 9,
+      "en": "make light of",
+      "ru": "относиться не серьезно",
+      "examples": [],
+      "fsrs": [
+        {
+          "card": {
+            "due": "2024-12-25T03:42:24.856Z",
+            "stability": 1.04,
+            "difficulty": 2.08,
+            "elapsed_days": 17,
+            "scheduled_days": 17,
+            "reps": 4,
+            "lapses": 3,
+            "state": "Review",
+            "last_review": "2024-12-07T20:42:24.856Z"
+          },
+          "last_review": "2024-12-07T20:42:24+00:00"
+        },
+        {
+          "card": {
+            "due": "2026-03-27T01:38:12.878951Z",
+            "stability": 0.0,
+            "difficulty": 0.0,
+            "elapsed_days": 0,
+            "scheduled_days": 0,
+            "reps": 0,
+            "lapses": 0,
+            "state": "New",
+            "last_review": "2026-03-27T01:38:12.878951Z"
+          },
+          "last_review": null
+        }
+      ],
+      "created_at": "2024-12-07T20:42:24+00:00"
+    },
+    {
+      "id": 46,
+      "en": "Cocksure",
+      "ru": "Самоуверенный",
+      "examples": [],
+      "fsrs": [
+        {
+          "card": {
+            "due": "2024-12-24T00:07:46.898Z",
+            "stability": 0.97,
+            "difficulty": 1.94,
+            "elapsed_days": 15,
+            "scheduled_days": 15,
+            "reps": 4,
+            "lapses": 3,
+            "state": "Review",
+            "last_review": "2024-12-08T23:07:46.898Z"
+          },
+          "last_review": "2024-12-08T23:07:46+00:00"
+        },
+        {
+          "card": {
+            "due": "2026-03-27T01:38:12.878970Z",
+            "stability": 0.0,
+            "difficulty": 0.0,
+            "elapsed_days": 0,
+            "scheduled_days": 0,
+            "reps": 0,
+            "lapses": 0,
+            "state": "New",
+            "last_review": "2026-03-27T01:38:12.878970Z"
+          },
+          "last_review": null
+        }
+      ],
+      "created_at": "2024-12-08T23:07:46+00:00"
+    },
+    {
+      "id": 11,
+      "en": "perilous",
+      "ru": "опасно, рисковано",
+      "examples": [],
+      "fsrs": [
+        {
+          "card": {
+            "due": "2024-12-13T21:00:00Z",
+            "stability": 1.25,
+            "difficulty": 2.5,
+            "elapsed_days": 0,
+            "scheduled_days": 0,
+            "reps": 1,
+            "lapses": 0,
+            "state": "New",
+            "last_review": "2024-12-13T10:46:03.088Z"
+          },
+          "last_review": "2024-12-13T10:46:03+00:00"
+        },
+        {
+          "card": {
+            "due": "2026-03-27T01:38:12.878989Z",
+            "stability": 0.0,
+            "difficulty": 0.0,
+            "elapsed_days": 0,
+            "scheduled_days": 0,
+            "reps": 0,
+            "lapses": 0,
+            "state": "New",
+            "last_review": "2026-03-27T01:38:12.878989Z"
+          },
+          "last_review": null
+        }
+      ],
+      "created_at": "2024-12-13T10:46:03+00:00"
+    },
+    {
+      "id": 47,
+      "en": "Insolent",
+      "ru": "Дерзкий, наглый, нахальный",
+      "examples": [],
+      "fsrs": [
+        {
+          "card": {
+            "due": "2024-12-13T21:00:00Z",
+            "stability": 1.18,
+            "difficulty": 2.36,
+            "elapsed_days": 0,
+            "scheduled_days": 0,
+            "reps": 1,
+            "lapses": 0,
+            "state": "New",
+            "last_review": "2024-12-13T10:46:28.413Z"
+          },
+          "last_review": "2024-12-13T10:46:28+00:00"
+        },
+        {
+          "card": {
+            "due": "2026-03-27T01:38:12.879008Z",
+            "stability": 0.0,
+            "difficulty": 0.0,
+            "elapsed_days": 0,
+            "scheduled_days": 0,
+            "reps": 0,
+            "lapses": 0,
+            "state": "New",
+            "last_review": "2026-03-27T01:38:12.879008Z"
+          },
+          "last_review": null
+        }
+      ],
+      "created_at": "2024-12-13T10:46:28+00:00"
+    },
+    {
+      "id": 7,
+      "en": "quarrel",
+      "ru": "ссоры",
+      "examples": [],
+      "fsrs": [
+        {
+          "card": {
+            "due": "2024-12-17T20:06:46.389Z",
+            "stability": 1.11,
+            "difficulty": 2.22,
+            "elapsed_days": 8,
+            "scheduled_days": 8,
+            "reps": 3,
+            "lapses": 2,
+            "state": "Learning",
+            "last_review": "2024-12-08T23:06:46.389Z"
+          },
+          "last_review": "2024-12-08T23:06:46+00:00"
+        },
+        {
+          "card": {
+            "due": "2026-03-27T01:38:12.879027Z",
+            "stability": 0.0,
+            "difficulty": 0.0,
+            "elapsed_days": 0,
+            "scheduled_days": 0,
+            "reps": 0,
+            "lapses": 0,
+            "state": "New",
+            "last_review": "2026-03-27T01:38:12.879028Z"
+          },
+          "last_review": null
+        }
+      ],
+      "created_at": "2024-12-08T23:06:46+00:00"
+    },
+    {
+      "id": 60,
+      "en": "Sweep",
+      "ru": "мести, подметать",
+      "examples": [],
+      "fsrs": [
+        {
+          "card": {
+            "due": "2024-12-16T03:42:15.832Z",
+            "stability": 1.04,
+            "difficulty": 2.08,
+            "elapsed_days": 8,
+            "scheduled_days": 8,
+            "reps": 3,
+            "lapses": 2,
+            "state": "Learning",
+            "last_review": "2024-12-07T20:42:15.833Z"
+          },
+          "last_review": "2024-12-07T20:42:15+00:00"
+        },
+        {
+          "card": {
+            "due": "2026-03-27T01:38:12.879047Z",
+            "stability": 0.0,
+            "difficulty": 0.0,
+            "elapsed_days": 0,
+            "scheduled_days": 0,
+            "reps": 0,
+            "lapses": 0,
+            "state": "New",
+            "last_review": "2026-03-27T01:38:12.879047Z"
+          },
+          "last_review": null
+        }
+      ],
+      "created_at": "2024-12-07T20:42:15+00:00"
+    },
+    {
+      "id": 3,
+      "en": "feast",
+      "ru": "пир, праздник",
+      "examples": [],
+      "fsrs": [
+        {
+          "card": {
+            "due": "2024-12-15T06:43:45.619Z",
+            "stability": 1.11,
+            "difficulty": 2.22,
+            "elapsed_days": 8,
+            "scheduled_days": 8,
+            "reps": 3,
+            "lapses": 2,
+            "state": "Learning",
+            "last_review": "2024-12-06T09:43:45.620Z"
+          },
+          "last_review": "2024-12-06T09:43:45+00:00"
+        },
+        {
+          "card": {
+            "due": "2026-03-27T01:38:12.879066Z",
+            "stability": 0.0,
+            "difficulty": 0.0,
+            "elapsed_days": 0,
+            "scheduled_days": 0,
+            "reps": 0,
+            "lapses": 0,
+            "state": "New",
+            "last_review": "2026-03-27T01:38:12.879066Z"
+          },
+          "last_review": null
+        }
+      ],
+      "created_at": "2024-12-06T09:43:45+00:00"
+    },
+    {
+      "id": 31,
+      "en": "cruel",
+      "ru": "жестокий",
+      "examples": [],
+      "fsrs": [
+        {
+          "card": {
+            "due": "2024-12-16T04:11:22.780Z",
+            "stability": 1.04,
+            "difficulty": 2.08,
+            "elapsed_days": 17,
+            "scheduled_days": 17,
+            "reps": 4,
+            "lapses": 3,
+            "state": "Review",
+            "last_review": "2024-11-28T21:11:22.780Z"
+          },
+          "last_review": "2024-11-28T21:11:22+00:00"
+        },
+        {
+          "card": {
+            "due": "2026-03-27T01:38:12.879085Z",
+            "stability": 0.0,
+            "difficulty": 0.0,
+            "elapsed_days": 0,
+            "scheduled_days": 0,
+            "reps": 0,
+            "lapses": 0,
+            "state": "New",
+            "last_review": "2026-03-27T01:38:12.879086Z"
+          },
+          "last_review": null
+        }
+      ],
+      "created_at": "2024-11-28T21:11:22+00:00"
+    },
+    {
+      "id": 38,
+      "en": "stump",
+      "ru": "обрубок/культя",
+      "examples": [],
+      "fsrs": [
+        {
+          "card": {
+            "due": "2024-12-24T00:06:50.210Z",
+            "stability": 0.97,
+            "difficulty": 1.94,
+            "elapsed_days": 15,
+            "scheduled_days": 15,
+            "reps": 4,
+            "lapses": 3,
+            "state": "Review",
+            "last_review": "2024-12-08T23:06:50.211Z"
+          },
+          "last_review": "2024-12-08T23:06:50+00:00"
+        },
+        {
+          "card": {
+            "due": "2026-03-27T01:38:12.879105Z",
+            "stability": 0.0,
+            "difficulty": 0.0,
+            "elapsed_days": 0,
+            "scheduled_days": 0,
+            "reps": 0,
+            "lapses": 0,
+            "state": "New",
+            "last_review": "2026-03-27T01:38:12.879105Z"
+          },
+          "last_review": null
+        }
+      ],
+      "created_at": "2024-12-08T23:06:50+00:00"
+    },
+    {
+      "id": 24,
+      "en": "sable",
+      "ru": "соболиный",
+      "examples": [],
+      "fsrs": [
+        {
+          "card": {
+            "due": "2024-12-16T17:43:31.172Z",
+            "stability": 1.11,
+            "difficulty": 2.22,
+            "elapsed_days": 8,
+            "scheduled_days": 8,
+            "reps": 3,
+            "lapses": 2,
+            "state": "Learning",
+            "last_review": "2024-12-07T20:43:31.172Z"
+          },
+          "last_review": "2024-12-07T20:43:31+00:00"
+        },
+        {
+          "card": {
+            "due": "2026-03-27T01:38:12.879124Z",
+            "stability": 0.0,
+            "difficulty": 0.0,
+            "elapsed_days": 0,
+            "scheduled_days": 0,
+            "reps": 0,
+            "lapses": 0,
+            "state": "New",
+            "last_review": "2026-03-27T01:38:12.879125Z"
+          },
+          "last_review": null
+        }
+      ],
+      "created_at": "2024-12-07T20:43:31+00:00"
+    },
+    {
+      "id": 8,
+      "en": "wet nurse",
+      "ru": "кормилица",
+      "examples": [],
+      "fsrs": [
+        {
+          "card": {
+            "due": "2025-01-03T04:08:09.762Z",
+            "stability": 1.21,
+            "difficulty": 2.42,
+            "elapsed_days": 23,
+            "scheduled_days": 23,
+            "reps": 4,
+            "lapses": 3,
+            "state": "Review",
+            "last_review": "2024-12-10T18:08:09.763Z"
+          },
+          "last_review": "2024-12-10T18:08:09+00:00"
+        },
+        {
+          "card": {
+            "due": "2026-03-27T01:38:12.879143Z",
+            "stability": 0.0,
+            "difficulty": 0.0,
+            "elapsed_days": 0,
+            "scheduled_days": 0,
+            "reps": 0,
+            "lapses": 0,
+            "state": "New",
+            "last_review": "2026-03-27T01:38:12.879143Z"
+          },
+          "last_review": null
+        }
+      ],
+      "created_at": "2024-12-10T18:08:09+00:00"
+    },
+    {
+      "id": 45,
+      "en": "lad",
+      "ru": "Юноша",
+      "examples": [],
+      "fsrs": [
+        {
+          "card": {
+            "due": "2024-12-24T00:07:43.181Z",
+            "stability": 0.97,
+            "difficulty": 1.94,
+            "elapsed_days": 15,
+            "scheduled_days": 15,
+            "reps": 4,
+            "lapses": 3,
+            "state": "Review",
+            "last_review": "2024-12-08T23:07:43.181Z"
+          },
+          "last_review": "2024-12-08T23:07:43+00:00"
+        },
+        {
+          "card": {
+            "due": "2026-03-27T01:38:12.879162Z",
+            "stability": 0.0,
+            "difficulty": 0.0,
+            "elapsed_days": 0,
+            "scheduled_days": 0,
+            "reps": 0,
+            "lapses": 0,
+            "state": "New",
+            "last_review": "2026-03-27T01:38:12.879162Z"
+          },
+          "last_review": null
+        }
+      ],
+      "created_at": "2024-12-08T23:07:43+00:00"
+    },
+    {
+      "id": 49,
+      "en": "Scabbard",
+      "ru": "Ножны",
+      "examples": [],
+      "fsrs": [
+        {
+          "card": {
+            "due": "2024-12-17T02:42:01.166Z",
+            "stability": 1.16,
+            "difficulty": 2.32,
+            "elapsed_days": 9,
+            "scheduled_days": 9,
+            "reps": 3,
+            "lapses": 2,
+            "state": "Learning",
+            "last_review": "2024-12-07T20:42:01.166Z"
+          },
+          "last_review": "2024-12-07T20:42:01+00:00"
+        },
+        {
+          "card": {
+            "due": "2026-03-27T01:38:12.879181Z",
+            "stability": 0.0,
+            "difficulty": 0.0,
+            "elapsed_days": 0,
+            "scheduled_days": 0,
+            "reps": 0,
+            "lapses": 0,
+            "state": "New",
+            "last_review": "2026-03-27T01:38:12.879182Z"
+          },
+          "last_review": null
+        }
+      ],
+      "created_at": "2024-12-07T20:42:01+00:00"
+    },
+    {
+      "id": 18,
+      "en": "heir",
+      "ru": "наследник",
+      "examples": [],
+      "fsrs": [
+        {
+          "card": {
+            "due": "2024-12-25T03:43:26.695Z",
+            "stability": 1.04,
+            "difficulty": 2.08,
+            "elapsed_days": 17,
+            "scheduled_days": 17,
+            "reps": 4,
+            "lapses": 3,
+            "state": "Review",
+            "last_review": "2024-12-07T20:43:26.695Z"
+          },
+          "last_review": "2024-12-07T20:43:26+00:00"
+        },
+        {
+          "card": {
+            "due": "2026-03-27T01:38:12.879201Z",
+            "stability": 0.0,
+            "difficulty": 0.0,
+            "elapsed_days": 0,
+            "scheduled_days": 0,
+            "reps": 0,
+            "lapses": 0,
+            "state": "New",
+            "last_review": "2026-03-27T01:38:12.879201Z"
+          },
+          "last_review": null
+        }
+      ],
+      "created_at": "2024-12-07T20:43:26+00:00"
+    },
+    {
+      "id": 10,
+      "en": "tension",
+      "ru": "напряжение",
+      "examples": [],
+      "fsrs": [
+        {
+          "card": {
+            "due": "2024-12-25T03:42:28.361Z",
+            "stability": 1.04,
+            "difficulty": 2.08,
+            "elapsed_days": 17,
+            "scheduled_days": 17,
+            "reps": 4,
+            "lapses": 3,
+            "state": "Review",
+            "last_review": "2024-12-07T20:42:28.361Z"
+          },
+          "last_review": "2024-12-07T20:42:28+00:00"
+        },
+        {
+          "card": {
+            "due": "2026-03-27T01:38:12.879220Z",
+            "stability": 0.0,
+            "difficulty": 0.0,
+            "elapsed_days": 0,
+            "scheduled_days": 0,
+            "reps": 0,
+            "lapses": 0,
+            "state": "New",
+            "last_review": "2026-03-27T01:38:12.879220Z"
+          },
+          "last_review": null
+        }
+      ],
+      "created_at": "2024-12-07T20:42:28+00:00"
+    },
+    {
+      "id": 33,
+      "en": "despite",
+      "ru": "несмотря на",
+      "examples": [],
+      "fsrs": [
+        {
+          "card": {
+            "due": "2024-12-22T12:41:01.620Z",
+            "stability": 1.11,
+            "difficulty": 2.22,
+            "elapsed_days": 8,
+            "scheduled_days": 8,
+            "reps": 3,
+            "lapses": 2,
+            "state": "Learning",
+            "last_review": "2024-12-13T15:41:01.622Z"
+          },
+          "last_review": "2024-12-13T15:41:01+00:00"
+        },
+        {
+          "card": {
+            "due": "2026-03-27T01:38:12.879240Z",
+            "stability": 0.0,
+            "difficulty": 0.0,
+            "elapsed_days": 0,
+            "scheduled_days": 0,
+            "reps": 0,
+            "lapses": 0,
+            "state": "New",
+            "last_review": "2026-03-27T01:38:12.879240Z"
+          },
+          "last_review": null
+        }
+      ],
+      "created_at": "2024-12-13T15:41:01+00:00"
+    },
+    {
+      "id": 26,
+      "en": "lordling",
+      "ru": "молодой лорд",
+      "examples": [],
+      "fsrs": [
+        {
+          "card": {
+            "due": "2024-12-28T08:40:03.672Z",
+            "stability": 1.09,
+            "difficulty": 2.18,
+            "elapsed_days": 19,
+            "scheduled_days": 19,
+            "reps": 4,
+            "lapses": 3,
+            "state": "Review",
+            "last_review": "2024-12-09T08:40:03.673Z"
+          },
+          "last_review": "2024-12-09T08:40:03+00:00"
+        },
+        {
+          "card": {
+            "due": "2026-03-27T01:38:12.879261Z",
+            "stability": 0.0,
+            "difficulty": 0.0,
+            "elapsed_days": 0,
+            "scheduled_days": 0,
+            "reps": 0,
+            "lapses": 0,
+            "state": "New",
+            "last_review": "2026-03-27T01:38:12.879262Z"
+          },
+          "last_review": null
+        }
+      ],
+      "created_at": "2024-12-09T08:40:03+00:00"
+    },
+    {
+      "id": 16,
+      "en": "implacable",
+      "ru": "безжалостно",
+      "examples": [],
+      "fsrs": [
+        {
+          "card": {
+            "due": "2024-12-13T21:00:00Z",
+            "stability": 1.25,
+            "difficulty": 2.5,
+            "elapsed_days": 0,
+            "scheduled_days": 0,
+            "reps": 1,
+            "lapses": 0,
+            "state": "New",
+            "last_review": "2024-12-13T10:46:11.787Z"
+          },
+          "last_review": "2024-12-13T10:46:11+00:00"
+        },
+        {
+          "card": {
+            "due": "2026-03-27T01:38:12.879280Z",
+            "stability": 0.0,
+            "difficulty": 0.0,
+            "elapsed_days": 0,
+            "scheduled_days": 0,
+            "reps": 0,
+            "lapses": 0,
+            "state": "New",
+            "last_review": "2026-03-27T01:38:12.879281Z"
+          },
+          "last_review": null
+        }
+      ],
+      "created_at": "2024-12-13T10:46:11+00:00"
+    },
+    {
+      "id": 37,
+      "en": "eloquence",
+      "ru": "красноречие",
+      "examples": [],
+      "fsrs": [
+        {
+          "card": {
+            "due": "2024-12-17T10:45:23.247Z",
+            "stability": 0.97,
+            "difficulty": 1.94,
+            "elapsed_days": 4,
+            "scheduled_days": 4,
+            "reps": 2,
+            "lapses": 1,
+            "state": "Learning",
+            "last_review": "2024-12-13T10:45:23.248Z"
+          },
+          "last_review": "2024-12-13T10:45:23+00:00"
+        },
+        {
+          "card": {
+            "due": "2026-03-27T01:38:12.879303Z",
+            "stability": 0.0,
+            "difficulty": 0.0,
+            "elapsed_days": 0,
+            "scheduled_days": 0,
+            "reps": 0,
+            "lapses": 0,
+            "state": "New",
+            "last_review": "2026-03-27T01:38:12.879303Z"
+          },
+          "last_review": null
+        }
+      ],
+      "created_at": "2024-12-13T10:45:23+00:00"
+    },
+    {
+      "id": 23,
+      "en": "ring mail",
+      "ru": "кольчуга",
+      "examples": [],
+      "fsrs": [
+        {
+          "card": {
+            "due": "2024-12-27T23:07:00.851Z",
+            "stability": 1.09,
+            "difficulty": 2.18,
+            "elapsed_days": 19,
+            "scheduled_days": 19,
+            "reps": 4,
+            "lapses": 3,
+            "state": "Review",
+            "last_review": "2024-12-08T23:07:00.852Z"
+          },
+          "last_review": "2024-12-08T23:07:00+00:00"
+        },
+        {
+          "card": {
+            "due": "2026-03-27T01:38:12.879322Z",
+            "stability": 0.0,
+            "difficulty": 0.0,
+            "elapsed_days": 0,
+            "scheduled_days": 0,
+            "reps": 0,
+            "lapses": 0,
+            "state": "New",
+            "last_review": "2026-03-27T01:38:12.879323Z"
+          },
+          "last_review": null
+        }
+      ],
+      "created_at": "2024-12-08T23:07:00+00:00"
+    },
+    {
+      "id": 42,
+      "en": "certainty",
+      "ru": "уверенность",
+      "examples": [],
+      "fsrs": [
+        {
+          "card": {
+            "due": "2024-12-13T21:00:00Z",
+            "stability": 1.25,
+            "difficulty": 2.5,
+            "elapsed_days": 0,
+            "scheduled_days": 0,
+            "reps": 1,
+            "lapses": 0,
+            "state": "New",
+            "last_review": "2024-12-13T10:46:43.342Z"
+          },
+          "last_review": "2024-12-13T10:46:43+00:00"
+        },
+        {
+          "card": {
+            "due": "2026-03-27T01:38:12.879341Z",
+            "stability": 0.0,
+            "difficulty": 0.0,
+            "elapsed_days": 0,
+            "scheduled_days": 0,
+            "reps": 0,
+            "lapses": 0,
+            "state": "New",
+            "last_review": "2026-03-27T01:38:12.879341Z"
+          },
+          "last_review": null
+        }
+      ],
+      "created_at": "2024-12-13T10:46:43+00:00"
+    },
+    {
+      "id": 61,
+      "en": "Reluctantly",
+      "ru": "нежелание",
+      "examples": [],
+      "fsrs": [
+        {
+          "card": {
+            "due": "2024-12-13T21:00:00Z",
+            "stability": 1.25,
+            "difficulty": 2.5,
+            "elapsed_days": 0,
+            "scheduled_days": 0,
+            "reps": 1,
+            "lapses": 0,
+            "state": "New",
+            "last_review": "2024-12-13T10:46:19.760Z"
+          },
+          "last_review": "2024-12-13T10:46:19+00:00"
+        },
+        {
+          "card": {
+            "due": "2026-03-27T01:38:12.879360Z",
+            "stability": 0.0,
+            "difficulty": 0.0,
+            "elapsed_days": 0,
+            "scheduled_days": 0,
+            "reps": 0,
+            "lapses": 0,
+            "state": "New",
+            "last_review": "2026-03-27T01:38:12.879360Z"
+          },
+          "last_review": null
+        }
+      ],
+      "created_at": "2024-12-13T10:46:19+00:00"
+    },
+    {
+      "id": 13,
+      "en": "bowels turned to water",
+      "ru": "внутренности стали водой (дословно)",
+      "examples": [
+        "максимально испугался"
+      ],
+      "fsrs": [
+        {
+          "card": {
+            "due": "2024-12-28T08:40:26.738Z",
+            "stability": 1.09,
+            "difficulty": 2.18,
+            "elapsed_days": 19,
+            "scheduled_days": 19,
+            "reps": 4,
+            "lapses": 3,
+            "state": "Review",
+            "last_review": "2024-12-09T08:40:26.738Z"
+          },
+          "last_review": "2024-12-09T08:40:26+00:00"
+        },
+        {
+          "card": {
+            "due": "2026-03-27T01:38:12.879381Z",
+            "stability": 0.0,
+            "difficulty": 0.0,
+            "elapsed_days": 0,
+            "scheduled_days": 0,
+            "reps": 0,
+            "lapses": 0,
+            "state": "New",
+            "last_review": "2026-03-27T01:38:12.879381Z"
+          },
+          "last_review": null
+        }
+      ],
+      "created_at": "2024-12-09T08:40:26+00:00"
+    },
+    {
+      "id": 32,
+      "en": "shrugged",
+      "ru": "пожимать плечами",
+      "examples": [],
+      "fsrs": [
+        {
+          "card": {
+            "due": "2024-12-24T00:07:36.338Z",
+            "stability": 0.97,
+            "difficulty": 1.94,
+            "elapsed_days": 15,
+            "scheduled_days": 15,
+            "reps": 4,
+            "lapses": 3,
+            "state": "Review",
+            "last_review": "2024-12-08T23:07:36.339Z"
+          },
+          "last_review": "2024-12-08T23:07:36+00:00"
+        },
+        {
+          "card": {
+            "due": "2026-03-27T01:38:12.879400Z",
+            "stability": 0.0,
+            "difficulty": 0.0,
+            "elapsed_days": 0,
+            "scheduled_days": 0,
+            "reps": 0,
+            "lapses": 0,
+            "state": "New",
+            "last_review": "2026-03-27T01:38:12.879401Z"
+          },
+          "last_review": null
+        }
+      ],
+      "created_at": "2024-12-08T23:07:36+00:00"
+    },
+    {
+      "id": 14,
+      "en": "raise hackles",
+      "ru": "шерсть дыбом",
+      "examples": [],
+      "fsrs": [
+        {
+          "card": {
+            "due": "2024-12-24T00:07:32.640Z",
+            "stability": 0.97,
+            "difficulty": 1.94,
+            "elapsed_days": 15,
+            "scheduled_days": 15,
+            "reps": 4,
+            "lapses": 3,
+            "state": "Review",
+            "last_review": "2024-12-08T23:07:32.641Z"
+          },
+          "last_review": "2024-12-08T23:07:32+00:00"
+        },
+        {
+          "card": {
+            "due": "2026-03-27T01:38:12.879420Z",
+            "stability": 0.0,
+            "difficulty": 0.0,
+            "elapsed_days": 0,
+            "scheduled_days": 0,
+            "reps": 0,
+            "lapses": 0,
+            "state": "New",
+            "last_review": "2026-03-27T01:38:12.879420Z"
+          },
+          "last_review": null
+        }
+      ],
+      "created_at": "2024-12-08T23:07:32+00:00"
+    },
+    {
+      "id": 40,
+      "en": "sullen",
+      "ru": "мрачный/угрюмый",
+      "examples": [],
+      "fsrs": [
+        {
+          "card": {
+            "due": "2024-12-13T21:00:00Z",
+            "stability": 1.25,
+            "difficulty": 2.5,
+            "elapsed_days": 0,
+            "scheduled_days": 0,
+            "reps": 1,
+            "lapses": 0,
+            "state": "New",
+            "last_review": "2024-12-13T10:46:23.653Z"
+          },
+          "last_review": "2024-12-13T10:46:23+00:00"
+        },
+        {
+          "card": {
+            "due": "2026-03-27T01:38:12.879439Z",
+            "stability": 0.0,
+            "difficulty": 0.0,
+            "elapsed_days": 0,
+            "scheduled_days": 0,
+            "reps": 0,
+            "lapses": 0,
+            "state": "New",
+            "last_review": "2026-03-27T01:38:12.879439Z"
+          },
+          "last_review": null
+        }
+      ],
+      "created_at": "2024-12-13T10:46:23+00:00"
+    },
+    {
+      "id": 29,
+      "en": "ridge",
+      "ru": "гребень горный",
+      "examples": [],
+      "fsrs": [
+        {
+          "card": {
+            "due": "2024-12-22T03:47:44.876Z",
+            "stability": 1.09,
+            "difficulty": 2.18,
+            "elapsed_days": 8,
+            "scheduled_days": 8,
+            "reps": 3,
+            "lapses": 2,
+            "state": "Learning",
+            "last_review": "2024-12-13T10:47:44.877Z"
+          },
+          "last_review": "2024-12-13T10:47:44+00:00"
+        },
+        {
+          "card": {
+            "due": "2026-03-27T01:38:12.879458Z",
+            "stability": 0.0,
+            "difficulty": 0.0,
+            "elapsed_days": 0,
+            "scheduled_days": 0,
+            "reps": 0,
+            "lapses": 0,
+            "state": "New",
+            "last_review": "2026-03-27T01:38:12.879458Z"
+          },
+          "last_review": null
+        }
+      ],
+      "created_at": "2024-12-13T10:47:44+00:00"
+    }
+  ]
+}

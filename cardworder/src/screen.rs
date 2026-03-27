@@ -8,10 +8,12 @@ pub enum Snapshot {
     MainMenu(crate::screens::main_menu::MainMenuSnapshot),
     Start(crate::screens::start::StartSnapshot),
     SystemInfo(crate::screens::system_info::SystemInfoSnapshot),
-    Settings(crate::screens::settings::SettingsSnapshot),
     WifiConfig(crate::screens::wifi_config::WifiConfigSnapshot),
     WifiConnect(crate::screens::wifi_connect::WifiConnectSnapshot),
     Ntp(crate::screens::ntp::NtpSnapshot),
+    AddWord(crate::screens::add_word::AddWordSnapshot),
+    Statistics(crate::screens::statistics::StatisticsSnapshot),
+    Review(crate::screens::review::ReviewSnapshot),
 }
 
 impl Snapshot {
@@ -20,10 +22,12 @@ impl Snapshot {
             Snapshot::MainMenu(s) => s.draw(ui),
             Snapshot::Start(s) => s.draw(ui),
             Snapshot::SystemInfo(s) => s.draw(ui),
-            Snapshot::Settings(s) => s.draw(ui),
             Snapshot::WifiConfig(s) => s.draw(ui),
             Snapshot::WifiConnect(s) => s.draw(ui),
             Snapshot::Ntp(s) => s.draw(ui),
+            Snapshot::AddWord(s) => s.draw(ui),
+            Snapshot::Statistics(s) => s.draw(ui),
+            Snapshot::Review(s) => s.draw(ui),
         }
     }
 
@@ -41,6 +45,9 @@ impl Snapshot {
             Snapshot::WifiConnect(s) => s.pending_action.clone(),
             Snapshot::Ntp(s) => s.pending_action.clone(),
             Snapshot::SystemInfo(s) => s.pending_action.clone(),
+            Snapshot::AddWord(s) => s.pending_action.clone(),
+            Snapshot::Statistics(s) => s.pending_action.clone(),
+            Snapshot::Review(s) => s.pending_action.clone(),
             _ => None,
         }
     }

@@ -198,6 +198,26 @@ impl<'a> CardputerHal<'a> {
         Ok(list)
     }
 
+    pub fn load_pairs(&mut self) -> anyhow::Result<fsrs_core::PairsFile> {
+        let exists = self.sd.is_file_exists("PAIRS.BIN")
+            .map_err(|_| anyhow::anyhow!("Failed to check PAIRS.BIN"))?;
+        if !exists {
+            return Ok(fsrs_core::PairsFile { next_id: 1, pairs: Vec::new() });
+        }
+        let bytes = self.sd.read_file_bytes("PAIRS.BIN")
+            .map_err(|e| anyhow::anyhow!("Failed to read PAIRS.BIN: {:?}", e))?;
+        let file: fsrs_core::PairsFile = postcard::from_bytes(&bytes)
+            .map_err(|e| anyhow::anyhow!("Postcard decode PAIRS.BIN: {:?}", e))?;
+        Ok(file)
+    }
+
+    pub fn save_pairs_bytes(&mut self, bytes: &[u8]) -> anyhow::Result<()> {
+        log::info!("save_pairs: writing {} bytes to PAIRS.BIN", bytes.len());
+        self.sd.write_file_bytes("PAIRS.BIN", bytes)
+            .map_err(|e| anyhow::anyhow!("SD write PAIRS.BIN: {:?}", e))?;
+        Ok(())
+    }
+
     pub fn save_wifi_list(&mut self, list: &crate::types::WifiConfigList) -> anyhow::Result<()> {
         let content = serde_json::to_string(list)?;
         log::info!("save_wifi_list: writing {} bytes to wifilist.jsn", content.len());

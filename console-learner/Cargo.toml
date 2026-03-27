@@ -5,10 +5,15 @@ edition = "2021"
 [[bin]]
 name = "console-learner"
 
+[[bin]]
+name = "convert_words"
+path = "convert_words.rs"
+
 [dependencies]
 fsrs-core = { path = "../fsrs-core" }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
+postcard = { version = "1.1", features = ["alloc"] }
 anyhow = "1.0"
 chrono = "0.4"
 rs-fsrs = { version = "1.2.1", features = ["serde"] }
