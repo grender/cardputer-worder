@@ -35,7 +35,6 @@ impl WifiConfigScreen {
     }
 
     fn total_focusable(&self) -> usize {
-        // Each config + "Add New" + optional "Disconnect" + "Back"
         self.configs.len() + if self.wifi_connected { 3 } else { 2 }
     }
 }
@@ -102,8 +101,9 @@ impl Screen for WifiConfigScreen {
                     }
                     Some((KeyEvent::Pressed, PressedSymbol::Enter)) => {
                         let add_idx = self.configs.len();
-                        let disconnect_idx = if self.wifi_connected { Some(self.configs.len() + 1) } else { None };
-                        let back_idx = self.configs.len() + if self.wifi_connected { 2 } else { 1 };
+                        let mut next = add_idx + 1;
+                        let disconnect_idx = if self.wifi_connected { let d = next; next += 1; Some(d) } else { None };
+                        let back_idx = next;
 
                         if self.focused_idx == add_idx {
                             Command::SwitchTo(Box::new(WifiConnectScreen::new(self.configs.clone())))

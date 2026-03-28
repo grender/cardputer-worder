@@ -14,6 +14,7 @@ pub enum Snapshot {
     AddWord(crate::screens::add_word::AddWordSnapshot),
     Statistics(crate::screens::statistics::StatisticsSnapshot),
     Review(crate::screens::review::ReviewSnapshot),
+    QuickSync(crate::screens::quick_sync::QuickSyncSnapshot),
 }
 
 impl Snapshot {
@@ -28,6 +29,7 @@ impl Snapshot {
             Snapshot::AddWord(s) => s.draw(ui),
             Snapshot::Statistics(s) => s.draw(ui),
             Snapshot::Review(s) => s.draw(ui),
+            Snapshot::QuickSync(s) => s.draw(ui),
         }
     }
 
@@ -38,16 +40,17 @@ impl Snapshot {
         }
     }
 
-    pub fn action(&self) -> Option<Core0Action> {
+    pub fn action(&mut self) -> Option<Core0Action> {
         match self {
-            Snapshot::Start(s) => s.pending_action.clone(),
-            Snapshot::WifiConfig(s) => s.pending_action.clone(),
-            Snapshot::WifiConnect(s) => s.pending_action.clone(),
-            Snapshot::Ntp(s) => s.pending_action.clone(),
-            Snapshot::SystemInfo(s) => s.pending_action.clone(),
-            Snapshot::AddWord(s) => s.pending_action.clone(),
-            Snapshot::Statistics(s) => s.pending_action.clone(),
-            Snapshot::Review(s) => s.pending_action.clone(),
+            Snapshot::Start(s) => s.pending_action.take(),
+            Snapshot::WifiConfig(s) => s.pending_action.take(),
+            Snapshot::WifiConnect(s) => s.pending_action.take(),
+            Snapshot::Ntp(s) => s.pending_action.take(),
+            Snapshot::SystemInfo(s) => s.pending_action.take(),
+            Snapshot::AddWord(s) => s.pending_action.take(),
+            Snapshot::Statistics(s) => s.pending_action.take(),
+            Snapshot::Review(s) => s.pending_action.take(),
+            Snapshot::QuickSync(s) => s.pending_action.take(),
             _ => None,
         }
     }

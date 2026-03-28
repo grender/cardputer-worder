@@ -1,6 +1,6 @@
 use core::fmt::Write;
 use embedded_graphics::pixelcolor::Rgb565;
-use embedded_graphics::prelude::{Point, RgbColor, WebColors};
+use embedded_graphics::prelude::WebColors;
 use u8g2_fonts::types::VerticalPosition;
 
 use crate::cardputer_hal::input::keyboard::{InputLanguage, PressedSymbol};
@@ -16,6 +16,9 @@ pub struct SystemInfoScreen {
     focused_idx: usize,
     wifi_ip: Option<heapless::String<16>>,
     needs_network_info: bool,
+    needs_battery: bool,
+    battery_mv: u32,
+    battery_percent: u8,
 }
 
 impl SystemInfoScreen {
@@ -24,6 +27,9 @@ impl SystemInfoScreen {
             focused_idx: 0,
             wifi_ip: None,
             needs_network_info: true,
+            needs_battery: true,
+            battery_mv: 0,
+            battery_percent: 0,
         }
     }
 }
@@ -31,6 +37,7 @@ impl SystemInfoScreen {
 impl Screen for SystemInfoScreen {
     fn on_mount(&mut self, _shared: &SharedState, _state_tx: &std::sync::mpsc::Sender<Snapshot>) -> Command {
         self.needs_network_info = true;
+        self.needs_battery = true;
         Command::None
     }
 
@@ -41,6 +48,11 @@ impl Screen for SystemInfoScreen {
                     Core0Result::NetworkInfo { ip } => {
                         self.wifi_ip = if ip.is_empty() { None } else { Some(ip) };
                         self.needs_network_info = false;
+                    }
+                    Core0Result::BatteryReading { mv, percent } => {
+                        self.battery_mv = mv;
+                        self.battery_percent = percent;
+                        self.needs_battery = false;
                     }
                     _ => {}
                 }
@@ -74,6 +86,8 @@ impl Screen for SystemInfoScreen {
 
         let pending_action = if self.needs_network_info {
             Some(Core0Action::GetNetworkInfo)
+        } else if self.needs_battery {
+            Some(Core0Action::ReadBattery)
         } else {
             None
         };
@@ -87,6 +101,8 @@ impl Screen for SystemInfoScreen {
             wifi_connected: shared.wifi_connected,
             wifi_ssid: shared.wifi_ssid.clone(),
             wifi_ip: self.wifi_ip.clone(),
+            battery_mv: self.battery_mv,
+            battery_percent: self.battery_percent,
             focused_idx: self.focused_idx,
             lang: shared.lang,
             pending_action,
@@ -103,6 +119,8 @@ pub struct SystemInfoSnapshot {
     pub wifi_connected: bool,
     pub wifi_ssid: Option<heapless::String<32>>,
     pub wifi_ip: Option<heapless::String<16>>,
+    pub battery_mv: u32,
+    pub battery_percent: u8,
     pub focused_idx: usize,
     pub lang: InputLanguage,
     pub pending_action: Option<Core0Action>,
@@ -139,6 +157,9 @@ impl SystemInfoSnapshot {
         let mut s_pct = heapless::String::<48>::new();
         let _ = write!(s_pct, "{}: {}%", t("Heap used", "Куча занята", l), pct);
 
+        let mut s_bat = heapless::String::<48>::new();
+        let _ = write!(s_bat, "{}: {} mV ({}%)", t("Battery", "Батарея", l), self.battery_mv, self.battery_percent);
+
         let wifi_status = if self.wifi_connected { t("WiFi: Connected", "WiFi: Подключен", l) } else { t("WiFi: Not connected", "WiFi: Не подключен", l) };
         let mut s_ssid = heapless::String::<48>::new();
         if let Some(ref ssid) = self.wifi_ssid {
@@ -158,6 +179,12 @@ impl SystemInfoSnapshot {
             UiLineType::Elements(vec![UiLineElement::Text(s_block.as_str(), font, VerticalPosition::Top, color)]),
             UiLineType::Elements(vec![UiLineElement::Text(s_uptime.as_str(), font, VerticalPosition::Top, color)]),
             UiLineType::Elements(vec![UiLineElement::Text(s_pct.as_str(), font, VerticalPosition::Top, label_color)]),
+            UiLineType::Spacer(4),
+            UiLineType::Elements(vec![UiLineElement::Text(s_bat.as_str(), font, VerticalPosition::Top, {
+                if self.battery_percent <= 10 { ThemeColor::Error }
+                else if self.battery_percent <= 30 { ThemeColor::Color(Rgb565::new(31, 50, 0)) }
+                else { ThemeColor::Color(Rgb565::new(0, 50, 0)) }
+            })]),
             UiLineType::Spacer(4),
             UiLineType::Elements(vec![UiLineElement::Text(wifi_status, font, VerticalPosition::Top, wifi_color)]),
         ];

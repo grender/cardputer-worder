@@ -1,18 +1,10 @@
 use core::fmt::Write;
 
 use embedded_fps::FPS;
-use embedded_graphics::mono_font::iso_8859_5::FONT_6X13;
-use embedded_graphics::mono_font::iso_8859_5::FONT_6X13_BOLD;
 use embedded_graphics::prelude::WebColors;
 use embedded_graphics::primitives::Rectangle;
-use embedded_graphics::{
-    mono_font::MonoTextStyle,
-    prelude::{Point, RgbColor},
-};
+use embedded_graphics::prelude::{Point, RgbColor};
 
-use embedded_text::alignment::HorizontalAlignment;
-use embedded_text::style::{HeightMode, TextBoxStyleBuilder};
-use embedded_text::TextBox;
 
 use embedded_graphics::{pixelcolor::Rgb565, prelude::*};
 
@@ -174,7 +166,7 @@ impl CardworderUi {
     /// Flush dirty region of framebuffer to display via SPI (partial flush).
     pub fn flip_buffer(&mut self) {
         let t0 = unsafe { esp_idf_svc::sys::esp_timer_get_time() as u64 };
-        let fps = self.fps_counter.tick();
+        let fps = self.fps_counter.try_tick_max().unwrap_or(0);
         if self.show_fps {
             let mut fps_text = heapless::String::<16>::new();
             let _ = write!(fps_text, "FPS: {}", fps);
@@ -262,6 +254,34 @@ impl CardworderUi {
             .unwrap().bounding_box
     }
 
+    /// Draw text with auto font sizing and word wrap. Returns height used in pixels.
+    pub fn draw_text_auto(&mut self, text: &str, color: ThemeColor, x: i32, y: i32, max_width: u32) -> i32 {
+        let char_count = text.chars().count();
+        let xlarge_max = (max_width / 10) as usize;
+        let large_max = (max_width / 9) as usize;
+        let med_max = (max_width / 6) as usize;
+
+        if char_count <= xlarge_max {
+            self.draw_text_oneline(text, CardFont::XLarge, color, Point::new(x, y), VerticalPosition::Top);
+            self.font_height(CardFont::XLarge) as i32
+        } else if char_count <= large_max {
+            self.draw_text_oneline(text, CardFont::Large, color, Point::new(x, y), VerticalPosition::Top);
+            self.font_height(CardFont::Large) as i32
+        } else if char_count <= med_max {
+            self.draw_text_oneline(text, CardFont::Medium, color, Point::new(x, y), VerticalPosition::Top);
+            self.font_height(CardFont::Medium) as i32
+        } else {
+            // Word wrap with Medium font
+            let line_h = self.font_height(CardFont::Medium) as i32;
+            let mut cy = y;
+            for line in wrap_text(text, med_max) {
+                self.draw_text_oneline(line.as_str(), CardFont::Medium, color, Point::new(x, cy), VerticalPosition::Top);
+                cy += line_h + 1;
+            }
+            (cy - y).max(line_h)
+        }
+    }
+
     pub fn fill_rect(&mut self, rect: Rectangle, color: Rgb565) {
         self.framebuffer.fill_solid(&rect, color).unwrap();
     }
@@ -271,6 +291,7 @@ impl CardworderUi {
         input_state: &InputState,
         key_event: &Option<(KeyEvent, PressedSymbol)>,
         wifi_connected: bool,
+        battery_percent: u8,
     ) {
         let top_line_area = Rectangle {
             top_left: Point { x: 0, y: 0 },
@@ -302,24 +323,60 @@ impl CardworderUi {
         let key_descs_x = separator_x + separator_rect.size.width as i32 + 2;
         self.framebuffer.fill_solid(&separator_rect, Rgb565::CSS_GRAY).unwrap();
 
+        // Fn/Shift indicators with lock mode support
+        let fn_bg = Rgb565::new(31, 15, 7);    // ~#fd7a39
+        let shift_bg = Rgb565::new(7, 15, 21); // ~#3b7aaa
+        let mut mod_x = key_descs_x;
+        let renderer = &self.renderers[CardFont::Medium as usize];
+        let char_w = 6i32; // Medium font width
+        let char_h = 10i32;
+
+        // Helper: draw modifier with optional colored background rect
+        macro_rules! draw_mod {
+            ($label:expr, $show:expr, $locked:expr, $pressed:expr, $bg_color:expr) => {
+                if $show || $locked {
+                    let label_w = $label.len() as i32 * char_w;
+                    if $locked {
+                        // Draw colored background rect
+                        let rect = Rectangle {
+                            top_left: Point::new(mod_x, 0),
+                            size: Size::new(label_w as u32 + 2, char_h as u32 + 1),
+                        };
+                        self.framebuffer.fill_solid(&rect, $bg_color).ok();
+                        // Text: white when active, gray when temporarily off
+                        let fg = if $pressed { Rgb565::CSS_GRAY } else { Rgb565::WHITE };
+                        renderer.render($label, Point::new(mod_x + 1, 1), VerticalPosition::Top,
+                            FontColor::Transparent(fg), &mut self.framebuffer).unwrap();
+                        mod_x += label_w + 4;
+                    } else {
+                        // Not locked, just held — white text
+                        renderer.render($label, Point::new(mod_x, 1), VerticalPosition::Top,
+                            FontColor::Transparent(Rgb565::WHITE), &mut self.framebuffer).unwrap();
+                        mod_x += label_w + 2;
+                    }
+                }
+            };
+        }
+
+        draw_mod!("fn", input_state.fn_pressed, input_state.fn_locked, input_state.fn_pressed, fn_bg);
+        draw_mod!("Aa", input_state.shift_pressed, input_state.shift_locked, input_state.shift_pressed, shift_bg);
+
+        // Other modifiers (Alt, Ctrl, Opt) — simple text
         let mut key_descs = heapless::String::<32>::new();
         for (flag, label) in [
-            (input_state.fn_pressed, "Fn "),
-            (input_state.shift_pressed, "Shft "),
-            (input_state.alt_pressed, "Alt "),
-            (input_state.ctrl_pressed, "Ctrl "),
-            (input_state.opt_pressed, "Opt "),
+            (input_state.alt_pressed, "alt "),
+            (input_state.ctrl_pressed, "ctrl "),
+            (input_state.opt_pressed, "opt "),
         ] {
             if flag { let _ = key_descs.push_str(label); }
         }
+        if !key_descs.is_empty() {
+            let r = renderer.render(key_descs.as_str(), Point::new(mod_x, 1), VerticalPosition::Top,
+                FontColor::Transparent(Rgb565::WHITE), &mut self.framebuffer).unwrap();
+            mod_x = r.bounding_box.map(|bb| bb.top_left.x + bb.size.width as i32).unwrap_or(mod_x) + 2;
+        }
 
-        let key_descs_rect = &self.renderers[CardFont::Medium as usize]
-            .render(key_descs.as_str(), Point::new(key_descs_x, 1), VerticalPosition::Top,
-                FontColor::Transparent(Rgb565::WHITE), &mut self.framebuffer)
-            .unwrap();
-
-        let pressed_key_desc_x = key_descs_rect.bounding_box
-            .map(|bb| bb.top_left.x + bb.size.width as i32).unwrap_or(key_descs_x + 20) + 2;
+        let pressed_key_desc_x = mod_x;
 
         if let Some((ke, PressedSymbol::Char(c))) = key_event {
             let mut buf = [0u8; 4];
@@ -334,9 +391,22 @@ impl CardworderUi {
         }
 
         let time_x = 240 - 2 - 8 * 6; // 8 chars "HH:MM:SS" × 6px Medium font width
+
+        // Battery percentage left of clock
+        let mut bat_text = heapless::String::<8>::new();
+        let _ = write!(bat_text, "{}%", battery_percent);
+        let bat_color = if battery_percent <= 10 { Rgb565::RED }
+                       else if battery_percent <= 30 { Rgb565::YELLOW }
+                       else { Rgb565::CSS_LIGHT_GREEN };
+        let bat_x = time_x - (bat_text.chars().count() as i32 * 6) - 4;
+        self.renderers[CardFont::Medium as usize]
+            .render(bat_text.as_str(), Point::new(bat_x, 1), VerticalPosition::Top,
+                FontColor::Transparent(bat_color), &mut self.framebuffer)
+            .unwrap();
+
         if wifi_connected {
             self.renderers[CardFont::Icons as usize]
-                .render(80 as char, Point::new(time_x - 11, 0), VerticalPosition::Top,
+                .render(80 as char, Point::new(bat_x - 11, 0), VerticalPosition::Top,
                     FontColor::Transparent(Rgb565::CSS_LIGHT_GREEN), &mut self.framebuffer)
                 .unwrap();
         }
@@ -358,4 +428,33 @@ impl CardworderUi {
                 FontColor::Transparent(font_color), &mut self.framebuffer)
             .unwrap();
     }
+}
+
+/// Split text at word boundaries to fit within max_chars per line.
+fn wrap_text(text: &str, max_chars: usize) -> Vec<String> {
+    let mut lines = Vec::new();
+    let mut current = String::new();
+
+    for word in text.split_whitespace() {
+        let word_len = word.chars().count();
+        let cur_len = current.chars().count();
+
+        if cur_len == 0 {
+            // First word on line — take it even if too long
+            current = word.to_string();
+        } else if cur_len + 1 + word_len <= max_chars {
+            current.push(' ');
+            current.push_str(word);
+        } else {
+            lines.push(current);
+            current = word.to_string();
+        }
+    }
+    if !current.is_empty() {
+        lines.push(current);
+    }
+    if lines.is_empty() {
+        lines.push(text.to_string());
+    }
+    lines
 }

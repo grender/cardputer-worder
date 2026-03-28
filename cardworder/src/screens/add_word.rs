@@ -9,11 +9,9 @@ use crate::types::{Command, Core0Action, Core0Result, Msg, SharedState};
 use crate::ui::cardworder_ui::{CardFont, CardworderUi, ThemeColor, TOP_BAR_HEIGHT};
 use crate::ui::elements::{UiLineElement, UiLineType};
 use crate::ui::render::{compose_scrolled_form, render_visible_lines};
-use fsrs_core::{PairsFile, WordPair};
 
 #[derive(Clone)]
 enum Phase {
-    Loading,
     Editing,
     Saving,
     Error,
@@ -32,20 +30,18 @@ fn byte_pos_of_char(s: &str, n: usize) -> usize {
 
 pub struct AddWordScreen {
     phase: Phase,
-    pairs_file: Option<PairsFile>,
     en_value: heapless::String<64>,
     ru_value: heapless::String<64>,
     en_cursor: usize,
     ru_cursor: usize,
-    focused_field: usize, // 0=English, 1=Russian, 2=Save, 3=Back
+    focused_field: usize, // 0=EN, 1=RU, 2=Save, 3=Back
     status_text: String,
 }
 
 impl Default for AddWordScreen {
     fn default() -> Self {
         Self {
-            phase: Phase::Loading,
-            pairs_file: None,
+            phase: Phase::Editing,
             en_value: heapless::String::new(),
             ru_value: heapless::String::new(),
             en_cursor: 0,
@@ -131,7 +127,7 @@ impl Screen for AddWordScreen {
         _shared: &SharedState,
         _state_tx: &std::sync::mpsc::Sender<Snapshot>,
     ) -> Command {
-        self.phase = Phase::Loading;
+        // No loading needed — screen is instantly ready for editing.
         Command::None
     }
 
@@ -140,15 +136,14 @@ impl Screen for AddWordScreen {
         match msg {
             Msg::Core0Result(result) => {
                 match result {
-                    Core0Result::PairsLoaded(pairs_file) => {
-                        self.pairs_file = Some(pairs_file);
-                        self.phase = Phase::Editing;
-                        self.status_text = String::new();
-                    }
-                    Core0Result::PairsSaved => {
+                    Core0Result::PairAdded(id) => {
                         self.clear_fields();
                         self.phase = Phase::Editing;
-                        self.status_text = t("Saved!", "Сохранено!", l).to_string();
+                        self.status_text = format!(
+                            "{} (ID: {})",
+                            t("Saved!", "Сохранено!", l),
+                            id
+                        );
                     }
                     Core0Result::Error(msg) => {
                         self.status_text = msg;
@@ -186,15 +181,7 @@ impl Screen for AddWordScreen {
                                                 l,
                                             )
                                             .to_string();
-                                        } else if let Some(ref mut pf) = self.pairs_file {
-                                            let id = pf.next_id;
-                                            let pair = WordPair::new(
-                                                id,
-                                                self.en_value.as_str().to_string(),
-                                                self.ru_value.as_str().to_string(),
-                                            );
-                                            pf.next_id += 1;
-                                            pf.pairs.push(pair);
+                                        } else {
                                             self.phase = Phase::Saving;
                                             self.status_text =
                                                 t("Saving...", "Сохранение...", l).to_string();
@@ -236,10 +223,10 @@ impl Screen for AddWordScreen {
     }
 
     fn snapshot(&self, shared: &SharedState) -> Snapshot {
-        let pending_action = match self.phase {
-            Phase::Loading => Some(Core0Action::LoadPairs),
-            Phase::Saving => self.pairs_file.as_ref().and_then(|pf| {
-                postcard::to_allocvec(pf).ok().map(Core0Action::SavePairsBytes)
+        let pending_action = match &self.phase {
+            Phase::Saving => Some(Core0Action::AddPair {
+                en: self.en_value.as_str().to_string(),
+                ru: self.ru_value.as_str().to_string(),
             }),
             _ => None,
         };
@@ -279,15 +266,6 @@ impl AddWordSnapshot {
         let y = TOP_BAR_HEIGHT as i32 + 2;
 
         match self.phase {
-            Phase::Loading => {
-                ui.draw_text_oneline(
-                    t("Loading...", "Загрузка...", l),
-                    font,
-                    ThemeColor::Text,
-                    Point::new(4, y),
-                    VerticalPosition::Top,
-                );
-            }
             Phase::Editing | Phase::Saving => {
                 const SCREEN_HEIGHT: u32 = 135;
                 let viewport_height = SCREEN_HEIGHT - TOP_BAR_HEIGHT;
@@ -343,7 +321,8 @@ impl AddWordSnapshot {
                 // Status text
                 if !self.status_text.is_empty() {
                     lines.push(UiLineType::Spacer(2));
-                    let status_color = if self.status_text == t("Saved!", "Сохранено!", l) {
+                    let status_color = if self.status_text.starts_with(t("Saved!", "Сохранено!", l))
+                    {
                         ThemeColor::Color(embedded_graphics::pixelcolor::Rgb565::new(0, 50, 0))
                     } else {
                         ThemeColor::Error
@@ -358,10 +337,10 @@ impl AddWordSnapshot {
 
                 // Determine scroll target based on focused field
                 let scroll_target = match self.focused_field {
-                    0 => 0,                        // English field
-                    1 => 2,                        // Russian field (after spacer)
-                    2 => 4,                        // Save button
-                    3 => 5,                        // Back button
+                    0 => 0, // English field
+                    1 => 2, // Russian field (after spacer)
+                    2 => 4, // Save button
+                    3 => 5, // Back button
                     _ => 0,
                 };
 

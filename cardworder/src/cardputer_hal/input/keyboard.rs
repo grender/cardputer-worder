@@ -27,12 +27,22 @@ pub struct InputState {
     pub opt_pressed: bool,
     pub alt_pressed: bool,
     pub fn_pressed: bool,
+    pub fn_locked: bool,
+    pub shift_locked: bool,
+    pub fn_last_release_us: u64,
+    pub shift_last_release_us: u64,
     pub lang: InputLanguage,
 }
 
 impl InputState {
+    /// Effective Fn state (XOR of physical press and lock)
+    pub fn fn_active(&self) -> bool { self.fn_pressed ^ self.fn_locked }
+    /// Effective Shift state
+    pub fn shift_active(&self) -> bool { self.shift_pressed ^ self.shift_locked }
+
     fn key_to_pressed_symbol(&self, key: Scancode) -> Option<PressedSymbol> {
-        let symbol_map = match (self.lang, self.shift_pressed) {
+        let shift = self.shift_active();
+        let symbol_map = match (self.lang, shift) {
             (InputLanguage::En, true) => SYMBOL_MAP_EN_SHIFTED,
             (InputLanguage::En, false) => SYMBOL_MAP_EN,
             (InputLanguage::Ru, true) => SYMBOL_MAP_RU_SHIFTED,
@@ -49,6 +59,10 @@ impl InputState {
         }
     }
 
+    fn now_us() -> u64 {
+        unsafe { esp_idf_svc::sys::esp_timer_get_time() as u64 }
+    }
+
     pub fn eat_keys(&mut self, event: KeyEvent, key: Scancode) -> Option<PressedSymbol> {
         match (event, key) {
             (KeyEvent::Pressed, Scancode::Opt) => self.opt_pressed = true,
@@ -58,14 +72,30 @@ impl InputState {
             (KeyEvent::Pressed, Scancode::Fn) => self.fn_pressed = true,
 
             (KeyEvent::Released, Scancode::Opt) => self.opt_pressed = false,
-            (KeyEvent::Released, Scancode::Shift) => self.shift_pressed = false,
+            (KeyEvent::Released, Scancode::Shift) => {
+                self.shift_pressed = false;
+                let now = Self::now_us();
+                if now - self.shift_last_release_us < 300_000 {
+                    self.shift_locked = !self.shift_locked;
+                }
+                self.shift_last_release_us = now;
+            }
             (KeyEvent::Released, Scancode::Alt) => self.alt_pressed = false,
             (KeyEvent::Released, Scancode::Ctrl) => self.ctrl_pressed = false,
-            (KeyEvent::Released, Scancode::Fn) => self.fn_pressed = false,
+            (KeyEvent::Released, Scancode::Fn) => {
+                self.fn_pressed = false;
+                let now = Self::now_us();
+                if now - self.fn_last_release_us < 300_000 {
+                    self.fn_locked = !self.fn_locked;
+                }
+                self.fn_last_release_us = now;
+            }
             _ => {}
         }
 
-        return match (event, key, self.ctrl_pressed, self.fn_pressed) {
+        let fn_active = self.fn_active();
+
+        return match (event, key, self.ctrl_pressed, fn_active) {
             (KeyEvent::Pressed, Scancode::Space, true, _) => {
                 self.switch_language();
                 None

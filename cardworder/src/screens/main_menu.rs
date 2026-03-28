@@ -9,8 +9,9 @@ use crate::screens::review::ReviewScreen;
 use crate::screens::statistics::StatisticsScreen;
 use crate::screens::wifi_config::WifiConfigScreen;
 use crate::screens::ntp::NtpScreen;
+use crate::screens::quick_sync::QuickSyncScreen;
 use crate::screens::system_info::SystemInfoScreen;
-use crate::types::{Command, KeyMsg, Msg, SharedState};
+use crate::types::{Command, Msg, SharedState};
 use crate::ui::cardworder_ui::{CardFont, CardworderUi, ThemeColor, TOP_BAR_HEIGHT};
 use crate::ui::elements::{UiLineElement, UiLineType};
 use crate::ui::render::{compose_scrolled_form, render_visible_lines};
@@ -19,6 +20,7 @@ enum MainMenuOption {
     ReviewWords,
     AddWord,
     Statistics,
+    QuickSync,
     ConnectWifi,
     UpdateNtp,
     SystemInfo,
@@ -38,6 +40,7 @@ impl Default for MainMenuScreen {
                 MainMenuOption::ReviewWords,
                 MainMenuOption::AddWord,
                 MainMenuOption::Statistics,
+                MainMenuOption::QuickSync,
                 MainMenuOption::ConnectWifi,
                 MainMenuOption::UpdateNtp,
                 MainMenuOption::SystemInfo,
@@ -57,9 +60,11 @@ fn get_option_text(option: &MainMenuOption, lang: InputLanguage) -> &'static str
         (InputLanguage::Ru, MainMenuOption::AddWord) => "Добавить слово",
         (InputLanguage::En, MainMenuOption::Statistics) => "Statistics",
         (InputLanguage::Ru, MainMenuOption::Statistics) => "Статистика",
+        (InputLanguage::En, MainMenuOption::QuickSync) => "Quick Sync",
+        (InputLanguage::Ru, MainMenuOption::QuickSync) => "Быстрая синхронизация",
         (InputLanguage::En, MainMenuOption::ConnectWifi) => "Connect Wi-Fi",
-        (InputLanguage::En, MainMenuOption::UpdateNtp) => "Update time by NTP",
         (InputLanguage::Ru, MainMenuOption::ConnectWifi) => "Подключить Wi-Fi",
+        (InputLanguage::En, MainMenuOption::UpdateNtp) => "Update NTP",
         (InputLanguage::Ru, MainMenuOption::UpdateNtp) => "Обновить время по NTP",
         (InputLanguage::En, MainMenuOption::SystemInfo) => "System Info",
         (InputLanguage::Ru, MainMenuOption::SystemInfo) => "Системная информация",
@@ -71,6 +76,7 @@ fn get_option_icon(option: &MainMenuOption) -> char {
         MainMenuOption::ReviewWords => '\u{158}',
         MainMenuOption::AddWord => '\u{1d5}',
         MainMenuOption::Statistics => '\u{15e}',
+        MainMenuOption::QuickSync => '\u{158}',
         MainMenuOption::ConnectWifi => '\u{25A}',
         MainMenuOption::UpdateNtp => '\u{158}',
         MainMenuOption::SystemInfo => '\u{15e}',
@@ -112,11 +118,14 @@ impl Screen for MainMenuScreen {
                             MainMenuOption::ConnectWifi => {
                                 return Command::SwitchTo(Box::new(WifiConfigScreen::new()));
                             }
+                            MainMenuOption::UpdateNtp => {
+                                return Command::SwitchTo(Box::new(NtpScreen::new()));
+                            }
                             MainMenuOption::SystemInfo => {
                                 return Command::SwitchTo(Box::new(SystemInfoScreen::new()));
                             }
-                            MainMenuOption::UpdateNtp => {
-                                return Command::SwitchTo(Box::new(NtpScreen::new()));
+                            MainMenuOption::QuickSync => {
+                                return Command::SwitchTo(Box::new(QuickSyncScreen::new()));
                             }
                             _ => {}
                         }

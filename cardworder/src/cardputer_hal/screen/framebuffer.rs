@@ -1,9 +1,8 @@
-use core::iter;
 
 use embedded_graphics::pixelcolor::{raw::RawU16, IntoStorage, Rgb565};
 use embedded_graphics_framebuf::backends::FrameBufferBackend;
 
-use esp_idf_sys::{heap_caps_malloc, heap_caps_free, MALLOC_CAP_DMA, MALLOC_CAP_INTERNAL};
+use esp_idf_sys::{heap_caps_malloc, MALLOC_CAP_DMA, MALLOC_CAP_INTERNAL};
 
 use super::display::{DISPLAY_SIZE_HEIGHT, DISPLAY_SIZE_WIDTH};
 

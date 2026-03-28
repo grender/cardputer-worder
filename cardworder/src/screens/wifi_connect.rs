@@ -140,7 +140,6 @@ impl Screen for WifiConnectScreen {
                         self.status_text = ts("Saving config...", "Сохранение...", l);
                     }
                     Core0Result::WifiListSaved => {
-                        // Config saved — show Connected screen with Disconnect button
                         self.phase = Phase::Connected;
                         self.focused_idx = 0;
                         self.status_text = ts("Connected!", "Подключено!", l);
@@ -186,6 +185,7 @@ impl Screen for WifiConnectScreen {
                                         self.focused_idx = 0;
                                     }
                                 } else {
+                                    // Back
                                     return Command::SwitchTo(Box::new(WifiConfigScreen::new()));
                                 }
                             }
@@ -263,7 +263,10 @@ impl WifiConnectSnapshot {
         let l = self.lang;
 
         match self.phase {
-            Phase::StartingWifi | Phase::Scanning => {
+            Phase::StartingWifi => {
+                ui.draw_text_oneline(self.status_text.as_str(), font, ThemeColor::Text, Point::new(4, y), VerticalPosition::Top);
+            }
+            Phase::Scanning => {
                 ui.draw_text_oneline(self.status_text.as_str(), font, ThemeColor::Text, Point::new(4, y), VerticalPosition::Top);
             }
             Phase::ShowingResults => {

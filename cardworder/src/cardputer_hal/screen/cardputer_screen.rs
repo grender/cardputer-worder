@@ -3,17 +3,16 @@ use core::convert::Infallible;
 use display_interface::{DataFormat, DisplayError};
 use embedded_graphics::{
     pixelcolor::Rgb565,
-    prelude::{IntoStorage, Point},
+    prelude::Point,
 };
 use embedded_graphics_framebuf::FrameBuf;
 use esp_idf_hal::gpio::OutputPin;
 use esp_idf_hal::spi::SpiAnyPins;
 use esp_idf_sys;
 use mipidsi::dcs::{SetColumnAddress, SetPageAddress, WriteMemoryStart};
-use esp_idf_hal::delay::FreeRtos;
 
 use super::{
-    display::{CardputerDisplay, DISPLAY_SIZE_HEIGHT, DISPLAY_SIZE_WIDTH},
+    display::CardputerDisplay,
     framebuffer::CardputerFramebuffer,
 };
 use display_interface::WriteOnlyDataCommand;

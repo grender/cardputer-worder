@@ -105,10 +105,18 @@ pub enum Core0Action {
     CheckNtpStatus,
     // Network info (reads IP from esp_netif on Core 0)
     GetNetworkInfo,
-    // Word pairs (SD card)
-    LoadPairs,
-    /// Pre-serialized postcard bytes — avoids cloning PairsFile across threads
-    SavePairsBytes(Vec<u8>),
+    // Battery
+    ReadBattery,
+    // Word pairs — granular two-file storage
+    LoadDueItems,
+    LoadWordText { slot: usize, word_offset: u32, word_length: u32 },
+    RateCard { slot: usize, record_bytes: [u8; 160] },
+    /// Rate current card + load next word in one action
+    RateAndLoadNext { slot: usize, record_bytes: [u8; 160], next_slot: usize, next_word_offset: u32, next_word_length: u32 },
+    AddPair { en: String, ru: String },
+    LoadQuickStats,
+    LoadNextId,
+    MigratePairs,
     // Legacy (kept for StartScreen compatibility)
     CreateWifiFileIfNotExists {
         ssid: heapless::String<32>,
@@ -132,12 +140,20 @@ pub enum Core0Result {
     WifiStopped,
     // Network info
     NetworkInfo { ip: heapless::String<16> },
+    BatteryReading { mv: u32, percent: u8 },
     // NTP
     NtpStarted,
     NtpSynced(bool),
-    // Word pairs
-    PairsLoaded(fsrs_core::PairsFile),
-    PairsSaved,
+    // Word pairs — granular results
+    DueItemsLoaded { forward_items: Vec<fsrs_core::DueItem>, reverse_items: Vec<fsrs_core::DueItem>, next_id: u64 },
+    WordTextLoaded { en: String, ru: String, record_bytes: [u8; 160] },
+    CardRated,
+    /// Combined: card rated + next word loaded
+    CardRatedAndNextLoaded { en: String, ru: String, record_bytes: [u8; 160] },
+    PairAdded(u64),
+    QuickStatsLoaded(crate::cardputer_hal::cardputer_hal::QuickStats),
+    NextIdLoaded(u64),
+    MigrationDone,
     // Legacy
     WifiFileCreated,
     WifiConfigLoaded(WifiConfig),

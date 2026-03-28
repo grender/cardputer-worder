@@ -22,6 +22,7 @@ fn execute_core0_action(
     hal: &mut CardputerHal<'_>,
     action: Core0Action,
     ntp: &mut Option<EspSntp<'static>>,
+    battery: &mut cardworder::cardputer_hal::cardputer_hal::BatteryReader,
 ) -> Core0Result {
     match action {
         Core0Action::SetTimezone => {
@@ -78,16 +79,59 @@ fn execute_core0_action(
                 Err(e) => Core0Result::Error(format!("Stop WiFi: {:?}", e)),
             }
         }
-        Core0Action::LoadPairs => {
-            match hal.load_pairs() {
-                Ok(file) => Core0Result::PairsLoaded(file),
-                Err(e) => Core0Result::Error(format!("Load pairs: {:?}", e)),
+        Core0Action::LoadDueItems => {
+            match hal.load_due_items() {
+                Ok((forward_items, reverse_items, next_id)) => Core0Result::DueItemsLoaded { forward_items, reverse_items, next_id },
+                Err(e) => Core0Result::Error(format!("Load due: {:?}", e)),
             }
         }
-        Core0Action::SavePairsBytes(bytes) => {
-            match hal.save_pairs_bytes(&bytes) {
-                Ok(()) => Core0Result::PairsSaved,
-                Err(e) => Core0Result::Error(format!("Save pairs: {:?}", e)),
+        Core0Action::LoadWordText { slot, word_offset, word_length } => {
+            match hal.load_word_text(word_offset, word_length) {
+                Ok(wt) => {
+                    match hal.load_fsrs_record(slot) {
+                        Ok(rec) => Core0Result::WordTextLoaded { en: wt.en, ru: wt.ru, record_bytes: rec.to_bytes() },
+                        Err(e) => Core0Result::Error(format!("Load record: {:?}", e)),
+                    }
+                }
+                Err(e) => Core0Result::Error(format!("Load word: {:?}", e)),
+            }
+        }
+        Core0Action::RateCard { slot, record_bytes } => {
+            let record = fsrs_core::FsrsRecord::from_bytes(&record_bytes);
+            match hal.save_fsrs_record(slot, &record) {
+                Ok(()) => Core0Result::CardRated,
+                Err(e) => Core0Result::Error(format!("Rate: {:?}", e)),
+            }
+        }
+        Core0Action::RateAndLoadNext { slot, record_bytes, next_slot, next_word_offset, next_word_length } => {
+            let record = fsrs_core::FsrsRecord::from_bytes(&record_bytes);
+            match hal.rate_and_load_next(slot, &record, next_slot, next_word_offset, next_word_length) {
+                Ok((wt, rec)) => Core0Result::CardRatedAndNextLoaded { en: wt.en, ru: wt.ru, record_bytes: rec.to_bytes() },
+                Err(e) => Core0Result::Error(format!("RateAndLoad: {:?}", e)),
+            }
+        }
+        Core0Action::AddPair { en, ru } => {
+            match hal.add_pair(&en, &ru) {
+                Ok(id) => Core0Result::PairAdded(id),
+                Err(e) => Core0Result::Error(format!("Add pair: {:?}", e)),
+            }
+        }
+        Core0Action::LoadQuickStats => {
+            match hal.load_quick_stats() {
+                Ok(stats) => Core0Result::QuickStatsLoaded(stats),
+                Err(e) => Core0Result::Error(format!("Stats: {:?}", e)),
+            }
+        }
+        Core0Action::LoadNextId => {
+            match hal.load_next_id() {
+                Ok(id) => Core0Result::NextIdLoaded(id),
+                Err(e) => Core0Result::Error(format!("NextId: {:?}", e)),
+            }
+        }
+        Core0Action::MigratePairs => {
+            match hal.migrate_pairs_if_needed() {
+                Ok(_) => Core0Result::MigrationDone,
+                Err(e) => Core0Result::Error(format!("Migrate: {:?}", e)),
             }
         }
         Core0Action::LoadWifiList => {
@@ -154,6 +198,11 @@ fn execute_core0_action(
             }
             Core0Result::NetworkInfo { ip: ip_str }
         }
+        Core0Action::ReadBattery => {
+            let mv = battery.read_mv();
+            let percent = battery.read_percent();
+            Core0Result::BatteryReading { mv, percent }
+        }
     }
 }
 
@@ -186,6 +235,17 @@ fn main() {
 
     // HAL stays on Core 0 (SPI is core-affine)
     let mut hal = parts.hal;
+    let mut battery = parts.battery;
+
+    let mut battery_percent: u8 = 0;
+    let mut last_battery_read_us: u64 = 0;
+
+    // Migrate old PAIRS.BIN to new two-file format if needed
+    match hal.migrate_pairs_if_needed() {
+        Ok(true) => log::info!("boot: migrated PAIRS.BIN → FSRS.BIN + WORDS.BIN"),
+        Ok(false) => {}
+        Err(e) => log::warn!("boot: migration skipped: {:?}", e),
+    }
 
     // Build UI with direct display ownership
     log::info!("boot step 4: CardworderUi::build");
@@ -233,6 +293,10 @@ fn main() {
         opt_pressed: false,
         alt_pressed: false,
         fn_pressed: false,
+        fn_locked: true,  // Fn locked on by default (arrows work without holding Fn)
+        shift_locked: false,
+        fn_last_release_us: 0,
+        shift_last_release_us: 0,
         lang: InputLanguage::En,
     };
     let mut last_pressed: Option<(KeyEvent, PressedSymbol)> = None;
@@ -263,23 +327,7 @@ fn main() {
             got_new_snapshot = true;
         }
 
-        // 3. Execute Core0Actions from snapshot (runs HAL on Core 0)
-        if got_new_snapshot {
-            if let Some(ref snapshot) = current_snapshot {
-                if let Some(action) = snapshot.action() {
-                    let result = execute_core0_action(&mut hal, action, &mut ntp_instance);
-                    // Track WiFi connected state for top bar icon
-                    match &result {
-                        Core0Result::WifiConnected { .. } => wifi_connected = true,
-                        Core0Result::WifiStopped => wifi_connected = false,
-                        _ => {}
-                    }
-                    let _ = core0_msg_tx.send(Msg::Core0Result(result));
-                }
-            }
-        }
-
-        // 4. Draw only when needed
+        // 3. Draw first (so Loading/Saving screens appear before blocking HAL ops)
         let now_us = unsafe { esp_idf_svc::sys::esp_timer_get_time() as u64 };
         let timer_tick = (now_us - last_draw_us) >= 1_000_000;
         let should_draw = got_new_snapshot || timer_tick;
@@ -291,14 +339,14 @@ fn main() {
                     ui.clear_no_dirty(Rgb565::BLACK);
                     snapshot.draw(&mut ui);
                     if snapshot.needs_top_line() {
-                        ui.draw_top_line(&input_state, &last_pressed, wifi_connected);
+                        ui.draw_top_line(&input_state, &last_pressed, wifi_connected, battery_percent);
                     }
                     // Ensure previously-drawn rows get flushed (to clear old content on display)
                     ui.mark_rows_dirty(0, prev_dirty_max_y);
                 } else {
                     // Clock-only redraw: only update top bar (12 rows)
                     if snapshot.needs_top_line() {
-                        ui.draw_top_line(&input_state, &last_pressed, wifi_connected);
+                        ui.draw_top_line(&input_state, &last_pressed, wifi_connected, battery_percent);
                     }
                 }
                 ui.flip_buffer();
@@ -308,7 +356,29 @@ fn main() {
             last_draw_us = now_us;
         }
 
-        // 5. Yield
+        // 4. Execute Core0Actions AFTER drawing (so Loading/Saving text is visible)
+        if got_new_snapshot {
+            if let Some(ref mut snapshot) = current_snapshot {
+                if let Some(action) = snapshot.action() {
+                    let result = execute_core0_action(&mut hal, action, &mut ntp_instance, &mut battery);
+                    match &result {
+                        Core0Result::WifiConnected { .. } => wifi_connected = true,
+                        Core0Result::WifiStopped => wifi_connected = false,
+                        _ => {}
+                    }
+                    let _ = core0_msg_tx.send(Msg::Core0Result(result));
+                }
+            }
+        }
+
+        // 5. Read battery every 30 seconds
+        let now_bat = unsafe { esp_idf_svc::sys::esp_timer_get_time() as u64 };
+        if now_bat - last_battery_read_us >= 30_000_000 || last_battery_read_us == 0 {
+            battery_percent = battery.read_percent();
+            last_battery_read_us = now_bat;
+        }
+
+        // 6. Yield
         FreeRtos::delay_ms(8);
     }
 }

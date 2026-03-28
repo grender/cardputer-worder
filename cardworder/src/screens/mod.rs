@@ -7,3 +7,4 @@ pub mod ntp;
 pub mod add_word;
 pub mod statistics;
 pub mod review;
+pub mod quick_sync;

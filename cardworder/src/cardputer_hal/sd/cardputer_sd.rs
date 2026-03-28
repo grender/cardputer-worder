@@ -1,6 +1,6 @@
 use embedded_hal::delay::DelayNs;
 use embedded_sdmmc::{
-    BlockDevice, Directory, Error, Mode, SdCard, TimeSource, VolumeIdx, VolumeManager,
+    BlockDevice, Error, Mode, SdCard, VolumeIdx, VolumeManager,
 };
 use esp_idf_hal::{
     delay::Delay,
@@ -45,7 +45,7 @@ impl CardputerSd<'_, Delay> {
         cs: impl OutputPin + 'a,
     ) -> CardputerSd<'a, Delay> {
         log::info!("sd: CardputerSd::build — start (SPI3)");
-        let mut delay = Delay::new_default();
+        let delay = Delay::new_default();
 
         // After ESP-IDF 5.1→5.5 upgrade, the SPI driver no longer sends the mandatory
         // 74+ clock cycles with CS HIGH that the SD spec requires for power-up.
@@ -174,10 +174,90 @@ impl CardputerSd<'_, Delay> {
         Ok(())
     }
 
+    /// Read `buf.len()` bytes from file at given byte offset. Returns bytes actually read.
+    pub fn read_at(&mut self, path: &str, offset: u32, buf: &mut [u8]) -> Result<usize, Error<SdCardError>> {
+        let volume0 = self.volume_manager.open_volume(VolumeIdx(0))?;
+        let root_dir = volume0.open_root_dir()?;
+        let file = root_dir.open_file_in_dir(path, Mode::ReadOnly)?;
+        file.seek_from_start(offset)?;
+        let n = file.read(buf)?;
+        Ok(n)
+    }
+
+    /// Write `data` at given byte offset (file must exist, opened read-write).
+    pub fn write_at(&mut self, path: &str, offset: u32, data: &[u8]) -> Result<(), Error<SdCardError>> {
+        let volume0 = self.volume_manager.open_volume(VolumeIdx(0))?;
+        let root_dir = volume0.open_root_dir()?;
+        let file = root_dir.open_file_in_dir(path, Mode::ReadWriteCreateOrAppend)?;
+        file.seek_from_start(offset)?;
+        file.write(data)?;
+        file.flush()?;
+        file.close()?;
+        Ok(())
+    }
+
+    /// Append `data` to end of file (create if not exists). Returns the byte offset where data was written.
+    pub fn append(&mut self, path: &str, data: &[u8]) -> Result<u32, Error<SdCardError>> {
+        let volume0 = self.volume_manager.open_volume(VolumeIdx(0))?;
+        let root_dir = volume0.open_root_dir()?;
+        let file = root_dir.open_file_in_dir(path, Mode::ReadWriteCreateOrAppend)?;
+        let offset = file.length();
+        file.seek_from_start(offset)?;
+        file.write(data)?;
+        file.flush()?;
+        file.close()?;
+        Ok(offset)
+    }
+
+    /// Get file length in bytes. Returns 0 if file doesn't exist.
+    pub fn file_length(&mut self, path: &str) -> Result<u32, Error<SdCardError>> {
+        let exists = self.is_file_exists(path)?;
+        if !exists {
+            return Ok(0);
+        }
+        let volume0 = self.volume_manager.open_volume(VolumeIdx(0))?;
+        let root_dir = volume0.open_root_dir()?;
+        let file = root_dir.open_file_in_dir(path, Mode::ReadOnly)?;
+        let len = file.length();
+        file.close()?;
+        Ok(len)
+    }
+
     pub fn is_file_exists(&mut self, path: &str) -> Result<bool, Error<SdCardError>> {
         let volume0 = self.volume_manager.open_volume(VolumeIdx(0))?;
         let root_dir = volume0.open_root_dir()?;
         let file = root_dir.open_file_in_dir(path, Mode::ReadOnly);
         Ok(file.is_ok())
+    }
+
+    /// Write data to one file + read from two files, all in a single volume open.
+    /// Used for rate-and-load-next: write FSRS record, read word text, read next FSRS record.
+    pub fn write_and_read_multi(
+        &mut self,
+        write_path: &str, write_offset: u32, write_data: &[u8],
+        read1_path: &str, read1_offset: u32, read1_buf: &mut [u8],
+        read2_path: &str, read2_offset: u32, read2_buf: &mut [u8],
+    ) -> Result<(usize, usize), Error<SdCardError>> {
+        let volume0 = self.volume_manager.open_volume(VolumeIdx(0))?;
+        let root_dir = volume0.open_root_dir()?;
+
+        // Write
+        let wf = root_dir.open_file_in_dir(write_path, Mode::ReadWriteCreateOrAppend)?;
+        wf.seek_from_start(write_offset)?;
+        wf.write(write_data)?;
+        wf.flush()?;
+        wf.close()?;
+
+        // Read 1
+        let rf1 = root_dir.open_file_in_dir(read1_path, Mode::ReadOnly)?;
+        rf1.seek_from_start(read1_offset)?;
+        let n1 = rf1.read(read1_buf)?;
+
+        // Read 2
+        let rf2 = root_dir.open_file_in_dir(read2_path, Mode::ReadOnly)?;
+        rf2.seek_from_start(read2_offset)?;
+        let n2 = rf2.read(read2_buf)?;
+
+        Ok((n1, n2))
     }
 }
