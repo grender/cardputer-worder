@@ -251,6 +251,9 @@ fn main() {
     log::info!("boot step 4: CardworderUi::build");
     let mut ui = CardworderUi::build(parts.framebuffer, display);
 
+    // Splash animation using hardware scroll
+    cardworder::ui::splash::run_splash(&mut ui, &mut keyboard);
+
     // Create channels
     let (msg_tx, msg_rx) = std::sync::mpsc::channel::<Msg>();
     let (state_tx, state_rx) = std::sync::mpsc::channel::<Snapshot>();

@@ -74,15 +74,11 @@ where
     let rs = PinDriver::output(rs)?;
     let rst = PinDriver::output(rst)?;
 
-    log::info!("display: backlight pulse …");
     let mut bl = PinDriver::output(bl)?;
     bl.set_low()?;
-    delay.delay_us(10_000);
-    bl.set_high()?;
-    delay.delay_us(10_000);
 
     log::info!("display: mipidsi Builder::init …");
-    let drawable = Builder::new(model, SPIInterface::new(spi, rs))
+    let mut drawable = Builder::new(model, SPIInterface::new(spi, rs))
         .reset_pin(rst)
         .display_size(DISPLAY_SIZE_HEIGHT, DISPLAY_SIZE_WIDTH)
         .display_offset(52, 40)
@@ -99,7 +95,20 @@ where
             anyhow::Error::msg("unknown")
         })?;
 
-    log::info!("display: mipidsi init — ok, build complete");
+    // Clear display RAM before turning backlight on (no random pixels)
+    log::info!("display: clearing before backlight …");
+    use embedded_graphics::prelude::DrawTarget;
+    use embedded_graphics::pixelcolor::Rgb565;
+    use embedded_graphics::prelude::RgbColor;
+    drawable.clear(Rgb565::BLACK).ok();
+
+    log::info!("display: backlight pulse");
+    bl.set_low()?;
+    delay.delay_us(10_000);
+    bl.set_high()?;
+    delay.delay_us(10_000);
+
+    log::info!("display: init complete");
 
     Ok(CardputerDisplay {
         screen: drawable,

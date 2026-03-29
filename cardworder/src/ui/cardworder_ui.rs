@@ -139,6 +139,22 @@ impl CardworderUi {
         }
     }
 
+    /// Flush framebuffer content to a custom page address range (for page 2 writes).
+    pub fn flush_to_page(&mut self, page_start: u16, page_end: u16) {
+        unsafe {
+            let screen = &mut self.display.screen;
+            screen.dcs().write_command(SetColumnAddress::new(40, 279)).unwrap();
+            screen.dcs().write_command(SetPageAddress::new(page_start, page_end)).unwrap();
+            screen.dcs().write_command(WriteMemoryStart).unwrap();
+            let pixel_data: &[u16] = &self.framebuffer.data.data;
+            let bytes: &[u8] = core::slice::from_raw_parts(
+                pixel_data.as_ptr() as *const u8,
+                pixel_data.len() * 2,
+            );
+            screen.dcs().di.send_data(DataFormat::U8(bytes)).unwrap();
+        }
+    }
+
     pub fn font_height(&self, font: CardFont) -> u32 {
         self.renderers[font as usize].get_default_line_height() as u32
     }
@@ -161,6 +177,18 @@ impl CardworderUi {
     /// Expand dirty region to include given row range.
     pub fn mark_rows_dirty(&mut self, min_y: usize, max_y: usize) {
         self.framebuffer.data.mark_rows_dirty(min_y, max_y);
+    }
+
+    /// Hardware scroll — shifts display content without redrawing framebuffer.
+    /// With 90° rotation, this scrolls horizontally on screen.
+    /// Only sends a 4-byte SPI command — instant, no pixel data transfer.
+    pub fn set_scroll_offset(&mut self, offset: u16) {
+        unsafe {
+            let screen = &mut self.display.screen;
+            screen.dcs().write_command(
+                mipidsi::dcs::SetScrollStart::new(offset)
+            ).unwrap();
+        }
     }
 
     /// Flush dirty region of framebuffer to display via SPI (partial flush).

@@ -30,6 +30,11 @@ name = "hal_test_sd"
 path = "src/bin/hal_test_sd.rs"
 harness = false
 
+[[bin]]
+name = "hal_test_scroll"
+path = "src/bin/hal_test_scroll.rs"
+harness = false
+
 [profile.release]
 opt-level = "s"
 
