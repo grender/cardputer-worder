@@ -281,6 +281,9 @@ pub fn render_visible_lines(composed: &ComposedForm, lines: &[UiLineType<'_>], u
             UiLineType::InputField { label, value, cursor_pos, focused } => {
                 draw_input_field_line(label, value.as_str(), *cursor_pos, *focused, &composed_line.rect, ui);
             }
+            UiLineType::AutoText { text, color, max_width } => {
+                ui.draw_text_auto(text, *color, composed_line.rect.top_left.x + 4, composed_line.rect.top_left.y, *max_width);
+            }
             UiLineType::Spacer(_) => {}
             UiLineType::Line(_, _color) => {}
         }

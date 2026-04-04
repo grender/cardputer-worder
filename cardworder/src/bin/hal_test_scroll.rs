@@ -7,14 +7,11 @@ use cardworder::cardputer_hal::screen::cardputer_screen::CardputerScreen;
 use cardworder::cardputer_hal::input::keyboard_io::{CardputerKeyboard, KeyEvent, Scancode};
 use cardworder::cardputer_hal::input::keyboard::{InputState, InputLanguage, PressedSymbol};
 use cardworder::ResultExt;
-use display_interface::{DataFormat, WriteOnlyDataCommand};
 use embedded_graphics::pixelcolor::Rgb565;
-use embedded_graphics::prelude::{DrawTarget, IntoStorage, Point, RgbColor, Size, WebColors};
-use embedded_graphics::primitives::Rectangle;
+use embedded_graphics::prelude::{IntoStorage, RgbColor};
 use esp_idf_hal::delay::FreeRtos;
 use esp_idf_hal::gpio::{Output, PinDriver, Pull};
 use esp_idf_svc::hal::peripherals::Peripherals;
-use mipidsi::dcs::{SetColumnAddress, SetPageAddress, SetScrollStart, WriteMemoryStart};
 use u8g2_fonts::types::{FontColor, VerticalPosition};
 use u8g2_fonts::{fonts, FontRenderer};
 
@@ -27,7 +24,7 @@ fn main() {
 
     // Build display
     let mut screen = CardputerScreen::build(
-        Rgb565::CSS_BLACK,
+        Rgb565::BLACK,
         peripherals.spi2,
         peripherals.pins.gpio36,
         peripherals.pins.gpio35,
@@ -83,7 +80,7 @@ fn main() {
     let repeat_delay_us: u64 = 80_000; // 80ms repeat rate
 
     loop {
-        let now_us = unsafe { esp_idf_svc::sys::esp_timer_get_time() as u64 };
+        let now_us = cardworder::esp_util::now_us();
 
         if let Some((event, scancode)) = keyboard.read_events() {
             if let Some(pressed) = input_state.eat_keys(event, scancode) {
@@ -110,7 +107,7 @@ fn main() {
                         }
                         _ => {}
                     }
-                    unsafe { display.screen.dcs().write_command(SetScrollStart::new(offset)).unwrap(); }
+                    display.set_scroll_start(offset);
                     log::info!("hal_test_scroll: offset={}", offset);
                 }
             }
@@ -125,7 +122,7 @@ fn main() {
         if held_direction != 0 && (now_us - last_repeat_us) >= repeat_delay_us {
             let step: i16 = if input_state.shift_active() { 10 } else { 1 };
             offset = ((offset as i16 + held_direction * step + 320) % 320) as u16;
-            unsafe { display.screen.dcs().write_command(SetScrollStart::new(offset)).unwrap(); }
+            display.set_scroll_start(offset);
             log::info!("hal_test_scroll: offset={}", offset);
             last_repeat_us = now_us;
         }
@@ -166,15 +163,6 @@ fn fill_full_ram(display: &mut cardworder::cardputer_hal::screen::display::Cardp
         }
 
         // Write to FULL chip address space: cols 0-239, rows chunk
-        unsafe {
-            display.screen.dcs().write_command(SetColumnAddress::new(0, 239)).unwrap();
-            display.screen.dcs().write_command(SetPageAddress::new(chunk_start, chunk_end)).unwrap();
-            display.screen.dcs().write_command(WriteMemoryStart).unwrap();
-            let bytes: &[u8] = core::slice::from_raw_parts(
-                pixels.as_ptr() as *const u8,
-                pixels.len() * 2,
-            );
-            display.screen.dcs().di.send_data(DataFormat::U8(bytes)).unwrap();
-        }
+        display.write_pixels(0, 239, chunk_start, chunk_end, &pixels);
     }
 }

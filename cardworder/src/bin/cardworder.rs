@@ -1,12 +1,13 @@
-use std::ffi::CStr;
-
 use cardworder::cardputer_hal::cardputer_hal::CardputerHal;
 use cardworder::cardputer_hal::input::keyboard::{InputLanguage, InputState, PressedSymbol};
 use cardworder::cardputer_hal::input::keyboard_io::KeyEvent;
+use cardworder::core0_dispatch::{self, Core0Result};
+use cardworder::core0_dispatch::executor::HalExecutor;
+use cardworder::esp_util;
 use cardworder::runtime::Runtime;
 use cardworder::screen::Snapshot;
 use cardworder::screens::main_menu::MainMenuScreen;
-use cardworder::types::{Core0Action, Core0Result, KeyMsg, Msg};
+use cardworder::types::{KeyMsg, Msg};
 use cardworder::ui::cardworder_ui::CardworderUi;
 use cardworder::ResultExt;
 use embedded_graphics::pixelcolor::Rgb565;
@@ -15,196 +16,7 @@ use esp_idf_hal::delay::FreeRtos;
 use esp_idf_hal::task::thread::ThreadSpawnConfiguration;
 use esp_idf_svc::eventloop::EspSystemEventLoop;
 use esp_idf_svc::hal::peripherals::Peripherals;
-use esp_idf_svc::sntp::{EspSntp, SyncStatus};
-
-/// Execute a Core0Action using the HAL on Core 0.
-fn execute_core0_action(
-    hal: &mut CardputerHal<'_>,
-    action: Core0Action,
-    ntp: &mut Option<EspSntp<'static>>,
-    battery: &mut cardworder::cardputer_hal::cardputer_hal::BatteryReader,
-) -> Core0Result {
-    match action {
-        Core0Action::SetTimezone => {
-            unsafe {
-                let env_tz = b"TZ\0";
-                let tz = b"GMT-3\0";
-                esp_idf_sys::setenv(env_tz.as_ptr() as *const u8, tz.as_ptr() as *const u8, 1);
-                esp_idf_sys::tzset();
-            }
-            Core0Result::TimezoneSet
-        }
-        Core0Action::CreateWifiFileIfNotExists { ssid, password } => {
-            match hal.create_wifi_file_if_non_exists(ssid, password) {
-                Ok(()) => Core0Result::WifiFileCreated,
-                Err(e) => Core0Result::Error(format!("Create wifi file: {:?}", e)),
-            }
-        }
-        Core0Action::LoadWifiConfig => {
-            match hal.load_wifi_config() {
-                Ok(config) => Core0Result::WifiConfigLoaded(config),
-                Err(e) => Core0Result::Error(format!("Load config: {:?}", e)),
-            }
-        }
-        Core0Action::ConnectWifi(config) => {
-            let ssid = config.ssid.clone();
-            match hal.connect_wifi(config) {
-                Ok(()) => Core0Result::WifiConnected { ssid },
-                Err(e) => Core0Result::Error(format!("Connect WiFi: {:?}", e)),
-            }
-        }
-        Core0Action::StartNtp => {
-            match EspSntp::new_default() {
-                Ok(sntp) => {
-                    *ntp = Some(sntp);
-                    Core0Result::NtpStarted
-                }
-                Err(e) => Core0Result::Error(format!("Start NTP: {:?}", e)),
-            }
-        }
-        Core0Action::CheckNtpStatus => {
-            if let Some(ref sntp) = ntp {
-                let done = sntp.get_sync_status() == SyncStatus::Completed;
-                if done {
-                    *ntp = None; // drop the SNTP instance
-                }
-                Core0Result::NtpSynced(done)
-            } else {
-                Core0Result::NtpSynced(true) // no NTP instance, consider done
-            }
-        }
-        Core0Action::StopWifi => {
-            match hal.stop_wifi() {
-                Ok(()) => Core0Result::WifiStopped,
-                Err(e) => Core0Result::Error(format!("Stop WiFi: {:?}", e)),
-            }
-        }
-        Core0Action::LoadDueItems => {
-            match hal.load_due_items() {
-                Ok((forward_items, reverse_items, next_id)) => Core0Result::DueItemsLoaded { forward_items, reverse_items, next_id },
-                Err(e) => Core0Result::Error(format!("Load due: {:?}", e)),
-            }
-        }
-        Core0Action::LoadWordText { slot, word_offset, word_length } => {
-            match hal.load_word_text(word_offset, word_length) {
-                Ok(wt) => {
-                    match hal.load_fsrs_record(slot) {
-                        Ok(rec) => Core0Result::WordTextLoaded { en: wt.en, ru: wt.ru, record_bytes: rec.to_bytes() },
-                        Err(e) => Core0Result::Error(format!("Load record: {:?}", e)),
-                    }
-                }
-                Err(e) => Core0Result::Error(format!("Load word: {:?}", e)),
-            }
-        }
-        Core0Action::RateCard { slot, record_bytes } => {
-            let record = fsrs_core::FsrsRecord::from_bytes(&record_bytes);
-            match hal.save_fsrs_record(slot, &record) {
-                Ok(()) => Core0Result::CardRated,
-                Err(e) => Core0Result::Error(format!("Rate: {:?}", e)),
-            }
-        }
-        Core0Action::RateAndLoadNext { slot, record_bytes, next_slot, next_word_offset, next_word_length } => {
-            let record = fsrs_core::FsrsRecord::from_bytes(&record_bytes);
-            match hal.rate_and_load_next(slot, &record, next_slot, next_word_offset, next_word_length) {
-                Ok((wt, rec)) => Core0Result::CardRatedAndNextLoaded { en: wt.en, ru: wt.ru, record_bytes: rec.to_bytes() },
-                Err(e) => Core0Result::Error(format!("RateAndLoad: {:?}", e)),
-            }
-        }
-        Core0Action::AddPair { en, ru } => {
-            match hal.add_pair(&en, &ru) {
-                Ok(id) => Core0Result::PairAdded(id),
-                Err(e) => Core0Result::Error(format!("Add pair: {:?}", e)),
-            }
-        }
-        Core0Action::LoadQuickStats => {
-            match hal.load_quick_stats() {
-                Ok(stats) => Core0Result::QuickStatsLoaded(stats),
-                Err(e) => Core0Result::Error(format!("Stats: {:?}", e)),
-            }
-        }
-        Core0Action::LoadNextId => {
-            match hal.load_next_id() {
-                Ok(id) => Core0Result::NextIdLoaded(id),
-                Err(e) => Core0Result::Error(format!("NextId: {:?}", e)),
-            }
-        }
-        Core0Action::MigratePairs => {
-            match hal.migrate_pairs_if_needed() {
-                Ok(_) => Core0Result::MigrationDone,
-                Err(e) => Core0Result::Error(format!("Migrate: {:?}", e)),
-            }
-        }
-        Core0Action::LoadWifiList => {
-            match hal.load_wifi_list() {
-                Ok(list) => Core0Result::WifiListLoaded(list),
-                Err(e) => Core0Result::Error(format!("Load WiFi list: {:?}", e)),
-            }
-        }
-        Core0Action::SaveWifiList(list) => {
-            match hal.save_wifi_list(&list) {
-                Ok(()) => Core0Result::WifiListSaved,
-                Err(e) => Core0Result::Error(format!("Save WiFi list: {:?}", e)),
-            }
-        }
-        Core0Action::StartWifi => {
-            match hal.start_wifi() {
-                Ok(()) => Core0Result::WifiStarted,
-                Err(e) => Core0Result::Error(format!("Start WiFi: {:?}", e)),
-            }
-        }
-        Core0Action::StartWifiScan => {
-            // scan() is blocking — starts scan and waits for results
-            match hal.scan_wifi() {
-                Ok(results) => {
-                    let networks: Vec<cardworder::types::ScannedNetwork> = results.iter().map(|ap| {
-                        cardworder::types::ScannedNetwork {
-                            ssid: ap.ssid.clone(),
-                            signal_strength: ap.signal_strength,
-                            has_saved_password: false, // will be set by screen
-                        }
-                    }).collect();
-                    Core0Result::WifiScanResults(networks)
-                }
-                Err(e) => Core0Result::Error(format!("WiFi scan: {:?}", e)),
-            }
-        }
-        Core0Action::GetScanResults => {
-            Core0Result::Error("use StartWifiScan instead".to_string())
-        }
-        Core0Action::GetNetworkInfo => {
-            let mut ip_str = heapless::String::<16>::new();
-            unsafe {
-                let netif = esp_idf_sys::esp_netif_get_handle_from_ifkey(
-                    b"WIFI_STA_DEF\0".as_ptr() as *const _,
-                );
-                if !netif.is_null() {
-                    let mut ip_info: esp_idf_sys::esp_netif_ip_info_t = core::mem::zeroed();
-                    if esp_idf_sys::esp_netif_get_ip_info(netif, &mut ip_info) == 0 {
-                        let ip = ip_info.ip.addr;
-                        if ip != 0 {
-                            let _ = core::fmt::Write::write_fmt(
-                                &mut ip_str,
-                                format_args!(
-                                    "{}.{}.{}.{}",
-                                    ip & 0xFF,
-                                    (ip >> 8) & 0xFF,
-                                    (ip >> 16) & 0xFF,
-                                    (ip >> 24) & 0xFF
-                                ),
-                            );
-                        }
-                    }
-                }
-            }
-            Core0Result::NetworkInfo { ip: ip_str }
-        }
-        Core0Action::ReadBattery => {
-            let mv = battery.read_mv();
-            let percent = battery.read_percent();
-            Core0Result::BatteryReading { mv, percent }
-        }
-    }
-}
+use esp_idf_svc::sntp::EspSntp;
 
 fn main() {
     esp_idf_svc::sys::link_patches();
@@ -267,7 +79,7 @@ fn main() {
     let runtime_state_tx = state_tx;
 
     ThreadSpawnConfiguration {
-        name: Some(unsafe { CStr::from_bytes_with_nul_unchecked(b"runtime\0") }),
+        name: Some(c"runtime"),
         stack_size: 32768,
         priority: 5,
         pin_to_core: Some(esp_idf_hal::cpu::Core::Core1),
@@ -286,9 +98,8 @@ fn main() {
     });
 
     // ---- Core 0: keyboard poll + draw loop + Core0Action execution ----
-    let free_heap = unsafe { esp_idf_sys::heap_caps_get_free_size(esp_idf_sys::MALLOC_CAP_DEFAULT) };
-    let total_heap = unsafe { esp_idf_sys::heap_caps_get_total_size(esp_idf_sys::MALLOC_CAP_DEFAULT) };
-    log::info!("boot: free heap {}KB / {}KB, entering Core 0 draw loop", free_heap / 1024, total_heap / 1024);
+    let heap = esp_util::heap_info();
+    log::info!("boot: free heap {}KB / {}KB, entering Core 0 draw loop", heap.free_bytes / 1024, heap.total_bytes / 1024);
 
     let mut input_state = InputState {
         ctrl_pressed: false,
@@ -331,7 +142,7 @@ fn main() {
         }
 
         // 3. Draw first (so Loading/Saving screens appear before blocking HAL ops)
-        let now_us = unsafe { esp_idf_svc::sys::esp_timer_get_time() as u64 };
+        let now_us = esp_util::now_us();
         let timer_tick = (now_us - last_draw_us) >= 1_000_000;
         let should_draw = got_new_snapshot || timer_tick;
 
@@ -363,7 +174,8 @@ fn main() {
         if got_new_snapshot {
             if let Some(ref mut snapshot) = current_snapshot {
                 if let Some(action) = snapshot.action() {
-                    let result = execute_core0_action(&mut hal, action, &mut ntp_instance, &mut battery);
+                    let mut executor = HalExecutor { hal: &mut hal, ntp: &mut ntp_instance, battery: &mut battery };
+                    let result = core0_dispatch::dispatch(&mut executor, action);
                     match &result {
                         Core0Result::WifiConnected { .. } => wifi_connected = true,
                         Core0Result::WifiStopped => wifi_connected = false,
@@ -375,7 +187,7 @@ fn main() {
         }
 
         // 5. Read battery every 30 seconds
-        let now_bat = unsafe { esp_idf_svc::sys::esp_timer_get_time() as u64 };
+        let now_bat = esp_util::now_us();
         if now_bat - last_battery_read_us >= 30_000_000 || last_battery_read_us == 0 {
             battery_percent = battery.read_percent();
             last_battery_read_us = now_bat;

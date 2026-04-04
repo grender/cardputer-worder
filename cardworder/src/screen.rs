@@ -36,6 +36,7 @@ impl Snapshot {
     pub fn needs_top_line(&self) -> bool {
         match self {
             Snapshot::Start(_) => false,
+            Snapshot::Review(_) => false,
             _ => true,
         }
     }

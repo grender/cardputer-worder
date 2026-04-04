@@ -78,11 +78,12 @@ impl Screen for SystemInfoScreen {
     }
 
     fn snapshot(&self, shared: &SharedState) -> Snapshot {
-        let free_heap = unsafe { esp_idf_sys::heap_caps_get_free_size(esp_idf_sys::MALLOC_CAP_DEFAULT) };
-        let total_heap = unsafe { esp_idf_sys::heap_caps_get_total_size(esp_idf_sys::MALLOC_CAP_DEFAULT) };
-        let free_dma = unsafe { esp_idf_sys::heap_caps_get_free_size(esp_idf_sys::MALLOC_CAP_DMA | esp_idf_sys::MALLOC_CAP_INTERNAL) };
-        let largest_block = unsafe { esp_idf_sys::heap_caps_get_largest_free_block(esp_idf_sys::MALLOC_CAP_DEFAULT) };
-        let uptime_us = unsafe { esp_idf_sys::esp_timer_get_time() as u64 };
+        let heap = crate::esp_util::heap_info();
+        let free_heap = heap.free_bytes;
+        let total_heap = heap.total_bytes;
+        let free_dma = heap.free_dma_bytes;
+        let largest_block = heap.largest_block_bytes;
+        let uptime_us = crate::esp_util::now_us();
 
         let pending_action = if self.needs_network_info {
             Some(Core0Action::GetNetworkInfo)

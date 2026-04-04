@@ -1,38 +1,35 @@
-//! HAL test: display FPS benchmark. Fills screen with solid color as fast as possible.
+//! HAL test: font rendering comparison.
+//! Shows monospaced vs proportional fonts, English and Russian text.
+//! Press any key to cycle through test pages.
 
 use core::fmt::Write;
 
 use cardworder::cardputer_hal::screen::cardputer_screen::CardputerScreen;
+use cardworder::cardputer_hal::input::keyboard_io::{CardputerKeyboard, KeyEvent};
 use cardworder::ResultExt;
-use embedded_fps::FPS;
 use embedded_graphics::{
     pixelcolor::Rgb565,
-    prelude::{DrawTarget, Point, Size, WebColors},
-    primitives::Rectangle,
+    prelude::{DrawTarget, Point, WebColors},
 };
 use embedded_graphics::prelude::RgbColor;
+use esp_idf_hal::delay::FreeRtos;
+use esp_idf_hal::gpio::{Output, PinDriver, Pull};
 use esp_idf_svc::hal::peripherals::Peripherals;
-use embedded_time::rate::Fraction;
 use u8g2_fonts::types::{FontColor, VerticalPosition};
 use u8g2_fonts::{fonts, FontRenderer};
 
-struct HalTestClock {}
-
-impl embedded_time::clock::Clock for HalTestClock {
-    type T = u64;
-    const SCALING_FACTOR: Fraction = Fraction::new(1, 1_000_000);
-
-    fn try_now(&self) -> Result<embedded_time::Instant<Self>, embedded_time::clock::Error> {
-        let now = unsafe { esp_idf_svc::sys::esp_timer_get_time() };
-        Ok(embedded_time::Instant::<Self>::new(now as u64))
-    }
+struct FontEntry<'a> {
+    name: &'a str,
+    renderer: &'a FontRenderer,
+    #[allow(dead_code)]
+    is_mono: bool,
 }
 
 fn main() {
     esp_idf_svc::sys::link_patches();
     esp_idf_svc::log::EspLogger::initialize_default();
 
-    log::info!("hal_test_screen: === FPS benchmark start ===");
+    log::info!("hal_test_screen: === font test start ===");
     let peripherals = Peripherals::take().unwrap_or_log("error get peripherals");
 
     let mut screen = CardputerScreen::build(
@@ -45,89 +42,159 @@ fn main() {
         peripherals.pins.gpio33,
         peripherals.pins.gpio38,
     );
+    screen.backlight_on().ok();
 
-    if let Err(e) = screen.backlight_on() {
-        log::warn!("hal_test_screen: backlight_on returned {:?}", e);
-    }
+    // Build keyboard
+    let mux_pins: [PinDriver<'_, Output>; 3] = [
+        PinDriver::output(peripherals.pins.gpio8.degrade_output()).unwrap(),
+        PinDriver::output(peripherals.pins.gpio9.degrade_output()).unwrap(),
+        PinDriver::output(peripherals.pins.gpio11.degrade_output()).unwrap(),
+    ];
+    let column_pins = [
+        PinDriver::input(peripherals.pins.gpio13.degrade_input_output(), Pull::Up).unwrap(),
+        PinDriver::input(peripherals.pins.gpio15.degrade_input_output(), Pull::Up).unwrap(),
+        PinDriver::input(peripherals.pins.gpio3.degrade_input_output(), Pull::Up).unwrap(),
+        PinDriver::input(peripherals.pins.gpio4.degrade_input_output(), Pull::Up).unwrap(),
+        PinDriver::input(peripherals.pins.gpio5.degrade_input_output(), Pull::Up).unwrap(),
+        PinDriver::input(peripherals.pins.gpio6.degrade_input_output(), Pull::Up).unwrap(),
+        PinDriver::input(peripherals.pins.gpio7.degrade_input_output(), Pull::Up).unwrap(),
+    ];
+    let mut keyboard = CardputerKeyboard::new(mux_pins, column_pins);
+    keyboard.init();
 
-    let mut fps_counter = FPS::<45, _>::new(HalTestClock {});
-    let fps_font = FontRenderer::new::<fonts::u8g2_font_4x6_t_cyrillic>();
-    let fps_glyph_size = fps_font.get_glyph_bounding_box(VerticalPosition::Top).size;
+    // --- Monospaced fonts (NxM pattern, fixed-width grid) ---
+    let mono_4x6 = FontRenderer::new::<fonts::u8g2_font_4x6_t_cyrillic>();
+    let mono_5x8 = FontRenderer::new::<fonts::u8g2_font_5x8_t_cyrillic>();
+    let mono_6x12 = FontRenderer::new::<fonts::u8g2_font_6x12_t_cyrillic>();
+    let mono_9x15 = FontRenderer::new::<fonts::u8g2_font_9x15_t_cyrillic>();
+    let mono_10x20 = FontRenderer::new::<fonts::u8g2_font_10x20_t_cyrillic>();
+    let mono_7x13 = FontRenderer::new::<fonts::u8g2_font_7x13_t_cyrillic>();
+    let mono_8x13 = FontRenderer::new::<fonts::u8g2_font_8x13_t_cyrillic>();
 
-    log::info!("hal_test_screen: entering benchmark loop (fill + flush, no delay)");
+    // --- Proportional fonts (variable-width glyphs) ---
+    let prop_cu12 = FontRenderer::new::<fonts::u8g2_font_cu12_t_cyrillic>();
+    let prop_inr24 = FontRenderer::new::<fonts::u8g2_font_inr24_t_cyrillic>();
+    let prop_inr27 = FontRenderer::new::<fonts::u8g2_font_inr27_t_cyrillic>();
+    let prop_haxr = FontRenderer::new::<fonts::u8g2_font_haxrcorp4089_t_cyrillic>();
+    let prop_unifont = FontRenderer::new::<fonts::u8g2_font_unifont_t_cyrillic>();
 
-    let mut n = 0u32;
-    let mut frame_sample_count: u64 = 0;
-    let mut fill_us_acc: u64 = 0;
-    let mut overlay_us_acc: u64 = 0;
-    let mut flush_us_acc: u64 = 0;
+    let en_text = "Hello World! iiiWWW";
+    let ru_text = "Привет Мир! шшшІІІ";
+    let _mix_text = "Mix: Слово - word";
+
+    let all_fonts: Vec<FontEntry> = vec![
+        // Page 1: Monospaced small
+        FontEntry { name: "4x6 mono", renderer: &mono_4x6, is_mono: true },
+        FontEntry { name: "5x8 mono", renderer: &mono_5x8, is_mono: true },
+        FontEntry { name: "6x12 mono", renderer: &mono_6x12, is_mono: true },
+        FontEntry { name: "7x13 mono", renderer: &mono_7x13, is_mono: true },
+        FontEntry { name: "8x13 mono", renderer: &mono_8x13, is_mono: true },
+        // Page 2: Monospaced large
+        FontEntry { name: "9x15 mono", renderer: &mono_9x15, is_mono: true },
+        FontEntry { name: "10x20 mono", renderer: &mono_10x20, is_mono: true },
+        // Page 3: Proportional
+        FontEntry { name: "cu12 prop", renderer: &prop_cu12, is_mono: false },
+        FontEntry { name: "haxrcorp prop", renderer: &prop_haxr, is_mono: false },
+        FontEntry { name: "unifont prop", renderer: &prop_unifont, is_mono: false },
+        // Page 4: Proportional large
+        FontEntry { name: "inr24 prop", renderer: &prop_inr24, is_mono: false },
+        FontEntry { name: "inr27 prop", renderer: &prop_inr27, is_mono: false },
+    ];
+
+    let label_font = &mono_4x6;
+    let mut page = 0usize;
+    let mut needs_redraw = true;
+
+    // Group fonts into pages that fit on screen
+    let pages: Vec<Vec<usize>> = build_pages(&all_fonts, &screen);
 
     loop {
-        n = n.wrapping_add(1);
+        if needs_redraw {
+            screen.clear(Rgb565::BLACK).unwrap();
 
-        let fill = match n % 6 {
-            0 => Rgb565::CSS_RED,
-            1 => Rgb565::CSS_GREEN,
-            2 => Rgb565::CSS_BLUE,
-            3 => Rgb565::CSS_YELLOW,
-            4 => Rgb565::CSS_MAGENTA,
-            _ => Rgb565::CSS_CYAN,
-        };
+            let page_fonts = &pages[page % pages.len()];
+            let mut y = 2i32;
 
-        // 1. Fill entire framebuffer
-        let t0 = unsafe { esp_idf_svc::sys::esp_timer_get_time() as u64 };
-        screen.clear(fill).unwrap();
-        let t_after_fill = unsafe { esp_idf_svc::sys::esp_timer_get_time() as u64 };
+            // Page header
+            let mut header = heapless::String::<32>::new();
+            let _ = write!(header, "Page {}/{}", page % pages.len() + 1, pages.len());
+            label_font.render(
+                header.as_str(), Point::new(0, y), VerticalPosition::Top,
+                FontColor::Transparent(Rgb565::CSS_GRAY), &mut screen,
+            ).ok();
+            y += 8;
 
-        // 2. FPS overlay
-        let fps = fps_counter.tick();
-        let mut fps_text = heapless::String::<16>::new();
-        let _ = write!(fps_text, "FPS: {}", fps);
-        let area = Rectangle {
-            top_left: Point::new(0, 0),
-            size: Size::new(
-                fps_glyph_size.width as u32 * fps_text.len() as u32 + 2,
-                fps_glyph_size.height as u32 + 2,
-            ),
-        };
-        let _ = screen.fill_solid(&area, Rgb565::BLACK);
-        fps_font
-            .render(
-                fps_text.as_str(),
-                Point::new(1, 1),
-                VerticalPosition::Top,
-                FontColor::Transparent(Rgb565::WHITE),
-                &mut screen,
-            )
-            .unwrap();
-        let t_after_overlay = unsafe { esp_idf_svc::sys::esp_timer_get_time() as u64 };
+            for &fi in page_fonts {
+                let entry = &all_fonts[fi];
+                let line_h = entry.renderer.get_default_line_height() as i32;
 
-        // 3. Flush to display (no delay — max speed)
-        match screen.flush_framebuffer() {
-            Ok(()) => {}
-            Err(e) => log::error!("hal_test_screen: flush error {:?}", e),
+                // Font label (small gray)
+                let mut label = heapless::String::<32>::new();
+                let _ = write!(label, "{}", entry.name);
+                label_font.render(
+                    label.as_str(), Point::new(0, y), VerticalPosition::Top,
+                    FontColor::Transparent(Rgb565::CSS_DARK_GRAY), &mut screen,
+                ).ok();
+                y += 7;
+
+                // English text
+                entry.renderer.render(
+                    en_text, Point::new(0, y), VerticalPosition::Top,
+                    FontColor::Transparent(Rgb565::WHITE), &mut screen,
+                ).ok();
+                y += line_h + 1;
+
+                // Russian text
+                entry.renderer.render(
+                    ru_text, Point::new(0, y), VerticalPosition::Top,
+                    FontColor::Transparent(Rgb565::CSS_LIGHT_BLUE), &mut screen,
+                ).ok();
+                y += line_h + 1;
+
+                // Separator
+                y += 2;
+            }
+
+            // Hint at bottom
+            label_font.render(
+                "Any key = next page", Point::new(0, 128), VerticalPosition::Top,
+                FontColor::Transparent(Rgb565::CSS_GRAY), &mut screen,
+            ).ok();
+
+            screen.flush_framebuffer().ok();
+            needs_redraw = false;
         }
-        let t_after_flush = unsafe { esp_idf_svc::sys::esp_timer_get_time() as u64 };
 
-        // Accumulate timing
-        fill_us_acc += t_after_fill - t0;
-        overlay_us_acc += t_after_overlay - t_after_fill;
-        flush_us_acc += t_after_flush - t_after_overlay;
-        frame_sample_count += 1;
-
-        if frame_sample_count >= 30 {
-            let n = frame_sample_count.max(1);
-            log::info!(
-                "perf frame avg us (fill={}, overlay={}, flush={}, total={})",
-                fill_us_acc / n,
-                overlay_us_acc / n,
-                flush_us_acc / n,
-                (fill_us_acc + overlay_us_acc + flush_us_acc) / n,
-            );
-            frame_sample_count = 0;
-            fill_us_acc = 0;
-            overlay_us_acc = 0;
-            flush_us_acc = 0;
+        if let Some((KeyEvent::Pressed, _)) = keyboard.read_events() {
+            page += 1;
+            needs_redraw = true;
         }
+
+        FreeRtos::delay_ms(10);
     }
+}
+
+/// Split font indices into pages that fit within 135px screen height.
+fn build_pages<'a>(fonts: &[FontEntry<'a>], _screen: &CardputerScreen) -> Vec<Vec<usize>> {
+    let mut pages: Vec<Vec<usize>> = Vec::new();
+    let mut current_page: Vec<usize> = Vec::new();
+    let mut y = 10i32; // header
+    let max_y = 125; // leave room for hint
+
+    for (i, entry) in fonts.iter().enumerate() {
+        let line_h = entry.renderer.get_default_line_height() as i32;
+        let block_h = 7 + line_h * 2 + 2 + 4; // label + 2 text lines + gaps
+
+        if y + block_h > max_y && !current_page.is_empty() {
+            pages.push(current_page);
+            current_page = Vec::new();
+            y = 10;
+        }
+        current_page.push(i);
+        y += block_h;
+    }
+    if !current_page.is_empty() {
+        pages.push(current_page);
+    }
+    pages
 }

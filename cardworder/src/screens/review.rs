@@ -2,15 +2,15 @@ use core::fmt::Write;
 use std::time::SystemTime;
 
 use embedded_graphics::pixelcolor::Rgb565;
-use embedded_graphics::prelude::Point;
-use u8g2_fonts::types::VerticalPosition;
 
 use crate::cardputer_hal::input::keyboard::{InputLanguage, PressedSymbol};
 use crate::cardputer_hal::input::keyboard_io::KeyEvent;
 use crate::screen::{Screen, Snapshot};
 use crate::screens::main_menu::MainMenuScreen;
 use crate::types::{Command, Core0Action, Core0Result, Msg, SharedState};
-use crate::ui::cardworder_ui::{CardFont, CardworderUi, ThemeColor, TOP_BAR_HEIGHT};
+use crate::ui::cardworder_ui::{CardFont, CardworderUi, ThemeColor};
+use crate::ui::elements::{UiLineElement, UiLineType};
+use crate::ui::render::{compose_scrolled_form, render_visible_lines};
 use fsrs_core::{Direction, DueItem, FsrsRecord, BinaryDirState, Rating, FSRS_RECORD_SIZE};
 use fsrs_core::models::get_timestamp_iso;
 
@@ -52,10 +52,6 @@ impl ReviewScreen {
 
     fn go_main_menu() -> Command {
         Command::SwitchTo(Box::new(MainMenuScreen::default()))
-    }
-
-    fn current_direction(&self) -> Option<Direction> {
-        self.due_items.get(self.current_idx).map(|item| item.direction)
     }
 
     fn current_prompt_answer(&self) -> Option<(&str, &str, Direction)> {
@@ -172,7 +168,7 @@ impl Screen for ReviewScreen {
                         self.phase = Phase::Empty;
                     } else {
                         // Fisher-Yates shuffle
-                        let mut seed = unsafe { esp_idf_svc::sys::esp_timer_get_time() as u64 };
+                        let mut seed = crate::esp_util::now_us();
                         for i in (1..due.len()).rev() {
                             seed = seed.wrapping_mul(6364136223846793005).wrapping_add(1);
                             let j = (seed >> 33) as usize % (i + 1);
@@ -326,69 +322,88 @@ pub struct ReviewSnapshot {
 impl ReviewSnapshot {
     pub fn draw(&self, ui: &mut CardworderUi) {
         let l = self.lang;
-        match &self.phase {
-            PhaseSnapshot::NtpCheck => self.draw_msg(ui,
+        let lines: Vec<UiLineType> = match &self.phase {
+            PhaseSnapshot::ShowPrompt { progress, prompt } => vec![
+                text_line(progress, CardFont::Small, ThemeColor::Text),
+                UiLineType::Spacer(8),
+                UiLineType::AutoText { text: prompt.clone(), color: ThemeColor::Selected, max_width: 232 },
+                UiLineType::Spacer(8),
+                text_line(t("Press Enter to reveal", "Нажмите Enter для ответа", l), CardFont::Small, ThemeColor::Text),
+            ],
+            PhaseSnapshot::ShowAnswer { progress, prompt, answer } => vec![
+                text_line(progress, CardFont::Small, ThemeColor::Text),
+                UiLineType::Spacer(4),
+                UiLineType::AutoText { text: prompt.clone(), color: ThemeColor::Text, max_width: 232 },
+                UiLineType::Spacer(4),
+                UiLineType::AutoText { text: answer.clone(), color: ThemeColor::Color(Rgb565::new(0, 63, 0)), max_width: 232 },
+                UiLineType::Spacer(4),
+                text_line(t("1:Again 2:Hard 3:Good 4:Easy", "1:Снова 2:Трудно 3:Хорошо 4:Легко", l), CardFont::Medium, ThemeColor::Selected),
+            ],
+            PhaseSnapshot::NtpCheck => msg_lines(
                 t("Time not set", "Время не установлено", l),
                 t("Set time via NTP first", "Сначала синхронизируйте время", l),
-                ThemeColor::Error, true),
-            PhaseSnapshot::Loading => self.draw_msg(ui,
+                ThemeColor::Error, Some(t("Press Enter/Esc", "Нажмите Enter/Esc", l)),
+            ),
+            PhaseSnapshot::Loading => msg_lines(
                 t("Review", "Повторение", l),
                 t("Loading cards...", "Загрузка карточек...", l),
-                ThemeColor::Text, false),
-            PhaseSnapshot::ShowPrompt { progress, prompt } => self.draw_prompt(ui, progress, prompt),
-            PhaseSnapshot::ShowAnswer { progress, prompt, answer } => self.draw_answer(ui, progress, prompt, answer),
-            PhaseSnapshot::Saving => self.draw_msg(ui,
+                ThemeColor::Text, None,
+            ),
+            PhaseSnapshot::Saving => msg_lines(
                 t("Review", "Повторение", l),
                 t("Saving progress...", "Сохранение прогресса...", l),
-                ThemeColor::Text, false),
+                ThemeColor::Text, None,
+            ),
             PhaseSnapshot::SessionDone { count } => {
                 let mut body = String::new();
                 let _ = write!(body, "{}{}{}", t("Reviewed ", "Повторено ", l), count, t(" cards", " карточек", l));
-                self.draw_msg(ui, t("Done!", "Готово!", l), &body,
-                    ThemeColor::Color(Rgb565::new(0, 63, 0)), true);
+                vec![
+                    text_line(t("Done!", "Готово!", l), CardFont::Large, ThemeColor::Color(Rgb565::new(0, 63, 0))),
+                    UiLineType::Spacer(6),
+                    text_line_owned(&body, ThemeColor::Text),
+                    UiLineType::Spacer(6),
+                    text_line(t("Press Enter/Esc", "Нажмите Enter/Esc", l), CardFont::Small, ThemeColor::Text),
+                ]
             }
-            PhaseSnapshot::Empty => self.draw_msg(ui,
+            PhaseSnapshot::Empty => msg_lines(
                 t("Review", "Повторение", l),
                 t("No cards due!", "Нет карточек для повторения!", l),
-                ThemeColor::Color(Rgb565::new(0, 63, 0)), true),
-            PhaseSnapshot::Error(msg) => self.draw_msg(ui,
-                t("Error", "Ошибка", l), msg, ThemeColor::Error, true),
-        }
-    }
+                ThemeColor::Color(Rgb565::new(0, 63, 0)), Some(t("Press Enter/Esc", "Нажмите Enter/Esc", l)),
+            ),
+            PhaseSnapshot::Error(msg) => {
+                vec![
+                    text_line(t("Error", "Ошибка", l), CardFont::Large, ThemeColor::Error),
+                    UiLineType::Spacer(6),
+                    text_line_owned(msg, ThemeColor::Text),
+                    UiLineType::Spacer(6),
+                    text_line(t("Press Enter/Esc", "Нажмите Enter/Esc", l), CardFont::Small, ThemeColor::Text),
+                ]
+            }
+        };
 
-    fn draw_msg(&self, ui: &mut CardworderUi, title: &str, body: &str, color: ThemeColor, show_hint: bool) {
-        let l = self.lang;
-        let mut y = TOP_BAR_HEIGHT as i32 + 10;
-        ui.draw_text_oneline(title, CardFont::Large, ThemeColor::Selected, Point::new(4, y), VerticalPosition::Top);
-        y += ui.font_height(CardFont::Large) as i32 + 8;
-        ui.draw_text_oneline(body, CardFont::Medium, color, Point::new(4, y), VerticalPosition::Top);
-        if show_hint {
-            y += ui.font_height(CardFont::Medium) as i32 + 8;
-            ui.draw_text_oneline(t("Press Enter/Esc", "Нажмите Enter/Esc", l), CardFont::Small, ThemeColor::Text, Point::new(4, y), VerticalPosition::Top);
-        }
+        let viewport_height = 131u32; // full screen minus small margin
+        let composed = compose_scrolled_form(&lines, 0, viewport_height, 4, ui);
+        render_visible_lines(&composed, &lines, ui);
     }
+}
 
-    fn draw_prompt(&self, ui: &mut CardworderUi, progress: &str, prompt: &str) {
-        let l = self.lang;
-        let mut y = TOP_BAR_HEIGHT as i32 + 6;
-        ui.draw_text_oneline(progress, CardFont::Small, ThemeColor::Text, Point::new(4, y), VerticalPosition::Top);
-        y += ui.font_height(CardFont::Small) as i32 + 12;
-        let h = ui.draw_text_auto(prompt, ThemeColor::Selected, 4, y, 232);
-        y += h + 12;
-        ui.draw_text_oneline(t("Press Enter to reveal", "Нажмите Enter для ответа", l), CardFont::Small, ThemeColor::Text, Point::new(4, y), VerticalPosition::Top);
-    }
+fn text_line<'a>(text: &'a str, font: CardFont, color: ThemeColor) -> UiLineType<'a> {
+    UiLineType::Elements(vec![UiLineElement::Text(text, font, u8g2_fonts::types::VerticalPosition::Top, color)])
+}
 
-    fn draw_answer(&self, ui: &mut CardworderUi, progress: &str, prompt: &str, answer: &str) {
-        let l = self.lang;
-        let mut y = TOP_BAR_HEIGHT as i32 + 6;
-        ui.draw_text_oneline(progress, CardFont::Small, ThemeColor::Text, Point::new(4, y), VerticalPosition::Top);
-        y += ui.font_height(CardFont::Small) as i32 + 6;
-        let h = ui.draw_text_auto(prompt, ThemeColor::Text, 4, y, 232);
-        y += h + 4;
-        let h = ui.draw_text_auto(answer, ThemeColor::Color(Rgb565::new(0, 63, 0)), 4, y, 232);
-        y += h + 6;
-        ui.draw_text_oneline(
-            t("1:Again 2:Hard 3:Good 4:Easy", "1:Снова 2:Трудно 3:Хорошо 4:Легко", l),
-            CardFont::Medium, ThemeColor::Selected, Point::new(4, y), VerticalPosition::Top);
+fn text_line_owned<'a>(text: &str, color: ThemeColor) -> UiLineType<'a> {
+    UiLineType::AutoText { text: text.to_string(), color, max_width: 232 }
+}
+
+fn msg_lines<'a>(title: &'a str, body: &'a str, body_color: ThemeColor, hint: Option<&'a str>) -> Vec<UiLineType<'a>> {
+    let mut lines = vec![
+        text_line(title, CardFont::Large, ThemeColor::Selected),
+        UiLineType::Spacer(6),
+        text_line(body, CardFont::Medium, body_color),
+    ];
+    if let Some(h) = hint {
+        lines.push(UiLineType::Spacer(6));
+        lines.push(text_line(h, CardFont::Small, ThemeColor::Text));
     }
+    lines
 }

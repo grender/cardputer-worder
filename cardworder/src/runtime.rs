@@ -1,5 +1,4 @@
 use std::sync::mpsc::{Receiver, Sender, TryRecvError};
-use std::ffi::CStr;
 
 use esp_idf_hal::delay::FreeRtos;
 use esp_idf_hal::task::thread::ThreadSpawnConfiguration;
@@ -86,7 +85,7 @@ impl Runtime {
                     tx: self.msg_tx.clone(),
                 };
                 ThreadSpawnConfiguration {
-                    name: Some(unsafe { CStr::from_bytes_with_nul_unchecked(b"task\0") }),
+                    name: Some(c"task"),
                     stack_size: 8192,
                     priority: 4,
                     pin_to_core: Some(Core::Core1),

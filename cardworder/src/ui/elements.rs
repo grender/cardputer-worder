@@ -24,4 +24,11 @@ pub enum UiLineType<'a> {
         cursor_pos: usize,
         focused: bool,
     },
+    /// Auto-sized text: picks largest font that fits, wraps if needed.
+    /// Uses String (owned) because snapshot data may outlive the builder.
+    AutoText {
+        text: String,
+        color: ThemeColor,
+        max_width: u32,
+    },
 }

@@ -1,6 +1,6 @@
 use anyhow::Result;
 use esp_idf_svc::wifi::{AccessPointInfo, ClientConfiguration, Configuration, EspWifi};
-use esp_idf_sys::usleep;
+use esp_idf_hal::delay::FreeRtos;
 use heapless::String;
 use serde::{Deserialize, Serialize};
 
@@ -46,9 +46,7 @@ impl<'a> CardWorderWifi<'a> {
         self.driver.connect()?;
 
         while !self.driver.is_connected()? {
-            unsafe {
-                usleep(1000);
-            }
+            FreeRtos::delay_ms(1);
         }
 
         log::info!("Connected to WiFi network");

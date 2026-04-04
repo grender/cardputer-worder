@@ -1,20 +1,15 @@
-use display_interface::{DataFormat, WriteOnlyDataCommand};
-use embedded_graphics::{pixelcolor::Rgb565, prelude::IntoStorage};
-use embedded_hal::{delay::DelayNs, digital::OutputPin};
+use embedded_graphics::pixelcolor::Rgb565;
+use embedded_hal::delay::DelayNs;
 
 use mipidsi::{
     dcs::{
-        BitsPerPixel, Dcs, EnterNormalMode, ExitSleepMode, PixelFormat, SetAddressMode,
-        SetDisplayOn, SetInvertMode, SetPixelFormat, SetScrollArea, SoftReset, WriteMemoryStart,
+        BitsPerPixel, EnterNormalMode, ExitSleepMode, InterfaceExt, PixelFormat,
+        SetAddressMode, SetDisplayOn, SetInvertMode, SetPixelFormat, SetScrollArea, SoftReset,
     },
-    error::{Error, InitError},
-    models::Model,
+    interface::Interface,
+    models::{Model, ModelInitError},
     options::{ColorInversion, ModelOptions},
 };
-
-/// ST7789 display in Rgb565 color mode.
-///
-/// Interfaces implemented by the [display-interface](https://crates.io/crates/display-interface) are supported.
 
 #[derive(Clone, Copy)]
 pub struct ST7789V2;
@@ -23,78 +18,51 @@ impl Model for ST7789V2 {
     type ColorFormat = Rgb565;
     const FRAMEBUFFER_SIZE: (u16, u16) = (240, 320);
 
-    fn init<RST, DELAY, DI>(
+    fn init<DELAY, DI>(
         &mut self,
-        dcs: &mut Dcs<DI>,
+        di: &mut DI,
         delay: &mut DELAY,
         options: &ModelOptions,
-        rst: &mut Option<RST>,
-    ) -> Result<SetAddressMode, InitError<RST::Error>>
+    ) -> Result<SetAddressMode, ModelInitError<DI::Error>>
     where
-        RST: OutputPin,
         DELAY: DelayNs,
-        DI: WriteOnlyDataCommand,
+        DI: Interface,
     {
-        log::info!("init");
+        log::info!("ST7789V2 init");
         let madctl = SetAddressMode::from(options);
 
-        match rst {
-            Some(ref mut rst) => self.hard_reset(rst, delay)?,
-            None => {}
-        }
-
-        dcs.write_command(SoftReset)?;
+        di.write_command(SoftReset).map_err(ModelInitError::Interface)?;
         delay.delay_us(150_000);
-        dcs.write_command(ExitSleepMode)?;
+
+        di.write_command(ExitSleepMode).map_err(ModelInitError::Interface)?;
         delay.delay_us(10_000);
 
-        dcs.write_command(SetInvertMode::new(ColorInversion::Normal))?;
-        dcs.write_command(SetScrollArea::new(0, Self::FRAMEBUFFER_SIZE.1, 0))?;
-        dcs.write_command(madctl)?;
+        di.write_command(SetInvertMode::new(ColorInversion::Normal))
+            .map_err(ModelInitError::Interface)?;
+
+        di.write_command(SetScrollArea::new(0, Self::FRAMEBUFFER_SIZE.1, 0))
+            .map_err(ModelInitError::Interface)?;
+
+        di.write_command(madctl).map_err(ModelInitError::Interface)?;
 
         let pf = PixelFormat::with_all(BitsPerPixel::from_rgb_color::<Self::ColorFormat>());
-        dcs.write_command(SetPixelFormat::new(pf))?;
-        dcs.write_command(SetInvertMode::new(ColorInversion::Inverted))?;
+        di.write_command(SetPixelFormat::new(pf))
+            .map_err(ModelInitError::Interface)?;
+
+        di.write_command(SetInvertMode::new(ColorInversion::Inverted))
+            .map_err(ModelInitError::Interface)?;
         delay.delay_us(10_000);
-        dcs.write_command(SetInvertMode::new(options.invert_colors))?;
+
+        di.write_command(SetInvertMode::new(options.invert_colors))
+            .map_err(ModelInitError::Interface)?;
         delay.delay_us(10_000);
-        dcs.write_command(EnterNormalMode)?;
+
+        di.write_command(EnterNormalMode).map_err(ModelInitError::Interface)?;
         delay.delay_us(10_000);
-        dcs.write_command(SetDisplayOn)?;
+
+        di.write_command(SetDisplayOn).map_err(ModelInitError::Interface)?;
         delay.delay_us(10_000);
+
         Ok(madctl)
-    }
-
-    fn write_pixels<DI, I>(&mut self, dcs: &mut Dcs<DI>, colors: I) -> Result<(), Error>
-    where
-        DI: WriteOnlyDataCommand,
-        I: IntoIterator<Item = Self::ColorFormat>,
-    {
-        dcs.write_command(WriteMemoryStart)?;
-        let mut iter = colors.into_iter().map(|c| c.into_storage());
-        let buf = DataFormat::U16BEIter(&mut iter);
-        dcs.di.send_data(buf)?;
-        Ok(())
-    }
-
-    /// Resets the display using a reset pin.
-    fn hard_reset<RST, DELAY>(
-        &mut self,
-        rst: &mut RST,
-        delay: &mut DELAY,
-    ) -> Result<(), InitError<RST::Error>>
-    where
-        RST: OutputPin,
-        DELAY: DelayNs,
-    {
-        log::info!("hard reset");
-        rst.set_high().map_err(InitError::Pin)?;
-        delay.delay_us(10);
-        rst.set_low().map_err(InitError::Pin)?;
-        delay.delay_us(10);
-        rst.set_high().map_err(InitError::Pin)?;
-        delay.delay_us(10);
-
-        Ok(())
     }
 }

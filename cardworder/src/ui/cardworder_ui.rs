@@ -8,12 +8,9 @@ use embedded_graphics::prelude::{Point, RgbColor};
 
 use embedded_graphics::{pixelcolor::Rgb565, prelude::*};
 
-use display_interface::DataFormat;
-use display_interface::WriteOnlyDataCommand;
 use embedded_graphics_framebuf::FrameBuf;
 use embedded_time::rate::Fraction;
-use esp_idf_sys::{localtime_r, time, time_t, tm};
-use mipidsi::dcs::{SetColumnAddress, SetPageAddress, WriteMemoryStart};
+use crate::esp_util;
 use u8g2_fonts::types::{FontColor, VerticalPosition};
 use u8g2_fonts::Content;
 use u8g2_fonts::{fonts, FontRenderer};
@@ -76,8 +73,7 @@ impl embedded_time::clock::Clock for CardworderClock {
     const SCALING_FACTOR: Fraction = Fraction::new(1, 1000000);
 
     fn try_now(&self) -> Result<embedded_time::Instant<Self>, embedded_time::clock::Error> {
-        let now = unsafe { esp_idf_svc::sys::esp_timer_get_time() };
-        Ok(embedded_time::Instant::<Self>::new(now as u64))
+        Ok(embedded_time::Instant::<Self>::new(esp_util::now_us()))
     }
 
     fn new_timer<Dur: embedded_time::duration::Duration>(
@@ -141,18 +137,7 @@ impl CardworderUi {
 
     /// Flush framebuffer content to a custom page address range (for page 2 writes).
     pub fn flush_to_page(&mut self, page_start: u16, page_end: u16) {
-        unsafe {
-            let screen = &mut self.display.screen;
-            screen.dcs().write_command(SetColumnAddress::new(40, 279)).unwrap();
-            screen.dcs().write_command(SetPageAddress::new(page_start, page_end)).unwrap();
-            screen.dcs().write_command(WriteMemoryStart).unwrap();
-            let pixel_data: &[u16] = &self.framebuffer.data.data;
-            let bytes: &[u8] = core::slice::from_raw_parts(
-                pixel_data.as_ptr() as *const u8,
-                pixel_data.len() * 2,
-            );
-            screen.dcs().di.send_data(DataFormat::U8(bytes)).unwrap();
-        }
+        self.display.write_pixels(40, 279, page_start, page_end, &self.framebuffer.data.data);
     }
 
     pub fn font_height(&self, font: CardFont) -> u32 {
@@ -183,17 +168,12 @@ impl CardworderUi {
     /// With 90° rotation, this scrolls horizontally on screen.
     /// Only sends a 4-byte SPI command — instant, no pixel data transfer.
     pub fn set_scroll_offset(&mut self, offset: u16) {
-        unsafe {
-            let screen = &mut self.display.screen;
-            screen.dcs().write_command(
-                mipidsi::dcs::SetScrollStart::new(offset)
-            ).unwrap();
-        }
+        self.display.set_scroll_start(offset);
     }
 
     /// Flush dirty region of framebuffer to display via SPI (partial flush).
     pub fn flip_buffer(&mut self) {
-        let t0 = unsafe { esp_idf_svc::sys::esp_timer_get_time() as u64 };
+        let t0 = esp_util::now_us();
         let fps = self.fps_counter.try_tick_max().unwrap_or(0);
         if self.show_fps {
             let mut fps_text = heapless::String::<16>::new();
@@ -213,29 +193,17 @@ impl CardworderUi {
                 FontColor::Transparent(get_rgb565(ThemeColor::Text)), &mut self.framebuffer,
             ).unwrap();
         }
-        let t_after_overlay = unsafe { esp_idf_svc::sys::esp_timer_get_time() as u64 };
+        let t_after_overlay = esp_util::now_us();
 
         // Direct partial SPI flush — only send dirty rows
         if let Some((_min_x, min_y, _max_x, max_y)) = self.framebuffer.data.take_dirty_bbox() {
-            unsafe {
-                let screen = &mut self.display.screen;
-                screen.dcs().write_command(SetColumnAddress::new(40, 279)).unwrap();
-                screen.dcs().write_command(SetPageAddress::new(
-                    53 + min_y as u16, 53 + max_y as u16,
-                )).unwrap();
-                screen.dcs().write_command(WriteMemoryStart).unwrap();
-                let start = min_y * 240;
-                let end = (max_y + 1) * 240;
-                let pixel_data: &[u16] = &self.framebuffer.data.data;
-                let bytes: &[u8] = core::slice::from_raw_parts(
-                    pixel_data[start..end].as_ptr() as *const u8,
-                    (end - start) * 2,
-                );
-                screen.dcs().di.send_data(DataFormat::U8(bytes)).unwrap();
-            }
+            let start = min_y * 240;
+            let end = (max_y + 1) * 240;
+            let pixel_data = &self.framebuffer.data.data[start..end];
+            self.display.write_pixels(40, 279, 53 + min_y as u16, 53 + max_y as u16, pixel_data);
         }
 
-        let t_after_flush = unsafe { esp_idf_svc::sys::esp_timer_get_time() as u64 };
+        let t_after_flush = esp_util::now_us();
         let total_us = t_after_flush - t0;
         let fps_overlay_us = t_after_overlay - t0;
         let flush_us = t_after_flush - t_after_overlay;
@@ -439,11 +407,9 @@ impl CardworderUi {
                 .unwrap();
         }
 
-        let mut tm = tm { tm_sec: 0, tm_min: 0, tm_hour: 0, tm_mday: 0, tm_mon: 0, tm_year: 0, tm_wday: 0, tm_yday: 0, tm_isdst: 0 };
-        let mut now_time: time_t = 0;
-        unsafe { time(&mut now_time); localtime_r(&now_time, &mut tm); }
+        let (hour, min, sec) = esp_util::local_time_hms();
         let mut formatted = heapless::String::<16>::new();
-        let _ = write!(formatted, "{:02}:{:02}:{:02}", tm.tm_hour, tm.tm_min, tm.tm_sec);
+        let _ = write!(formatted, "{:02}:{:02}:{:02}", hour, min, sec);
         &self.renderers[CardFont::Medium as usize]
             .render(formatted.as_str(), Point::new(time_x, 1), VerticalPosition::Top,
                 FontColor::Transparent(Rgb565::WHITE), &mut self.framebuffer)

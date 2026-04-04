@@ -60,7 +60,7 @@ impl InputState {
     }
 
     fn now_us() -> u64 {
-        unsafe { esp_idf_svc::sys::esp_timer_get_time() as u64 }
+        crate::esp_util::now_us()
     }
 
     pub fn eat_keys(&mut self, event: KeyEvent, key: Scancode) -> Option<PressedSymbol> {

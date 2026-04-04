@@ -1,6 +1,8 @@
 // #![no_std] // can't cuz there is many format! macro
 
 pub mod cardputer_hal;
+pub mod core0_dispatch;
+pub mod esp_util;
 pub mod ui;
 pub mod types;
 pub mod screen;

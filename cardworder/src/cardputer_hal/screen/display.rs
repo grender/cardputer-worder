@@ -1,6 +1,5 @@
 //! Create and initialize ST7789 display driver
 use anyhow::Result;
-use display_interface_spi::SPIInterface;
 use esp_idf_hal::{
     delay::Delay,
     gpio::{AnyInputPin, Output, OutputPin, PinDriver},
@@ -8,6 +7,8 @@ use esp_idf_hal::{
     units::FromValueType,
 };
 use mipidsi::{
+    dcs::{InterfaceExt, SetColumnAddress, SetPageAddress, SetScrollStart, WriteMemoryStart},
+    interface::{Interface, SpiInterface},
     options::{
         ColorInversion, ColorOrder, HorizontalRefreshOrder, Orientation, RefreshOrder, Rotation,
         VerticalRefreshOrder,
@@ -17,8 +18,14 @@ use mipidsi::{
 
 use crate::cardputer_hal::screen::st7789v2::ST7789V2;
 
+/// Display error type (replaces display_interface::DisplayError)
+#[derive(Debug)]
+pub enum DisplayError {
+    Interface,
+}
+
 type Drawable<'a> = Display<
-    SPIInterface<SpiDeviceDriver<'a, SpiDriver<'a>>, PinDriver<'a, Output>>,
+    SpiInterface<'a, SpiDeviceDriver<'a, SpiDriver<'a>>, PinDriver<'a, Output>>,
     ST7789V2,
     PinDriver<'a, Output>,
 >;
@@ -31,6 +38,26 @@ pub const DISPLAY_SIZE_HEIGHT: u16 = 135;
 pub struct CardputerDisplay<'a> {
     pub screen: Drawable<'a>,
     pub backlight_pin: PinDriver<'a, Output>,
+}
+
+impl<'a> CardputerDisplay<'a> {
+    /// Send DCS commands to write a region of pixel data.
+    /// Encapsulates the unsafe dcs() access for the common flush pattern.
+    pub fn write_pixels(&mut self, col_start: u16, col_end: u16, page_start: u16, page_end: u16, pixels: &[u16]) {
+        // SAFETY: dcs() is unsafe because it bypasses mipidsi's state tracking.
+        // We only use it for pixel writes which don't conflict with driver state.
+        let di = unsafe { self.screen.dcs() };
+        di.write_command(SetColumnAddress::new(col_start, col_end)).unwrap();
+        di.write_command(SetPageAddress::new(page_start, page_end)).unwrap();
+        di.write_command(WriteMemoryStart).unwrap();
+        di.send_pixels(pixels.iter().map(|&p| p.to_ne_bytes())).unwrap();
+    }
+
+    /// Set hardware scroll offset (4-byte SPI command, no pixel data).
+    pub fn set_scroll_start(&mut self, offset: u16) {
+        let di = unsafe { self.screen.dcs() };
+        di.write_command(SetScrollStart::new(offset)).unwrap();
+    }
 }
 
 pub fn build<'a, SPI>(
@@ -77,8 +104,11 @@ where
     let mut bl = PinDriver::output(bl)?;
     bl.set_low()?;
 
+    // SpiInterface needs a buffer for command/data framing
+    let buffer = Box::leak(Box::new([0u8; 512]));
+
     log::info!("display: mipidsi Builder::init …");
-    let mut drawable = Builder::new(model, SPIInterface::new(spi, rs))
+    let mut drawable = Builder::new(model, SpiInterface::new(spi, rs, buffer))
         .reset_pin(rst)
         .display_size(DISPLAY_SIZE_HEIGHT, DISPLAY_SIZE_WIDTH)
         .display_offset(52, 40)
@@ -97,9 +127,8 @@ where
 
     // Clear display RAM before turning backlight on (no random pixels)
     log::info!("display: clearing before backlight …");
-    use embedded_graphics::prelude::DrawTarget;
+    use embedded_graphics::prelude::{DrawTarget, RgbColor};
     use embedded_graphics::pixelcolor::Rgb565;
-    use embedded_graphics::prelude::RgbColor;
     drawable.clear(Rgb565::BLACK).ok();
 
     log::info!("display: backlight pulse");
