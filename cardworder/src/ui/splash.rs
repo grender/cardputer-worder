@@ -5,8 +5,9 @@ use u8g2_fonts::types::VerticalPosition;
 
 use crate::cardputer_hal::input::keyboard_io::CardputerKeyboard;
 use crate::ui::cardworder_ui::{CardFont, CardworderUi, ThemeColor};
+use cardworder_core::ui::framebuffer::CardworderFB;
 
-pub fn run_splash(ui: &mut CardworderUi, keyboard: &mut CardputerKeyboard<'_>) {
+pub fn run_splash<FB: CardworderFB>(ui: &mut CardworderUi<FB>, keyboard: &mut CardputerKeyboard<'_>) {
     log::info!("boot: splash animation");
 
     let title = "CardWorder";

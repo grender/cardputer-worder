@@ -54,31 +54,7 @@ pub struct CardputerParts<'a> {
     pub battery: BatteryReader,
 }
 
-/// Per-direction statistics
-#[derive(Clone, Default)]
-pub struct DirStats {
-    pub due: usize,
-    pub new_count: usize,
-    pub learning: usize,
-    pub mastered: usize,
-    pub total_reviews: i64,
-    pub total_lapses: i64,
-    pub avg_difficulty: f32,
-    pub hardest_word: Option<String>,
-    pub hardest_lapses: i32,
-    pub strongest_word: Option<String>,
-    pub strongest_days: i64,
-    pub weakest_word: Option<String>,
-    pub weakest_days: i64,
-}
-
-/// Compact statistics computed from FSRS.BIN only
-#[derive(Clone)]
-pub struct QuickStats {
-    pub total_pairs: usize,
-    pub forward: DirStats,
-    pub reverse: DirStats,
-}
+pub use cardworder_core::types::{DirStats, QuickStats};
 
 /// Slim HAL that owns SD + Wi-Fi (lazy). Used on Core 0.
 pub struct CardputerHal<'a> {

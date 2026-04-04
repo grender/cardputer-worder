@@ -1,10 +1,10 @@
 pub mod main_menu;
 pub mod start;
-pub mod system_info;
+pub mod review;
+pub mod ntp;
 pub mod wifi_config;
 pub mod wifi_connect;
-pub mod ntp;
 pub mod add_word;
 pub mod statistics;
-pub mod review;
+pub mod system_info;
 pub mod quick_sync;

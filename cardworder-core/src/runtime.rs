@@ -1,9 +1,5 @@
 use std::sync::mpsc::{Receiver, Sender, TryRecvError};
 
-use esp_idf_hal::delay::FreeRtos;
-use esp_idf_hal::task::thread::ThreadSpawnConfiguration;
-use esp_idf_hal::cpu::Core;
-
 use crate::screen::{Snapshot, Screen};
 use crate::types::{Command, Msg, SharedState, SharedStateUpdate, TaskHandle};
 
@@ -13,6 +9,8 @@ pub struct Runtime {
     msg_rx: Receiver<Msg>,
     msg_tx: Sender<Msg>,
     state_tx: Sender<Snapshot>,
+    sleep_ms: fn(u32),
+    spawn_task: fn(Box<dyn FnOnce() + Send>),
 }
 
 impl Runtime {
@@ -21,6 +19,8 @@ impl Runtime {
         msg_rx: Receiver<Msg>,
         msg_tx: Sender<Msg>,
         state_tx: Sender<Snapshot>,
+        sleep_ms: fn(u32),
+        spawn_task: fn(Box<dyn FnOnce() + Send>),
     ) -> Self {
         Self {
             screen,
@@ -28,22 +28,21 @@ impl Runtime {
             msg_rx,
             msg_tx,
             state_tx,
+            sleep_ms,
+            spawn_task,
         }
     }
 
     pub fn run(mut self) {
-        log::info!("runtime: started on Core 1");
+        log::info!("runtime: started");
 
-        // Mount initial screen
         let cmd = self.screen.on_mount(&self.shared, &self.state_tx);
         self.execute(cmd);
         let _ = self.state_tx.send(self.screen.snapshot(&self.shared));
 
-        // Message loop — poll with FreeRtos yield (avoids ESP-IDF pthread issues)
         loop {
             match self.msg_rx.try_recv() {
                 Ok(msg) => {
-                    // Update shared state from messages
                     match &msg {
                         Msg::Key(key_msg) => {
                             self.shared.lang = key_msg.input_state.lang;
@@ -66,7 +65,7 @@ impl Runtime {
                     let _ = self.state_tx.send(self.screen.snapshot(&self.shared));
                 }
                 Err(TryRecvError::Empty) => {
-                    FreeRtos::delay_ms(1);
+                    (self.sleep_ms)(1);
                 }
                 Err(TryRecvError::Disconnected) => {
                     log::error!("runtime: msg channel disconnected");
@@ -80,20 +79,9 @@ impl Runtime {
         match cmd {
             Command::None => {}
             Command::SpawnTask { id, task } => {
-                let handle = TaskHandle {
-                    id,
-                    tx: self.msg_tx.clone(),
-                };
-                ThreadSpawnConfiguration {
-                    name: Some(c"task"),
-                    stack_size: 8192,
-                    priority: 4,
-                    pin_to_core: Some(Core::Core1),
-                    ..Default::default()
-                }
-                .set()
-                .ok();
-                std::thread::spawn(move || task(handle));
+                let handle = TaskHandle { id, tx: self.msg_tx.clone() };
+                let spawn = self.spawn_task;
+                spawn(Box::new(move || task(handle)));
             }
             Command::SwitchTo(mut new_screen) => {
                 let mount_cmd = new_screen.on_mount(&self.shared, &self.state_tx);

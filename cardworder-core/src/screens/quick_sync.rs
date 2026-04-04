@@ -2,23 +2,24 @@ use core::fmt::Write;
 use embedded_graphics::prelude::Point;
 use u8g2_fonts::types::VerticalPosition;
 
-use crate::cardputer_hal::input::keyboard::{InputLanguage, PressedSymbol};
-use crate::cardputer_hal::input::keyboard_io::KeyEvent;
-use crate::cardputer_hal::wifi::wifi::WifiConfig;
+use crate::input::keyboard::{InputLanguage, PressedSymbol};
+use crate::input::keyboard_io::KeyEvent;
 use crate::screen::{Screen, Snapshot};
 use crate::screens::main_menu::MainMenuScreen;
-use crate::types::{Command, Core0Action, Core0Result, Msg, ScannedNetwork, SharedState};
+use crate::types::{Command, Core0Action, Core0Result, Msg, ScannedNetwork, SharedState, WifiConfig};
 use crate::ui::cardworder_ui::{CardFont, CardworderUi, ThemeColor, TOP_BAR_HEIGHT};
+use crate::ui::framebuffer::CardworderFB;
 
 fn t(en: &'static str, ru: &'static str, lang: InputLanguage) -> &'static str {
     match lang { InputLanguage::En => en, InputLanguage::Ru => ru }
 }
 
 fn now_us() -> u64 {
-    crate::esp_util::now_us()
+    use std::sync::OnceLock;
+    use std::time::Instant;
+    static START: OnceLock<Instant> = OnceLock::new();
+    START.get_or_init(Instant::now).elapsed().as_micros() as u64
 }
-
-// ── Phase: each step knows its timeout and status text ──
 
 #[derive(Clone)]
 enum Phase {
@@ -46,7 +47,7 @@ impl Phase {
             Phase::SyncingNtp => 3_000_000,
             Phase::WaitingNtp => 15_000_000,
             Phase::Disconnecting => 5_000_000,
-            _ => u64::MAX, // terminal phases never timeout
+            _ => u64::MAX,
         }
     }
 
@@ -80,7 +81,6 @@ impl Phase {
         }
     }
 
-    /// Which Core0Action to emit in this phase.
     fn action(&self, screen: &QuickSyncScreen) -> Option<Core0Action> {
         match self {
             Phase::LoadingConfigs => Some(Core0Action::LoadWifiList),
@@ -96,15 +96,12 @@ impl Phase {
     }
 }
 
-// ── Screen ──
-
 pub struct QuickSyncScreen {
     phase: Phase,
     saved_configs: Vec<WifiConfig>,
     matched_configs: Vec<WifiConfig>,
     current_config_idx: usize,
     phase_start_us: u64,
-    /// Override status (e.g. "Connecting to MyWiFi..." or error message)
     status_override: Option<String>,
 }
 
@@ -149,7 +146,6 @@ impl QuickSyncScreen {
             return false;
         }
 
-        // Connecting has special retry logic
         if matches!(self.phase, Phase::Connecting) {
             self.current_config_idx += 1;
             if let Some(cfg) = self.current_config() {
@@ -223,12 +219,6 @@ impl Screen for QuickSyncScreen {
     }
 }
 
-// ── Result handling: the linear pipeline ──
-//
-// Flow: LoadConfigs → StartWifi → Scan → Connect → SetTZ → NTP → WaitNTP → Disconnect → Done
-//
-// Each result advances to the next phase. Only Connecting and Scanning have branching logic.
-
 impl QuickSyncScreen {
     fn handle_result(&mut self, result: Core0Result, lang: InputLanguage) -> Command {
         match result {
@@ -274,8 +264,6 @@ impl QuickSyncScreen {
     }
 }
 
-// ── Snapshot (draw) ──
-
 pub struct QuickSyncSnapshot {
     pub phase: Phase,
     pub matched_configs_len: usize,
@@ -286,7 +274,7 @@ pub struct QuickSyncSnapshot {
 }
 
 impl QuickSyncSnapshot {
-    pub fn draw(&self, ui: &mut CardworderUi) {
+    pub fn draw<FB: CardworderFB>(&self, ui: &mut CardworderUi<FB>) {
         let l = self.lang;
         let mut y = TOP_BAR_HEIGHT as i32 + 10;
 
@@ -304,7 +292,6 @@ impl QuickSyncSnapshot {
         );
         y += ui.font_height(CardFont::Medium) as i32 + 8;
 
-        // Progress when connecting to multiple networks
         if matches!(self.phase, Phase::Connecting) && self.matched_configs_len > 1 {
             let mut prog = heapless::String::<32>::new();
             let _ = write!(prog, "({}/{})", self.current_config_idx + 1, self.matched_configs_len);
@@ -316,7 +303,6 @@ impl QuickSyncSnapshot {
             y += ui.font_height(CardFont::Small) as i32 + 4;
         }
 
-        // Hint
         let hint = if matches!(self.phase, Phase::Error | Phase::NoConfigs) {
             t("Press Enter/Esc", "Нажмите Enter/Esc", l)
         } else {

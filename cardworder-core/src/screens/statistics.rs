@@ -1,14 +1,14 @@
 use core::fmt::Write;
 use u8g2_fonts::types::VerticalPosition;
 
-use crate::cardputer_hal::cardputer_hal::{QuickStats, DirStats};
-use crate::cardputer_hal::input::keyboard::{InputLanguage, PressedSymbol};
-use crate::cardputer_hal::input::keyboard_io::KeyEvent;
+use crate::input::keyboard::{InputLanguage, PressedSymbol};
+use crate::input::keyboard_io::KeyEvent;
 use crate::screen::{Screen, Snapshot};
 use crate::screens::main_menu::MainMenuScreen;
-use crate::types::{Command, Core0Action, Core0Result, Msg, SharedState};
+use crate::types::{Command, Core0Action, Core0Result, DirStats, Msg, QuickStats, SharedState};
 use crate::ui::cardworder_ui::{CardFont, CardworderUi, ThemeColor, TOP_BAR_HEIGHT};
 use crate::ui::elements::{UiLineElement, UiLineType};
+use crate::ui::framebuffer::CardworderFB;
 use crate::ui::render::{compose_scrolled_form, render_visible_lines};
 use embedded_graphics::pixelcolor::Rgb565;
 
@@ -22,7 +22,7 @@ pub struct StatisticsScreen {
     phase: Phase,
     stats: Option<QuickStats>,
     focused_idx: usize,
-    active_tab: usize, // 0 = EN→RU, 1 = RU→EN
+    active_tab: usize,
 }
 
 impl StatisticsScreen {
@@ -108,7 +108,7 @@ pub struct StatisticsSnapshot {
 }
 
 impl StatisticsSnapshot {
-    pub fn draw(&self, ui: &mut CardworderUi) {
+    pub fn draw<FB: CardworderFB>(&self, ui: &mut CardworderUi<FB>) {
         let l = self.lang;
         let med = CardFont::Medium;
         let sm = CardFont::Small;
@@ -144,9 +144,8 @@ impl StatisticsSnapshot {
 
         let s = match &self.stats { Some(s) => s, None => return };
 
-        let ds = if self.active_tab == 0 { &s.forward } else { &s.reverse };
+        let ds: &DirStats = if self.active_tab == 0 { &s.forward } else { &s.reverse };
 
-        // Tab header
         let tab0_color = if self.active_tab == 0 { ThemeColor::Selected } else { dim };
         let tab1_color = if self.active_tab == 1 { ThemeColor::Selected } else { dim };
 
@@ -164,7 +163,6 @@ impl StatisticsSnapshot {
         let b_diff = fmt!("{}: {:.1}", t("Avg difficulty", "Ср. сложность", l), ds.avg_difficulty);
 
         let mut lines: Vec<UiLineType> = vec![
-            // Tab header
             UiLineType::Elements(vec![
                 UiLineElement::Text(if self.active_tab == 0 { "[EN>RU]" } else { " EN>RU " }, med, VerticalPosition::Top, tab0_color),
                 UiLineElement::Spacer(8),

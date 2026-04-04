@@ -1,14 +1,8 @@
 use anyhow::Result;
 use esp_idf_svc::wifi::{AccessPointInfo, ClientConfiguration, Configuration, EspWifi};
 use esp_idf_hal::delay::FreeRtos;
-use heapless::String;
-use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct WifiConfig {
-    pub ssid: String<32>,
-    pub password: String<64>,
-}
+pub use cardworder_core::types::WifiConfig;
 
 pub struct CardWorderWifi<'a> {
     driver: EspWifi<'a>,

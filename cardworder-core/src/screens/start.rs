@@ -3,9 +3,9 @@ use embedded_graphics::prelude::RgbColor;
 
 use crate::screen::{Screen, Snapshot};
 use crate::screens::main_menu::MainMenuScreen;
-use crate::cardputer_hal::wifi::wifi::WifiConfig;
-use crate::types::{Command, Core0Action, Core0Result, Msg, SharedState};
+use crate::types::{Command, Core0Action, Core0Result, Msg, SharedState, WifiConfig};
 use crate::ui::cardworder_ui::CardworderUi;
+use crate::ui::framebuffer::CardworderFB;
 
 #[derive(Clone)]
 enum StartPhase {
@@ -96,7 +96,6 @@ impl Screen for StartScreen {
                         if done {
                             self.phase = StartPhase::StoppingWifi;
                         }
-                        // else stay in AwaitingNtp, Core 0 will check again
                     }
                     Core0Result::WifiStopped => {
                         self.phase = StartPhase::Done;
@@ -106,7 +105,7 @@ impl Screen for StartScreen {
                         log::error!("StartScreen: Core0 error: {}", msg);
                         return Command::SwitchTo(Box::new(MainMenuScreen::default()));
                     }
-                    _ => {} // ignore unrelated results
+                    _ => {}
                 }
                 Command::None
             }
@@ -130,7 +129,7 @@ pub struct StartSnapshot {
 }
 
 impl StartSnapshot {
-    pub fn draw(&self, ui: &mut CardworderUi) {
+    pub fn draw<FB: CardworderFB>(&self, ui: &mut CardworderUi<FB>) {
         ui.draw_starting_line_text(self.status_text, Rgb565::BLACK, Rgb565::WHITE);
     }
 }

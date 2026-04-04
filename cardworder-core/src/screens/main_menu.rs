@@ -1,8 +1,7 @@
 use u8g2_fonts::types::VerticalPosition;
 
-
-use crate::cardputer_hal::input::keyboard::{InputLanguage, PressedSymbol};
-use crate::cardputer_hal::input::keyboard_io::{KeyEvent, Scancode};
+use crate::input::keyboard::{InputLanguage, PressedSymbol};
+use crate::input::keyboard_io::{KeyEvent, Scancode};
 use crate::screen::{Screen, Snapshot};
 use crate::screens::add_word::AddWordScreen;
 use crate::screens::review::ReviewScreen;
@@ -14,6 +13,7 @@ use crate::screens::system_info::SystemInfoScreen;
 use crate::types::{Command, Msg, SharedState};
 use crate::ui::cardworder_ui::{CardFont, CardworderUi, ThemeColor, TOP_BAR_HEIGHT};
 use crate::ui::elements::{UiLineElement, UiLineType};
+use crate::ui::framebuffer::CardworderFB;
 use crate::ui::render::{compose_scrolled_form, render_visible_lines};
 
 enum MainMenuOption {
@@ -170,7 +170,7 @@ pub struct MainMenuSnapshot {
 }
 
 impl MainMenuSnapshot {
-    pub fn draw(&self, ui: &mut CardworderUi) {
+    pub fn draw<FB: CardworderFB>(&self, ui: &mut CardworderUi<FB>) {
         const SCREEN_HEIGHT: u32 = 135;
         let viewport_height = SCREEN_HEIGHT - TOP_BAR_HEIGHT;
 

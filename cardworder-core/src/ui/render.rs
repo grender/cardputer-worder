@@ -1,11 +1,11 @@
 //! Compose, scroll, and render logic for scrollable forms in Cardputer UI.
 
 use crate::ui::elements::{UiLineElement, UiLineType};
-use crate::ui::cardworder_ui::{CardworderUi, TOP_BAR_HEIGHT};
+use crate::ui::cardworder_ui::{CardFont, CardworderUi, ThemeColor, TOP_BAR_HEIGHT};
+use crate::ui::framebuffer::CardworderFB;
 use embedded_graphics::prelude::{Point, Size};
 use embedded_graphics::primitives::Rectangle;
 
-/// State for a composed form, including scroll offset.
 pub struct ComposedForm {
     pub lines: Vec<ComposedUiLine>,
     pub scroll_offset: u32,
@@ -13,10 +13,9 @@ pub struct ComposedForm {
     pub total_content_height: u32,
 }
 
-/// A composed line: index into the original `lines` slice plus screen rectangle.
 pub struct ComposedUiLine {
     pub line_index: usize,
-    pub rect: embedded_graphics::primitives::Rectangle,
+    pub rect: Rectangle,
 }
 
 pub struct ScrollBar {
@@ -44,7 +43,12 @@ impl ScrollBar {
         }
     }
 
-    pub fn calculate(&mut self, total_content_height: u32, viewport_height: u32, scroll_offset: u32) {
+    pub fn calculate(
+        &mut self,
+        total_content_height: u32,
+        viewport_height: u32,
+        scroll_offset: u32,
+    ) {
         self.total_content_height = total_content_height;
         self.viewport_height = viewport_height;
         self.scroll_offset = scroll_offset;
@@ -57,7 +61,8 @@ impl ScrollBar {
             if self.thumb_height < 8 {
                 self.thumb_height = 8;
             }
-            let scroll_ratio = scroll_offset as f32 / (total_content_height - viewport_height) as f32;
+            let scroll_ratio =
+                scroll_offset as f32 / (total_content_height - viewport_height) as f32;
             let max_thumb_offset = viewport_height - self.thumb_height;
             self.thumb_position = (scroll_ratio * max_thumb_offset as f32) as u32;
         }
@@ -78,13 +83,12 @@ impl ScrollBar {
     }
 }
 
-/// Compose lines: measure heights, scroll so `selected_line_idx` is visible.
-pub fn compose_scrolled_form<'a>(
+pub fn compose_scrolled_form<'a, FB: CardworderFB>(
     lines: &[UiLineType<'a>],
     selected_line_idx: usize,
     viewport_height: u32,
     content_top_y: i32,
-    ui: &CardworderUi,
+    ui: &CardworderUi<FB>,
 ) -> ComposedForm {
     let width = 240u32;
     let mut heights = Vec::with_capacity(lines.len());
@@ -114,30 +118,24 @@ pub fn compose_scrolled_form<'a>(
         let line_bottom = y + h;
         if line_bottom > viewport_top && line_top < viewport_bottom {
             let adjusted_rect = Rectangle::new(
-                Point::new(0, (y as i32) - (scroll_offset as i32) + content_top_y),
+                Point::new(
+                    0,
+                    (y as i32) - (scroll_offset as i32) + content_top_y,
+                ),
                 Size::new(width, h),
             );
-            composed_lines.push(ComposedUiLine {
-                line_index: idx,
-                rect: adjusted_rect,
-            });
+            composed_lines.push(ComposedUiLine { line_index: idx, rect: adjusted_rect });
         }
         y += h;
     }
 
-    ComposedForm {
-        lines: composed_lines,
-        scroll_offset,
-        viewport_height,
-        total_content_height,
-    }
+    ComposedForm { lines: composed_lines, scroll_offset, viewport_height, total_content_height }
 }
 
-/// Draws a line of type Elements.
-fn draw_elements_line(
+fn draw_elements_line<FB: CardworderFB>(
     elements: &[UiLineElement<'_>],
     rect: &Rectangle,
-    ui: &mut CardworderUi,
+    ui: &mut CardworderUi<FB>,
 ) {
     let mut x = rect.top_left.x;
     let line_top_y = rect.top_left.y;
@@ -163,8 +161,11 @@ fn draw_elements_line(
                     u8g2_fonts::types::VerticalPosition::Baseline => y_center,
                 };
                 let text_rect = ui.draw_text_oneline(
-                    *text, *font, *color,
-                    Point::new(x, draw_y), *vpos,
+                    *text,
+                    *font,
+                    *color,
+                    Point::new(x, draw_y),
+                    *vpos,
                 );
                 if let Some(r) = text_rect {
                     x += r.size.width as i32;
@@ -178,8 +179,11 @@ fn draw_elements_line(
     }
 }
 
-/// Render the scroll bar if visible.
-pub fn render_scroll_bar(scroll_bar: &ScrollBar, ui: &mut CardworderUi, screen_width: u32) {
+pub fn render_scroll_bar<FB: CardworderFB>(
+    scroll_bar: &ScrollBar,
+    ui: &mut CardworderUi<FB>,
+    screen_width: u32,
+) {
     if !scroll_bar.visible {
         return;
     }
@@ -200,16 +204,14 @@ pub fn render_scroll_bar(scroll_bar: &ScrollBar, ui: &mut CardworderUi, screen_w
     ui.fill_rect(adjusted_thumb_rect, thumb_color);
 }
 
-/// Draws an InputField line: label above, bordered input box with value and cursor.
-fn draw_input_field_line(
+fn draw_input_field_line<FB: CardworderFB>(
     label: &str,
     value: &str,
     cursor_pos: usize,
     focused: bool,
     rect: &Rectangle,
-    ui: &mut CardworderUi,
+    ui: &mut CardworderUi<FB>,
 ) {
-    use crate::ui::cardworder_ui::{CardFont, ThemeColor};
     use embedded_graphics::pixelcolor::Rgb565;
     use embedded_graphics::prelude::{RgbColor, WebColors};
 
@@ -217,7 +219,6 @@ fn draw_input_field_line(
     let y = rect.top_left.y;
     let width = rect.size.width.saturating_sub(4);
 
-    // Label
     let label_h = ui.font_height(CardFont::Small) as i32;
     ui.draw_text_oneline(
         label,
@@ -227,26 +228,18 @@ fn draw_input_field_line(
         u8g2_fonts::types::VerticalPosition::Top,
     );
 
-    // Input box
     let box_y = y + label_h + 2;
     let box_h = ui.font_height(CardFont::Medium) as i32 + 6;
-    let border_color = if focused {
-        Rgb565::CSS_LIGHT_BLUE
-    } else {
-        Rgb565::CSS_GRAY
-    };
+    let border_color = if focused { Rgb565::CSS_LIGHT_BLUE } else { Rgb565::CSS_GRAY };
 
-    // Border (top, bottom, left, right)
     let box_rect = Rectangle::new(Point::new(x, box_y), Size::new(width, box_h as u32));
     ui.fill_rect(box_rect, border_color);
-    // Interior (1px border)
     let inner = Rectangle::new(
         Point::new(x + 1, box_y + 1),
         Size::new(width.saturating_sub(2), (box_h - 2).max(0) as u32),
     );
-    ui.fill_rect(inner, Rgb565::new(4, 8, 4)); // dark background
+    ui.fill_rect(inner, Rgb565::new(4, 8, 4));
 
-    // Value text
     let text_x = x + 3;
     let text_y = box_y + 3;
     if !value.is_empty() {
@@ -259,7 +252,6 @@ fn draw_input_field_line(
         );
     }
 
-    // Cursor (when focused)
     if focused {
         let char_w = ui.font_width(CardFont::Medium) as i32;
         let cursor_x = text_x + (cursor_pos as i32) * char_w;
@@ -271,18 +263,34 @@ fn draw_input_field_line(
     }
 }
 
-/// Render only visible lines.
-pub fn render_visible_lines(composed: &ComposedForm, lines: &[UiLineType<'_>], ui: &mut CardworderUi) {
+pub fn render_visible_lines<FB: CardworderFB>(
+    composed: &ComposedForm,
+    lines: &[UiLineType<'_>],
+    ui: &mut CardworderUi<FB>,
+) {
     for composed_line in &composed.lines {
         match &lines[composed_line.line_index] {
             UiLineType::Elements(elements) => {
                 draw_elements_line(elements, &composed_line.rect, ui);
             }
             UiLineType::InputField { label, value, cursor_pos, focused } => {
-                draw_input_field_line(label, value.as_str(), *cursor_pos, *focused, &composed_line.rect, ui);
+                draw_input_field_line(
+                    label,
+                    value.as_str(),
+                    *cursor_pos,
+                    *focused,
+                    &composed_line.rect,
+                    ui,
+                );
             }
             UiLineType::AutoText { text, color, max_width } => {
-                ui.draw_text_auto(text, *color, composed_line.rect.top_left.x + 4, composed_line.rect.top_left.y, *max_width);
+                ui.draw_text_auto(
+                    text,
+                    *color,
+                    composed_line.rect.top_left.x + 4,
+                    composed_line.rect.top_left.y,
+                    *max_width,
+                );
             }
             UiLineType::Spacer(_) => {}
             UiLineType::Line(_, _color) => {}

@@ -3,13 +3,14 @@ use std::time::SystemTime;
 
 use embedded_graphics::pixelcolor::Rgb565;
 
-use crate::cardputer_hal::input::keyboard::{InputLanguage, PressedSymbol};
-use crate::cardputer_hal::input::keyboard_io::KeyEvent;
+use crate::input::keyboard::{InputLanguage, PressedSymbol};
+use crate::input::keyboard_io::KeyEvent;
 use crate::screen::{Screen, Snapshot};
 use crate::screens::main_menu::MainMenuScreen;
 use crate::types::{Command, Core0Action, Core0Result, Msg, SharedState};
 use crate::ui::cardworder_ui::{CardFont, CardworderUi, ThemeColor};
 use crate::ui::elements::{UiLineElement, UiLineType};
+use crate::ui::framebuffer::CardworderFB;
 use crate::ui::render::{compose_scrolled_form, render_visible_lines};
 use fsrs_core::{Direction, DueItem, FsrsRecord, BinaryDirState, Rating, FSRS_RECORD_SIZE};
 use fsrs_core::models::get_timestamp_iso;
@@ -63,7 +64,6 @@ impl ReviewScreen {
         Some((prompt, answer, item.direction))
     }
 
-    /// Apply rating to the current card's FSRS record in memory.
     fn apply_rating(&mut self, rating: Rating) {
         let item = &self.due_items[self.current_idx];
         let mut record = FsrsRecord::from_bytes(&self.current_record_bytes);
@@ -95,6 +95,13 @@ fn direction_label(dir: Direction) -> &'static str {
     match dir { Direction::Forward => "EN>RU", Direction::Reverse => "RU>EN" }
 }
 
+fn now_us() -> u64 {
+    use std::sync::OnceLock;
+    use std::time::Instant;
+    static START: OnceLock<Instant> = OnceLock::new();
+    START.get_or_init(Instant::now).elapsed().as_micros() as u64
+}
+
 impl Screen for ReviewScreen {
     fn on_mount(&mut self, _shared: &SharedState, _state_tx: &std::sync::mpsc::Sender<Snapshot>) -> Command {
         if !is_time_synced() {
@@ -120,9 +127,7 @@ impl Screen for ReviewScreen {
                         self.phase = Phase::ShowAnswer;
                         Command::None
                     }
-                    Some((KeyEvent::Pressed, PressedSymbol::Esc)) => {
-                        Self::go_main_menu()
-                    }
+                    Some((KeyEvent::Pressed, PressedSymbol::Esc)) => Self::go_main_menu(),
                     _ => Command::None,
                 },
 
@@ -137,9 +142,7 @@ impl Screen for ReviewScreen {
                         self.apply_rating(rating);
                         Command::None
                     }
-                    Some((KeyEvent::Pressed, PressedSymbol::Esc)) => {
-                        Self::go_main_menu()
-                    }
+                    Some((KeyEvent::Pressed, PressedSymbol::Esc)) => Self::go_main_menu(),
                     _ => Command::None,
                 },
 
@@ -151,10 +154,6 @@ impl Screen for ReviewScreen {
 
             Msg::Core0Result(result) => match result {
                 Core0Result::DueItemsLoaded { forward_items, reverse_items, next_id: _ } => {
-                    // Pick list based on interface language:
-                    // English UI → EN→RU (forward), Russian UI → RU→EN (reverse)
-                    // If preferred list is empty, fall back to the other
-                    use crate::cardputer_hal::input::keyboard::InputLanguage;
                     let mut due = match shared.lang {
                         InputLanguage::En => {
                             if !forward_items.is_empty() { forward_items } else { reverse_items }
@@ -168,7 +167,7 @@ impl Screen for ReviewScreen {
                         self.phase = Phase::Empty;
                     } else {
                         // Fisher-Yates shuffle
-                        let mut seed = crate::esp_util::now_us();
+                        let mut seed = now_us();
                         for i in (1..due.len()).rev() {
                             seed = seed.wrapping_mul(6364136223846793005).wrapping_add(1);
                             let j = (seed >> 33) as usize % (i + 1);
@@ -191,14 +190,12 @@ impl Screen for ReviewScreen {
                 }
 
                 Core0Result::CardRated => {
-                    // Last card was rated (no next card)
                     self.current_idx += 1;
                     self.phase = Phase::SessionDone;
                     Command::None
                 }
 
                 Core0Result::CardRatedAndNextLoaded { en, ru, record_bytes } => {
-                    // Current card saved + next card already loaded
                     self.current_idx += 1;
                     self.current_en = en;
                     self.current_ru = ru;
@@ -235,7 +232,6 @@ impl Screen for ReviewScreen {
                 let item = &self.due_items[self.current_idx];
                 let next_idx = self.current_idx + 1;
                 if next_idx < self.due_items.len() {
-                    // Combined: save current + load next in one SD operation
                     let next = &self.due_items[next_idx];
                     Some(Core0Action::RateAndLoadNext {
                         slot: item.slot,
@@ -245,7 +241,6 @@ impl Screen for ReviewScreen {
                         next_word_length: next.word_length,
                     })
                 } else {
-                    // Last card — just save
                     Some(Core0Action::RateCard {
                         slot: item.slot,
                         record_bytes: self.current_record_bytes,
@@ -320,7 +315,7 @@ pub struct ReviewSnapshot {
 }
 
 impl ReviewSnapshot {
-    pub fn draw(&self, ui: &mut CardworderUi) {
+    pub fn draw<FB: CardworderFB>(&self, ui: &mut CardworderUi<FB>) {
         let l = self.lang;
         let lines: Vec<UiLineType> = match &self.phase {
             PhaseSnapshot::ShowPrompt { progress, prompt } => vec![
@@ -381,7 +376,7 @@ impl ReviewSnapshot {
             }
         };
 
-        let viewport_height = 131u32; // full screen minus small margin
+        let viewport_height = 131u32;
         let composed = compose_scrolled_form(&lines, 0, viewport_height, 4, ui);
         render_visible_lines(&composed, &lines, ui);
     }

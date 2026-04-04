@@ -1,9 +1,13 @@
 //! Font measurement helpers for Cardputer UI.
 
-use crate::ui::cardworder_ui::CardFont;
+use crate::ui::cardworder_ui::{CardFont, CardworderUi};
 use crate::ui::elements::{UiLineElement, UiLineType};
+use crate::ui::framebuffer::CardworderFB;
 
-pub fn measure_element_height(ui: &crate::ui::cardworder_ui::CardworderUi, element: &UiLineElement) -> u32 {
+pub fn measure_element_height<FB: CardworderFB>(
+    ui: &CardworderUi<FB>,
+    element: &UiLineElement,
+) -> u32 {
     match element {
         UiLineElement::Icon(_, font, _) => ui.font_height(*font),
         UiLineElement::Text(_, font, _, _) => ui.font_height(*font),
@@ -12,11 +16,16 @@ pub fn measure_element_height(ui: &crate::ui::cardworder_ui::CardworderUi, eleme
     }
 }
 
-pub fn measure_line_height(ui: &crate::ui::cardworder_ui::CardworderUi, line: &UiLineType) -> u32 {
+pub fn measure_line_height<FB: CardworderFB>(
+    ui: &CardworderUi<FB>,
+    line: &UiLineType,
+) -> u32 {
     match line {
-        UiLineType::Elements(elements) => {
-            elements.iter().map(|e| measure_element_height(ui, e)).max().unwrap_or(0)
-        }
+        UiLineType::Elements(elements) => elements
+            .iter()
+            .map(|e| measure_element_height(ui, e))
+            .max()
+            .unwrap_or(0),
         UiLineType::Spacer(pixels) => *pixels as u32,
         UiLineType::Line(pixels, _) => *pixels as u32,
         UiLineType::InputField { .. } => {
@@ -29,7 +38,11 @@ pub fn measure_line_height(ui: &crate::ui::cardworder_ui::CardworderUi, line: &U
 }
 
 /// Measure height of auto-sized text (same logic as `draw_text_auto`).
-pub fn measure_auto_text_height(ui: &crate::ui::cardworder_ui::CardworderUi, text: &str, max_width: u32) -> u32 {
+pub fn measure_auto_text_height<FB: CardworderFB>(
+    ui: &CardworderUi<FB>,
+    text: &str,
+    max_width: u32,
+) -> u32 {
     let char_count = text.chars().count();
     let xlarge_max = (max_width / 10) as usize;
     let large_max = (max_width / 9) as usize;
@@ -42,7 +55,6 @@ pub fn measure_auto_text_height(ui: &crate::ui::cardworder_ui::CardworderUi, tex
     } else if char_count <= med_max {
         ui.font_height(CardFont::Medium)
     } else {
-        // Word wrap: count lines
         let line_h = ui.font_height(CardFont::Medium);
         let mut line_count = 1u32;
         let mut cur_len = 0usize;
@@ -57,6 +69,6 @@ pub fn measure_auto_text_height(ui: &crate::ui::cardworder_ui::CardworderUi, tex
                 cur_len = word_len;
             }
         }
-        line_count * line_h + (line_count - 1) // +1px gap between lines
+        line_count * line_h + (line_count - 1)
     }
 }

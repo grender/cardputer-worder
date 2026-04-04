@@ -2,15 +2,15 @@ use core::fmt::Write;
 use embedded_graphics::prelude::WebColors;
 use u8g2_fonts::types::VerticalPosition;
 
-use crate::cardputer_hal::input::keyboard::{InputLanguage, PressedSymbol};
-use crate::cardputer_hal::input::keyboard_io::KeyEvent;
-use crate::cardputer_hal::wifi::wifi::WifiConfig;
+use crate::input::keyboard::{InputLanguage, PressedSymbol};
+use crate::input::keyboard_io::KeyEvent;
 use crate::screen::{Screen, Snapshot};
 use crate::screens::main_menu::MainMenuScreen;
 use crate::screens::wifi_connect::WifiConnectScreen;
-use crate::types::{Command, Core0Action, Core0Result, Msg, SharedState, WifiConfigList};
+use crate::types::{Command, Core0Action, Core0Result, Msg, SharedState, WifiConfig, WifiConfigList};
 use crate::ui::cardworder_ui::{CardFont, CardworderUi, ThemeColor, TOP_BAR_HEIGHT};
 use crate::ui::elements::{UiLineElement, UiLineType};
+use crate::ui::framebuffer::CardworderFB;
 use crate::ui::render::{compose_scrolled_form, render_visible_lines};
 
 pub struct WifiConfigScreen {
@@ -120,7 +120,6 @@ impl Screen for WifiConfigScreen {
                         }
                     }
                     Some((KeyEvent::Pressed, PressedSymbol::Del)) => {
-                        // Del key removes the focused config
                         if self.focused_idx < self.configs.len() {
                             self.configs.remove(self.focused_idx);
                             if self.focused_idx >= self.total_focusable() && self.focused_idx > 0 {
@@ -177,7 +176,7 @@ fn t(en: &'static str, ru: &'static str, lang: InputLanguage) -> &'static str {
 }
 
 impl WifiConfigSnapshot {
-    pub fn draw(&self, ui: &mut CardworderUi) {
+    pub fn draw<FB: CardworderFB>(&self, ui: &mut CardworderUi<FB>) {
         const SCREEN_HEIGHT: u32 = 135;
         let viewport_height = SCREEN_HEIGHT - TOP_BAR_HEIGHT;
 
@@ -191,7 +190,6 @@ impl WifiConfigSnapshot {
             return;
         }
 
-        // Pre-format SSID labels
         let mut ssid_labels: Vec<heapless::String<48>> = Vec::new();
         for config in &self.configs {
             let mut s = heapless::String::<48>::new();
@@ -201,7 +199,6 @@ impl WifiConfigSnapshot {
 
         let mut lines: Vec<UiLineType> = Vec::new();
 
-        // Config entries
         for (idx, label) in ssid_labels.iter().enumerate() {
             let color = if idx == self.focused_idx { ThemeColor::Selected } else { ThemeColor::Text };
             lines.push(UiLineType::Elements(vec![
@@ -217,7 +214,6 @@ impl WifiConfigSnapshot {
 
         lines.push(UiLineType::Spacer(4));
 
-        // "Add New" button
         let add_idx = self.configs.len();
         let mut next_idx = add_idx + 1;
         let add_color = if self.focused_idx == add_idx { ThemeColor::Selected } else { ThemeColor::Text };
@@ -225,7 +221,6 @@ impl WifiConfigSnapshot {
             UiLineElement::Text(t("+ Scan & Add WiFi", "+ Поиск и добавление", l), CardFont::Medium, VerticalPosition::Top, add_color),
         ]));
 
-        // "Disconnect" button (only if connected)
         if self.wifi_connected {
             let disc_color = if self.focused_idx == next_idx { ThemeColor::Selected } else { ThemeColor::Error };
             lines.push(UiLineType::Elements(vec![
@@ -234,13 +229,11 @@ impl WifiConfigSnapshot {
             next_idx += 1;
         }
 
-        // "Back" button
         let back_color = if self.focused_idx == next_idx { ThemeColor::Selected } else { ThemeColor::Text };
         lines.push(UiLineType::Elements(vec![
             UiLineElement::Text(t("<- Back", "<- Назад", l), CardFont::Medium, VerticalPosition::Top, back_color),
         ]));
 
-        // Hint
         if self.focused_idx < self.configs.len() {
             lines.push(UiLineType::Spacer(4));
             lines.push(UiLineType::Elements(vec![
@@ -250,8 +243,8 @@ impl WifiConfigSnapshot {
 
         let scroll_target = if self.configs.is_empty() {
             match self.focused_idx {
-                0 => 2, // add (after empty + spacer)
-                _ => 3, // back
+                0 => 2,
+                _ => 3,
             }
         } else if self.focused_idx < self.configs.len() {
             self.focused_idx

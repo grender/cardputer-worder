@@ -3,11 +3,9 @@
 pub mod cardputer_hal;
 pub mod core0_dispatch;
 pub mod esp_util;
+
 pub mod ui;
-pub mod types;
-pub mod screen;
-pub mod runtime;
-pub mod screens;
+pub use cardworder_core::{input, runtime, screen, screens, types};
 
 pub trait ResultExt<R, E> {
     fn unwrap_or_log(self, message: &str) -> R;

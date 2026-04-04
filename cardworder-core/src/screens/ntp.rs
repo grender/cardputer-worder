@@ -1,11 +1,12 @@
 use u8g2_fonts::types::VerticalPosition;
 
-use crate::cardputer_hal::input::keyboard::{InputLanguage, PressedSymbol};
-use crate::cardputer_hal::input::keyboard_io::KeyEvent;
+use crate::input::keyboard::{InputLanguage, PressedSymbol};
+use crate::input::keyboard_io::KeyEvent;
 use crate::screen::{Screen, Snapshot};
 use crate::screens::main_menu::MainMenuScreen;
 use crate::types::{Command, Core0Action, Core0Result, Msg, SharedState};
 use crate::ui::cardworder_ui::{CardFont, CardworderUi, ThemeColor, TOP_BAR_HEIGHT};
+use crate::ui::framebuffer::CardworderFB;
 
 #[derive(Clone)]
 enum NtpPhase {
@@ -85,7 +86,7 @@ impl Screen for NtpScreen {
                         NtpPhase::NotConnected | NtpPhase::Done | NtpPhase::Error => {
                             Command::SwitchTo(Box::new(MainMenuScreen::default()))
                         }
-                        _ => Command::None, // don't allow exit during sync
+                        _ => Command::None,
                     }
                 }
                 _ => Command::None,
@@ -125,18 +126,16 @@ fn t(en: &'static str, ru: &'static str, lang: InputLanguage) -> &'static str {
 }
 
 impl NtpSnapshot {
-    pub fn draw(&self, ui: &mut CardworderUi) {
+    pub fn draw<FB: CardworderFB>(&self, ui: &mut CardworderUi<FB>) {
         use embedded_graphics::prelude::Point;
 
         let font = CardFont::Medium;
         let mut y = TOP_BAR_HEIGHT as i32 + 10;
 
-        // Title
         let l = self.lang;
         ui.draw_text_oneline(t("NTP Time Sync", "Синхр. времени NTP", l), CardFont::Large, ThemeColor::Selected, Point::new(4, y), VerticalPosition::Top);
         y += ui.font_height(CardFont::Large) as i32 + 8;
 
-        // Status
         let color = match self.phase {
             NtpPhase::NotConnected | NtpPhase::Error => ThemeColor::Error,
             NtpPhase::Done => ThemeColor::Color(embedded_graphics::pixelcolor::Rgb565::new(0, 63, 0)),
@@ -145,7 +144,6 @@ impl NtpSnapshot {
         ui.draw_text_oneline(self.status_text.as_str(), font, color, Point::new(4, y), VerticalPosition::Top);
         y += ui.font_height(font) as i32 + 4;
 
-        // Help text
         match self.phase {
             NtpPhase::NotConnected => {
                 ui.draw_text_oneline(t("Connect to WiFi first,", "Сначала подключите WiFi,", l), CardFont::Small, ThemeColor::Text, Point::new(4, y), VerticalPosition::Top);

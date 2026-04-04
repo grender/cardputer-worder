@@ -8,7 +8,7 @@ use cardworder::runtime::Runtime;
 use cardworder::screen::Snapshot;
 use cardworder::screens::main_menu::MainMenuScreen;
 use cardworder::types::{KeyMsg, Msg};
-use cardworder::ui::cardworder_ui::CardworderUi;
+use cardworder::ui::cardworder_ui::{CardworderDisplay, CardworderUi};
 use cardworder::ResultExt;
 use embedded_graphics::pixelcolor::Rgb565;
 use embedded_graphics::prelude::RgbColor;
@@ -38,11 +38,13 @@ fn main() {
     // Keyboard stays on Core 0 main thread
     let mut keyboard = parts.keyboard;
 
-    // Heap-pin display (ESP-IDF SPI driver has internal registrations that break on move)
-    let display: &'static mut _ = unsafe {
-        std::mem::transmute::<_, &'static mut cardworder::cardputer_hal::screen::display::CardputerDisplay<'static>>(
-            Box::leak(Box::new(parts.display)),
-        )
+    // Heap-pin display then box as trait object.
+    // Safety: Box::leak returns a valid heap pointer; Box::from_raw reclaims it.
+    // transmute extends the lifetime to 'static (ESP peripherals live for the entire program).
+    let boxed_display: Box<dyn CardworderDisplay> = unsafe {
+        let leaked: &'static mut cardworder::cardputer_hal::screen::display::CardputerDisplay<'static> =
+            std::mem::transmute(Box::leak(Box::new(parts.display)));
+        Box::from_raw(leaked as *mut _)
     };
 
     // HAL stays on Core 0 (SPI is core-affine)
@@ -61,7 +63,7 @@ fn main() {
 
     // Build UI with direct display ownership
     log::info!("boot step 4: CardworderUi::build");
-    let mut ui = CardworderUi::build(parts.framebuffer, display);
+    let mut ui = CardworderUi::build(parts.framebuffer, boxed_display, esp_util::local_time_hms);
 
     // Splash animation using hardware scroll
     cardworder::ui::splash::run_splash(&mut ui, &mut keyboard);
@@ -93,6 +95,19 @@ fn main() {
             msg_rx,
             runtime_msg_tx,
             runtime_state_tx,
+            |ms| FreeRtos::delay_ms(ms),
+            |task| {
+                ThreadSpawnConfiguration {
+                    pin_to_core: Some(esp_idf_hal::cpu::Core::Core1),
+                    stack_size: 8192,
+                    priority: 4,
+                    name: Some(c"task"),
+                    ..Default::default()
+                }
+                .set()
+                .ok();
+                std::thread::spawn(task);
+            },
         );
         runtime.run();
     });

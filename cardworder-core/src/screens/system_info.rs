@@ -3,14 +3,22 @@ use embedded_graphics::pixelcolor::Rgb565;
 use embedded_graphics::prelude::WebColors;
 use u8g2_fonts::types::VerticalPosition;
 
-use crate::cardputer_hal::input::keyboard::{InputLanguage, PressedSymbol};
-use crate::cardputer_hal::input::keyboard_io::KeyEvent;
+use crate::input::keyboard::{InputLanguage, PressedSymbol};
+use crate::input::keyboard_io::KeyEvent;
 use crate::screen::{Screen, Snapshot};
 use crate::screens::main_menu::MainMenuScreen;
 use crate::types::{Command, Core0Action, Core0Result, Msg, SharedState};
 use crate::ui::cardworder_ui::{CardFont, CardworderUi, ThemeColor, TOP_BAR_HEIGHT};
 use crate::ui::elements::{UiLineElement, UiLineType};
+use crate::ui::framebuffer::CardworderFB;
 use crate::ui::render::{compose_scrolled_form, render_visible_lines};
+
+fn now_us() -> u64 {
+    use std::sync::OnceLock;
+    use std::time::Instant;
+    static START: OnceLock<Instant> = OnceLock::new();
+    START.get_or_init(Instant::now).elapsed().as_micros() as u64
+}
 
 pub struct SystemInfoScreen {
     focused_idx: usize,
@@ -78,13 +86,7 @@ impl Screen for SystemInfoScreen {
     }
 
     fn snapshot(&self, shared: &SharedState) -> Snapshot {
-        let heap = crate::esp_util::heap_info();
-        let free_heap = heap.free_bytes;
-        let total_heap = heap.total_bytes;
-        let free_dma = heap.free_dma_bytes;
-        let largest_block = heap.largest_block_bytes;
-        let uptime_us = crate::esp_util::now_us();
-
+        // Heap info not available in platform-agnostic core — return zeroes.
         let pending_action = if self.needs_network_info {
             Some(Core0Action::GetNetworkInfo)
         } else if self.needs_battery {
@@ -94,11 +96,11 @@ impl Screen for SystemInfoScreen {
         };
 
         Snapshot::SystemInfo(SystemInfoSnapshot {
-            free_heap_bytes: free_heap as u32,
-            total_heap_bytes: total_heap as u32,
-            free_dma_bytes: free_dma as u32,
-            largest_block_bytes: largest_block as u32,
-            uptime_secs: (uptime_us / 1_000_000) as u32,
+            free_heap_bytes: 0,
+            total_heap_bytes: 0,
+            free_dma_bytes: 0,
+            largest_block_bytes: 0,
+            uptime_secs: (now_us() / 1_000_000) as u32,
             wifi_connected: shared.wifi_connected,
             wifi_ssid: shared.wifi_ssid.clone(),
             wifi_ip: self.wifi_ip.clone(),
@@ -132,7 +134,7 @@ fn t(en: &'static str, ru: &'static str, lang: InputLanguage) -> &'static str {
 }
 
 impl SystemInfoSnapshot {
-    pub fn draw(&self, ui: &mut CardworderUi) {
+    pub fn draw<FB: CardworderFB>(&self, ui: &mut CardworderUi<FB>) {
         let font = CardFont::Medium;
         let color = ThemeColor::Text;
         let label_color = ThemeColor::Color(Rgb565::CSS_GRAY);

@@ -1,5 +1,7 @@
 use esp_idf_hal::gpio::{Input, Output, PinDriver};
 
+pub use cardworder_core::input::keyboard_io::{KeyEvent, Scancode};
+
 type KeyboardState = [u8; 8];
 pub struct CardputerKeyboard<'a> {
     mux: [PinDriver<'a, Output>; 3],
@@ -102,78 +104,7 @@ impl<'a> CardputerKeyboard<'a> {
     }
 }
 
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
-pub enum Scancode {
-    Space = 6, // register 0 msb
-    Period = 5,
-    M = 4,
-    B = 3,
-    C = 2,
-    Z = 1,
-    Opt = 0,
-
-    Enter = 13, // register 1 msb
-    Semicolon = 12,
-    K = 11,
-    H = 10,
-    F = 9,
-    S = 8,
-    Shift = 7,
-
-    BackSlash = 20,
-    LeftSquareBracket = 19,
-    O = 18,
-    U = 17,
-    T = 16,
-    E = 15,
-    Q = 14,
-
-    Backspace = 27,
-    Underscore = 26,
-    _9 = 25,
-    _7 = 24,
-    _5 = 23,
-    _3 = 22,
-    _1 = 21,
-
-    Slash = 34, //register 5 msb
-    Comma = 33,
-    N = 32,
-    V = 31,
-    X = 30,
-    Alt = 29,
-    Ctrl = 28,
-
-    Quote = 41,
-    L = 40,
-    J = 39,
-    G = 38,
-    D = 37,
-    A = 36,
-    Fn = 35,
-
-    RightSquareBracket = 48,
-    P = 47,
-    I = 46,
-    Y = 45,
-    R = 44,
-    W = 43,
-    Tab = 42,
-
-    Equal = 55, // register 7 msb
-    _0 = 54,
-    _8 = 53,
-    _6 = 52,
-    _4 = 51,
-    _2 = 50,
-    Tilde = 49,
-}
-
-#[derive(Debug, Copy, Clone)]
-pub enum KeyEvent {
-    Pressed,
-    Released,
-}
+// Scancode and KeyEvent are re-exported from cardworder_core::input::keyboard_io above.
 
 const KEY_MAP: [Scancode; 56] = [
     Scancode::Opt,

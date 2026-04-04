@@ -60,6 +60,17 @@ impl<'a> CardputerDisplay<'a> {
     }
 }
 
+impl cardworder_core::ui::cardworder_ui::CardworderDisplay for CardputerDisplay<'_> {
+    fn flush_rows(&mut self, min_y: usize, max_y: usize, pixels: &[u16]) {
+        // Physical display offsets: col 40..279, page 53..187 (135 rows)
+        self.write_pixels(40, 279, 53 + min_y as u16, 53 + max_y as u16, pixels);
+    }
+
+    fn set_scroll_start(&mut self, offset: u16) {
+        CardputerDisplay::set_scroll_start(self, offset);
+    }
+}
+
 pub fn build<'a, SPI>(
     spi: SPI,
     sck: impl OutputPin + 'a,

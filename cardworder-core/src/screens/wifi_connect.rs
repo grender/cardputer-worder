@@ -1,16 +1,16 @@
 use core::fmt::Write;
 use u8g2_fonts::types::VerticalPosition;
 
-use crate::cardputer_hal::input::keyboard::{InputLanguage, PressedSymbol};
-use crate::cardputer_hal::input::keyboard_io::KeyEvent;
-use crate::cardputer_hal::wifi::wifi::WifiConfig;
+use crate::input::keyboard::{InputLanguage, PressedSymbol};
+use crate::input::keyboard_io::KeyEvent;
 use crate::screen::{Screen, Snapshot};
 use crate::screens::wifi_config::WifiConfigScreen;
 use crate::types::{
-    Command, Core0Action, Core0Result, Msg, ScannedNetwork, SharedState, WifiConfigList,
+    Command, Core0Action, Core0Result, Msg, ScannedNetwork, SharedState, WifiConfig, WifiConfigList,
 };
 use crate::ui::cardworder_ui::{CardFont, CardworderUi, ThemeColor, TOP_BAR_HEIGHT};
 use crate::ui::elements::{UiLineElement, UiLineType};
+use crate::ui::framebuffer::CardworderFB;
 
 #[derive(Clone)]
 enum Phase { StartingWifi, Scanning, ShowingResults, EnteringPassword, Connecting, Connected, Saving, Error }
@@ -129,7 +129,6 @@ impl Screen for WifiConnectScreen {
                         self.focused_idx = 0;
                     }
                     Core0Result::WifiConnected { .. } => {
-                        // Save config first if new
                         if self.selected_network_idx < self.networks.len() {
                             let ssid = self.networks[self.selected_network_idx].ssid.clone();
                             if self.find_saved_password(ssid.as_str()).is_none() {
@@ -185,7 +184,6 @@ impl Screen for WifiConnectScreen {
                                         self.focused_idx = 0;
                                     }
                                 } else {
-                                    // Back
                                     return Command::SwitchTo(Box::new(WifiConfigScreen::new()));
                                 }
                             }
@@ -253,7 +251,7 @@ pub struct WifiConnectSnapshot {
 }
 
 impl WifiConnectSnapshot {
-    pub fn draw(&self, ui: &mut CardworderUi) {
+    pub fn draw<FB: CardworderFB>(&self, ui: &mut CardworderUi<FB>) {
         use embedded_graphics::prelude::Point;
         use crate::ui::render::{compose_scrolled_form, render_visible_lines};
         let font = CardFont::Medium;
@@ -298,8 +296,8 @@ impl WifiConnectSnapshot {
                 ui.draw_text_oneline(t("Enter Password", "Введите пароль", l), small, ThemeColor::Text, Point::new(4, y), VerticalPosition::Top);
                 y += ui.font_height(small) as i32 + 2;
                 let lines = vec![UiLineType::InputField { label: t("Password", "Пароль", l), value: self.password.clone(), cursor_pos: self.password_cursor, focused: self.focused_idx == 0 }];
-                let composed = crate::ui::render::compose_scrolled_form(&lines, 0, 40, y, ui);
-                crate::ui::render::render_visible_lines(&composed, &lines, ui);
+                let composed = compose_scrolled_form(&lines, 0, 40, y, ui);
+                render_visible_lines(&composed, &lines, ui);
                 y += 30;
                 let connect_color = if self.focused_idx == 1 { ThemeColor::Selected } else { ThemeColor::Text };
                 ui.draw_text_oneline(t("[Connect]", "[Подключить]", l), font, connect_color, Point::new(4, y), VerticalPosition::Top);

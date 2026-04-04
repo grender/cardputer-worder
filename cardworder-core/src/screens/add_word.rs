@@ -1,13 +1,14 @@
 use embedded_graphics::prelude::Point;
 use u8g2_fonts::types::VerticalPosition;
 
-use crate::cardputer_hal::input::keyboard::{InputLanguage, PressedSymbol};
-use crate::cardputer_hal::input::keyboard_io::KeyEvent;
+use crate::input::keyboard::{InputLanguage, PressedSymbol};
+use crate::input::keyboard_io::KeyEvent;
 use crate::screen::{Screen, Snapshot};
 use crate::screens::main_menu::MainMenuScreen;
 use crate::types::{Command, Core0Action, Core0Result, Msg, SharedState};
 use crate::ui::cardworder_ui::{CardFont, CardworderUi, ThemeColor, TOP_BAR_HEIGHT};
 use crate::ui::elements::{UiLineElement, UiLineType};
+use crate::ui::framebuffer::CardworderFB;
 use crate::ui::render::{compose_scrolled_form, render_visible_lines};
 
 #[derive(Clone)]
@@ -34,7 +35,7 @@ pub struct AddWordScreen {
     ru_value: heapless::String<64>,
     en_cursor: usize,
     ru_cursor: usize,
-    focused_field: usize, // 0=EN, 1=RU, 2=Save, 3=Back
+    focused_field: usize,
     status_text: String,
 }
 
@@ -98,15 +99,11 @@ impl AddWordScreen {
                 }
             }
             PressedSymbol::ArrowLeft => {
-                if *cursor > 0 {
-                    *cursor -= 1;
-                }
+                if *cursor > 0 { *cursor -= 1; }
             }
             PressedSymbol::ArrowRight => {
                 let char_count = value.chars().count();
-                if *cursor < char_count {
-                    *cursor += 1;
-                }
+                if *cursor < char_count { *cursor += 1; }
             }
             _ => {}
         }
@@ -127,7 +124,6 @@ impl Screen for AddWordScreen {
         _shared: &SharedState,
         _state_tx: &std::sync::mpsc::Sender<Snapshot>,
     ) -> Command {
-        // No loading needed — screen is instantly ready for editing.
         Command::None
     }
 
@@ -173,7 +169,6 @@ impl Screen for AddWordScreen {
                             Phase::Editing => {
                                 match self.focused_field {
                                     2 => {
-                                        // Save
                                         if self.en_value.is_empty() || self.ru_value.is_empty() {
                                             self.status_text = t(
                                                 "Both fields required",
@@ -188,19 +183,16 @@ impl Screen for AddWordScreen {
                                         }
                                     }
                                     3 => {
-                                        // Back
                                         return Command::SwitchTo(Box::new(
                                             MainMenuScreen::default(),
                                         ));
                                     }
                                     _ => {
-                                        // Enter on input fields moves to next field
                                         self.focused_field = (self.focused_field + 1) % 4;
                                     }
                                 }
                             }
                             Phase::Error => {
-                                // Go back to editing on error
                                 self.phase = Phase::Editing;
                                 self.status_text = String::new();
                             }
@@ -259,7 +251,7 @@ pub struct AddWordSnapshot {
 }
 
 impl AddWordSnapshot {
-    pub fn draw(&self, ui: &mut CardworderUi) {
+    pub fn draw<FB: CardworderFB>(&self, ui: &mut CardworderUi<FB>) {
         let font = CardFont::Medium;
         let small = CardFont::Small;
         let l = self.lang;
@@ -272,7 +264,6 @@ impl AddWordSnapshot {
 
                 let mut lines: Vec<UiLineType> = Vec::new();
 
-                // English input field
                 lines.push(UiLineType::InputField {
                     label: t("English", "Английский", l),
                     value: self.en_value.clone(),
@@ -282,7 +273,6 @@ impl AddWordSnapshot {
 
                 lines.push(UiLineType::Spacer(2));
 
-                // Russian input field
                 lines.push(UiLineType::InputField {
                     label: t("Russian", "Русский", l),
                     value: self.ru_value.clone(),
@@ -292,7 +282,6 @@ impl AddWordSnapshot {
 
                 lines.push(UiLineType::Spacer(4));
 
-                // Save button
                 let save_color = if self.focused_field == 2 {
                     ThemeColor::Selected
                 } else {
@@ -305,7 +294,6 @@ impl AddWordSnapshot {
                     save_color,
                 )]));
 
-                // Back button
                 let back_color = if self.focused_field == 3 {
                     ThemeColor::Selected
                 } else {
@@ -318,7 +306,6 @@ impl AddWordSnapshot {
                     back_color,
                 )]));
 
-                // Status text
                 if !self.status_text.is_empty() {
                     lines.push(UiLineType::Spacer(2));
                     let status_color = if self.status_text.starts_with(t("Saved!", "Сохранено!", l))
@@ -335,12 +322,11 @@ impl AddWordSnapshot {
                     )]));
                 }
 
-                // Determine scroll target based on focused field
                 let scroll_target = match self.focused_field {
-                    0 => 0, // English field
-                    1 => 2, // Russian field (after spacer)
-                    2 => 4, // Save button
-                    3 => 5, // Back button
+                    0 => 0,
+                    1 => 2,
+                    2 => 4,
+                    3 => 5,
                     _ => 0,
                 };
 

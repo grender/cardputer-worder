@@ -69,6 +69,7 @@ anyhow = "1.0.94"
 log = "0.4"
 rs-fsrs = { version = "1.2.1" }
 fsrs-core = { path = "../fsrs-core" }
+cardworder-core = { path = "../cardworder-core" }
 
 [dev-dependencies]
 

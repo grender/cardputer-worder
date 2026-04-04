@@ -1,5 +1,5 @@
 [workspace]
-members = ["cardworder", "fsrs-core", "console-learner"]
+members = ["cardworder", "fsrs-core", "console-learner", "cardworder-core", "cardworder-sim"]
 resolver = "2"
 
 [workspace.package]

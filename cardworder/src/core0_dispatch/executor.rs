@@ -4,9 +4,8 @@ use core::fmt::Write;
 
 use esp_idf_svc::sntp::{EspSntp, SyncStatus};
 
-use crate::cardputer_hal::cardputer_hal::{BatteryReader, CardputerHal, QuickStats};
-use crate::cardputer_hal::wifi::wifi::WifiConfig;
-use crate::types::{ScannedNetwork, WifiConfigList};
+use crate::cardputer_hal::cardputer_hal::{BatteryReader, CardputerHal};
+use crate::types::{QuickStats, ScannedNetwork, WifiConfig, WifiConfigList};
 
 use super::{NtpExecutor, StorageExecutor, SystemExecutor, WifiExecutor};
 
